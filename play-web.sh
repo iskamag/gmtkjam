@@ -5,11 +5,14 @@ set -eu
 project_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 cd "$project_dir"
 
-mkdir -p build/web
-godot --headless --path . --export-release Web build/web/index.html
-
 build_id=$(date +%s)
+export_dir="build/web-$build_id"
+mkdir -p "$export_dir"
+
+godot --headless --path . --export-release Web "$export_dir/index.html"
+
 printf '%s\n' "Chronosword's Last Day was rebuilt from:"
 printf '  %s\n' "$project_dir"
-printf '%s\n' "Open http://localhost:8000/?build=$build_id"
-exec python3 scripts/serve_web.py build/web 8000
+printf 'Build ID: %s\n' "$build_id"
+printf 'Export:   %s\n' "$export_dir/index.pck"
+exec python3 scripts/serve_web.py "$export_dir" 8000 "$build_id"

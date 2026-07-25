@@ -38,8 +38,10 @@ For a one-command export and local server:
 ./play-web.sh
 ```
 
-The launcher resolves its own project directory, rebuilds the Web export, prints
-a cache-busted URL, and serves every file with browser caching disabled.
+The launcher resolves its own project directory, exports into a new build-ID
+directory, prints the exact cache-busted URL, and serves every file with browser
+caching disabled. If port 8000 belongs to an older preview, it automatically
+selects a fresh port instead of silently leaving you on the old game.
 
 Or run the individual steps:
 
