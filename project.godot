@@ -1,0 +1,30 @@
+; Engine configuration file.
+; Chronosword's Last Day — combat prototype
+
+config_version=5
+
+[application]
+
+config/name="Chronosword's Last Day — Prototype"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/window_width_override=1280
+window/size/window_height_override=720
+window/stretch/mode="canvas_items"
+
+[physics]
+
+3d/physics_engine="GodotPhysics3D"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+textures/canvas_textures/default_texture_filter=0
+environment/defaults/default_clear_color=Color(0.025, 0.024, 0.022, 1)
