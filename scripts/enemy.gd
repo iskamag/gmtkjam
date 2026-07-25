@@ -33,6 +33,10 @@ var visual_time := 0.0
 var spawn_position := Vector3.ZERO
 var stagger := 0.0
 var stunned := 0.0
+var guard := 0.0
+var strafe_bias := 1.0
+var hit_lean := Vector3.ZERO
+var hit_squash := 0.0
 
 
 func _ready() -> void:
@@ -41,6 +45,9 @@ func _ready() -> void:
 	_configure_kind()
 	_build_body()
 	spawn_position = global_position
+	strafe_bias = -1.0 if get_instance_id() % 2 == 0 else 1.0
+	if kind == Kind.ELITE:
+		guard = 100.0
 
 
 func _physics_process(delta: float) -> void:
@@ -56,6 +63,8 @@ func _physics_process(delta: float) -> void:
 	attack_cooldown -= local_delta
 	stagger = maxf(stagger - local_delta * 11.0, 0.0)
 	stunned = maxf(stunned - local_delta, 0.0)
+	hit_lean = hit_lean.lerp(Vector3.ZERO, 1.0 - exp(-local_delta * 9.0))
+	hit_squash = maxf(hit_squash - local_delta * 6.0, 0.0)
 
 	if not is_on_floor():
 		velocity.y -= 24.0 * local_delta
@@ -104,7 +113,14 @@ func _choose_motion(flat_to_player: Vector3, distance: float, delta: float) -> v
 		else:
 			desired = global_transform.basis.x * sin(visual_time * 1.4) * move_speed * 0.55
 	else:
-		desired = flat_to_player.normalized() * move_speed
+		if distance > 4.5:
+			desired = flat_to_player.normalized() * move_speed
+		elif distance > 2.25:
+			var approach := flat_to_player.normalized() * move_speed * 0.42
+			var orbit := flat_to_player.normalized().cross(Vector3.UP) * move_speed * 0.72 * strafe_bias
+			desired = approach + orbit
+		else:
+			desired = -flat_to_player.normalized() * move_speed * 0.35
 
 	velocity.x = move_toward(velocity.x, desired.x, 12.0 * delta)
 	velocity.z = move_toward(velocity.z, desired.z, 12.0 * delta)
@@ -197,20 +213,38 @@ func _fire_direction(shot_direction: Vector3, shot_speed: float) -> void:
 	projectile.global_position = global_position + Vector3.UP * 1.6
 
 
-func take_damage(amount: int, hit_position: Vector3, critical: bool = false, stagger_force: float = 30.0) -> void:
+func take_damage(
+	amount: int,
+	hit_position: Vector3,
+	critical: bool = false,
+	stagger_force: float = 30.0,
+	launch_force: float = 0.0
+) -> void:
 	if not alive:
 		return
 	var applied_damage := amount
-	if kind == Kind.ELITE and stunned <= 0.0 and stagger_force < 50.0:
-		applied_damage = int(float(amount) * 0.46)
+	if kind == Kind.ELITE and guard > 0.0 and stunned <= 0.0:
+		if stagger_force < 55.0:
+			applied_damage = int(float(amount) * 0.38)
+			guard = maxf(guard - stagger_force * 0.62, 0.0)
+			stagger_force *= 0.32
+		else:
+			guard = 0.0
+			stunned = 1.3
+			critical = true
 	health -= applied_damage
 	stagger += stagger_force
 	flash = 1.0
-	var away := global_position - hit_position
+	hit_squash = 1.0
+	var away := global_position - player.global_position
 	away.y = 0.0
 	if away.length_squared() > 0.0001:
 		var knockback := stagger_force * (0.055 if kind != Kind.BOSS else 0.012)
 		velocity += away.normalized() * knockback
+		hit_lean = away.normalized() * minf(stagger_force * 0.0028, 0.26)
+	if launch_force > 0.0 and kind != Kind.BOSS:
+		velocity.y = maxf(velocity.y, launch_force)
+		stunned = maxf(stunned, 0.58 + launch_force * 0.055)
 	if stagger >= (145.0 if kind == Kind.BOSS else 100.0):
 		stagger = 0.0
 		stunned = 0.48 if kind == Kind.BOSS else 1.05
@@ -228,6 +262,10 @@ func take_damage(amount: int, hit_position: Vector3, critical: bool = false, sta
 
 	if health <= 0:
 		_die()
+
+
+func is_vulnerable() -> bool:
+	return stunned > 0.0 or guard <= 0.0 and kind == Kind.ELITE
 
 
 func vanish() -> void:
@@ -356,13 +394,24 @@ func _update_visual(distance: float) -> void:
 	if not is_instance_valid(visual_root):
 		return
 	var bob_scale := 0.025 if kind != Kind.BOSS else 0.06
-	visual_root.position.y = sin(visual_time * (4.0 if kind != Kind.BOSS else 2.0)) * bob_scale
+	visual_root.position = Vector3(
+		hit_lean.x,
+		sin(visual_time * (4.0 if kind != Kind.BOSS else 2.0)) * bob_scale - hit_squash * 0.11,
+		hit_lean.z
+	)
+	visual_root.scale = Vector3(
+		1.0 + hit_squash * 0.14,
+		1.0 - hit_squash * 0.20,
+		1.0 + hit_squash * 0.14
+	)
 	var telegraph := windup > 0.0
 	for material in body_materials:
 		var base := _kind_color()
 		var response: float = maxf(flash, 0.42 if telegraph else 0.0)
 		if stunned > 0.0:
 			response = maxf(response, 0.58)
+		if kind == Kind.ELITE and guard > 0.0:
+			response = maxf(response, 0.12)
 		material.albedo_color = base.lerp(Color(0.93, 0.75, 0.46), response)
 		material.emission_enabled = telegraph or flash > 0.05 or stunned > 0.0
 		if not material.emission_enabled:

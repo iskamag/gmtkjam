@@ -4,6 +4,8 @@ var player: CharacterBody3D
 var visual_time := 0.0
 var canvas_scale := 1.0
 var canvas_offset := Vector2.ZERO
+var displayed_fire_ratio := 0.0
+var displayed_watch_lift := 0.0
 
 const DESIGN_SIZE := Vector2(1280.0, 720.0)
 const SKIN := Color(0.44, 0.35, 0.27)
@@ -29,6 +31,11 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	visual_time += delta
+	if is_instance_valid(player):
+		var target_ratio: float = clampf(player.watchfire / player.MAX_WATCHFIRE, 0.0, 1.0)
+		displayed_fire_ratio = move_toward(displayed_fire_ratio, target_ratio, delta * 1.9)
+		var target_lift := 48.0 if player.watch_active else 0.0
+		displayed_watch_lift = lerpf(displayed_watch_lift, target_lift, 1.0 - exp(-delta * 8.0))
 	queue_redraw()
 
 
@@ -39,11 +46,13 @@ func _draw() -> void:
 	canvas_offset = (size - DESIGN_SIZE * canvas_scale) * 0.5
 	_set_design_transform()
 
-	var lift := 0.0
-	if player.watch_active:
-		lift = 72.0
+	var lift := displayed_watch_lift
 	lift += sin(visual_time * 24.0) * player.wound_visual * 10.0
-	var watch_center := Vector2(250.0, 584.0 - lift)
+	var movement_offset := Vector2(
+		player.movement_sway * 7.0 + player.camera_kick.x * 3.0,
+		absf(player.movement_sway) * 4.0 + player.landing_visual * 12.0
+	)
+	var watch_center := Vector2(250.0, 584.0 - lift) + movement_offset
 
 	_draw_left_hand(watch_center)
 	_draw_watchfire(watch_center)
@@ -54,18 +63,18 @@ func _draw() -> void:
 
 
 func _draw_watchfire(center: Vector2) -> void:
-	var ratio: float = clampf(player.watchfire / player.MAX_WATCHFIRE, 0.0, 1.0)
+	var ratio := displayed_fire_ratio
 	if ratio <= 0.005:
 		return
-	var active_scale := 1.68 if player.watch_active else 1.0
-	var height := (62.0 + ratio * 230.0) * active_scale
-	var width := 84.0 + ratio * 44.0
+	var active_scale := 1.18 if player.watch_active else 1.0
+	var height := (48.0 + ratio * 182.0) * active_scale
+	var width := 72.0 + ratio * 42.0
 	var flutter := sin(visual_time * (17.0 if player.watch_active else 9.0))
 
 	for layer in 3:
 		var layer_scale := 1.0 - float(layer) * 0.2
 		var x_shift := (float(layer) - 1.0) * 25.0
-		var tongue_height := height * layer_scale * (0.88 + sin(visual_time * 11.0 + float(layer) * 2.1) * 0.1)
+		var tongue_height := height * layer_scale * (0.96 + sin(visual_time * 11.0 + float(layer) * 2.1) * 0.04)
 		var base_y := center.y - 4.0
 		var points := PackedVector2Array([
 			Vector2(center.x - width * 0.5 + x_shift, base_y),
@@ -80,7 +89,7 @@ func _draw_watchfire(center: Vector2) -> void:
 		draw_colored_polygon(points, color)
 
 	if player.watch_active:
-		for index in 7:
+		for index in 4:
 			var angle := float(index) * 0.91 + visual_time * 0.6
 			var mote := center + Vector2(cos(angle) * 58.0, -95.0 - float(index) * 18.0)
 			mote.x += sin(visual_time * 8.0 + float(index)) * 14.0
@@ -174,14 +183,20 @@ func _draw_right_hand() -> void:
 
 	if player.dagger_state == player.DaggerState.HELD:
 		var slash := sin(player.swing_visual * PI)
-		var origin := Vector2(1040.0 - slash * 115.0, 615.0 - slash * 65.0)
+		var origin := Vector2(
+			1040.0 - slash * 115.0 - player.movement_sway * 8.0,
+			615.0 - slash * 65.0 + absf(player.movement_sway) * 5.0 + player.landing_visual * 12.0
+		)
 		_set_component_transform(origin, -0.35 - slash * 0.85)
 		_draw_arm_from_origin()
 		_draw_dagger_from_origin()
 		_set_design_transform()
 	else:
 		var punch := sin(player.punch_visual * PI)
-		var origin := Vector2(1090.0 - punch * 225.0, 625.0 - punch * 55.0)
+		var origin := Vector2(
+			1090.0 - punch * 225.0 - player.movement_sway * 9.0,
+			625.0 - punch * 55.0 + absf(player.movement_sway) * 5.0 + player.landing_visual * 12.0
+		)
 		_set_component_transform(origin, -0.22 - punch * 0.12)
 		_draw_arm_from_origin()
 		_draw_fist_from_origin()

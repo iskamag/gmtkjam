@@ -16,10 +16,13 @@ The broken watch is the player's health:
 | --- | --- |
 | `WASD` | Move |
 | Mouse | Look |
-| Left mouse | Dagger combo / deflect; punch and kick while unarmed |
-| Right mouse | Throw dagger; press again to rewind it manually |
+| `Shift` | Chronostep (one air use before landing) |
+| `Ctrl` | Ground slide; jump out to preserve speed |
+| Left mouse | Buffered dagger combo / deflect; punch while unarmed |
+| `E` | Kick / guard break / launch |
+| Right mouse | Free throw (hold briefly to guide); press again to pay Watchfire for rewind |
 | `Q` | Burn Watchfire to slow hostile time |
-| `Space` | Jump |
+| `Space` | Jump / slide-jump / wall-kick |
 | `F3` | Prototype telemetry |
 | `R` | Restart after death |
 | `Esc` | Release/capture mouse |
@@ -64,11 +67,14 @@ short sequence of encounters and a boss-shaped finale to test:
 
 1. kill-based time recovery;
 2. wound rewind plus permanent maximum-time erosion;
-3. melee, unarmed stagger, deflection, steerable throw/manual recall, and
-   Watchfire slowdown;
-4. PS2-style authored spaces and historical deterioration rather than
-   posterization;
-5. the level-50 damage-number presentation without a conventional HUD health bar.
+3. momentum movement, slide-jumps, wall-kicks, and a time-art chronostep;
+4. buffered melee, unarmed stagger, launch, deflection, hit-stop, and enemy
+   reactions;
+5. free steerable dagger placement, expensive manual recall, and free physical
+   retrieval;
+6. gated authored encounters and PS2-style historical deterioration rather
+   than posterization;
+7. the level-50 damage-number presentation without a conventional HUD health bar.
 
 The project emits neutral gameplay signals for future score choreography. It
 deliberately does **not** contain a shallow adaptive-music mixer. A genuinely

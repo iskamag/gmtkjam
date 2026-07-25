@@ -15,16 +15,24 @@ var started := false
 var run_finished := false
 var boss_defeated := false
 var wave := 0
-var pending_wave := false
+var encounter_index := -1
+var encounter_active := false
+var encounter_resolving := false
+var encounter_gates: Array[StaticBody3D] = []
+var encounter_definitions: Array[Dictionary] = []
 var deterioration := 0.0
 var world_environment_resource: Environment
-var ghost_materials: Array[StandardMaterial3D] = []
+var ghost_materials: Array[ShaderMaterial] = []
+var impact_level := 0.0
+var wound_level := 0.0
+var hitstop_until_msec := 0
 
 
 func _ready() -> void:
 	_ensure_input_actions()
 	_build_world()
 	_build_level()
+	_build_encounter_definitions()
 
 	enemies_root = Node3D.new()
 	enemies_root.name = "Enemies"
@@ -62,9 +70,11 @@ func _process(delta: float) -> void:
 		player.watchfire / player.MAX_WATCHFIRE
 	)
 
-	if started and not run_finished and active_enemies.is_empty() and not pending_wave and not boss_defeated:
-		pending_wave = true
-		get_tree().create_timer(1.15).timeout.connect(_spawn_next_wave)
+	_update_hitstop()
+	impact_level = maxf(impact_level - delta * 5.8, 0.0)
+	wound_level = maxf(wound_level - delta * 3.7, 0.0)
+	if started and not run_finished and not boss_defeated:
+		_update_encounter_triggers()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -98,30 +108,86 @@ func _start_run() -> void:
 	emit_signal("score_event", &"run_started", {"time": player.time_left})
 
 
-func _spawn_next_wave() -> void:
-	pending_wave = false
-	if run_finished or boss_defeated:
+func _update_encounter_triggers() -> void:
+	if encounter_active or encounter_resolving:
 		return
+	var next_index := encounter_index + 1
+	if next_index >= encounter_definitions.size():
+		return
+	var definition := encounter_definitions[next_index]
+	if player.global_position.z <= float(definition["trigger_z"]):
+		_start_encounter(next_index)
 
-	wave += 1
-	match wave:
-		1:
-			hud.announce("PLACE THE BLADE", "THROW • FIGHT EMPTY-HANDED • REWIND")
-			_spawn_enemy(Vector3(-2.8, 0.05, 7.0), EnemyScript.Kind.MELEE)
-			_spawn_enemy(Vector3(3.2, 0.05, -1.0), EnemyScript.Kind.RANGED)
-			emit_signal("score_event", &"encounter_started", {"room": 1, "threat": 0.35})
-		2:
-			hud.announce("THE ROAD REMEMBERS", "Wounds return. The maximum does not.")
-			_spawn_enemy(Vector3(-6.5, 0.05, -10.0), EnemyScript.Kind.RANGED)
-			_spawn_enemy(Vector3(5.7, 0.05, -14.0), EnemyScript.Kind.MELEE)
-			_spawn_enemy(Vector3(-2.0, 0.05, -20.0), EnemyScript.Kind.ELITE)
-			emit_signal("score_event", &"encounter_started", {"room": 2, "threat": 0.68})
-		3:
-			hud.announce("THE UNFINISHED", "Your first job. Your last job.")
-			_spawn_enemy(Vector3(0.0, 0.05, -25.0), EnemyScript.Kind.BOSS)
-			emit_signal("score_event", &"boss_started", {"room": 3, "phase": 1})
-		_:
-			pass
+
+func _start_encounter(index: int) -> void:
+	if index < 0 or index >= encounter_definitions.size():
+		return
+	encounter_index = index
+	wave = index + 1
+	encounter_active = true
+	var definition := encounter_definitions[index]
+	hud.announce(String(definition["title"]), String(definition["subtitle"]), 1.55)
+	for spawn_data in definition["spawns"]:
+		_spawn_enemy(spawn_data[0], spawn_data[1])
+	var tag: StringName = &"boss_started" if index == encounter_definitions.size() - 1 else &"encounter_started"
+	emit_signal("score_event", tag, {
+		"room": index + 1,
+		"threat": definition["threat"],
+	})
+
+
+func _complete_encounter(index: int) -> void:
+	if index != encounter_index or run_finished:
+		return
+	encounter_active = false
+	encounter_resolving = false
+	if index < encounter_gates.size():
+		_open_gate(encounter_gates[index])
+		hud.announce(
+			"PASSAGE %02d RELEASED" % (index + 1),
+			"Your clock did not stop.",
+			1.1
+		)
+	emit_signal("score_event", &"encounter_cleared", {
+		"room": index + 1,
+		"time": player.time_left,
+		"maximum": player.max_time,
+	})
+
+
+func _build_encounter_definitions() -> void:
+	encounter_definitions = [
+		{
+			"trigger_z": 13.0,
+			"title": "PLACE THE BLADE",
+			"subtitle": "A thrown weapon is a position you must account for.",
+			"threat": 0.35,
+			"spawns": [
+				[Vector3(-3.7, 0.05, 5.5), EnemyScript.Kind.MELEE],
+				[Vector3(5.0, 0.05, 0.0), EnemyScript.Kind.RANGED],
+			],
+		},
+		{
+			"trigger_z": -7.0,
+			"title": "THE ROAD REMEMBERS",
+			"subtitle": "Break the guard. Decide whether recall is worth the flame.",
+			"threat": 0.70,
+			"spawns": [
+				[Vector3(-6.3, 0.05, -10.0), EnemyScript.Kind.RANGED],
+				[Vector3(5.6, 0.05, -14.0), EnemyScript.Kind.MELEE],
+				[Vector3(-1.7, 0.05, -17.8), EnemyScript.Kind.ELITE],
+			],
+		},
+		{
+			"trigger_z": -22.0,
+			"title": "THE UNFINISHED",
+			"subtitle": "Your first job. Your last job.",
+			"threat": 1.0,
+			"spawns": [
+				[Vector3(0.0, 0.05, -28.0), EnemyScript.Kind.BOSS],
+			],
+		},
+	]
 
 
 func _spawn_enemy(at: Vector3, kind: int) -> void:
@@ -151,6 +217,7 @@ func _on_enemy_died(enemy: Node, reward: float, was_boss: bool) -> void:
 
 	if was_boss:
 		boss_defeated = true
+		encounter_active = false
 		hud.hide_boss()
 		for remainder in active_enemies.duplicate():
 			if is_instance_valid(remainder):
@@ -169,6 +236,10 @@ func _on_enemy_died(enemy: Node, reward: float, was_boss: bool) -> void:
 		"time": player.time_left,
 		"remaining": active_enemies.size(),
 	})
+	if active_enemies.is_empty() and encounter_active and not encounter_resolving:
+		encounter_resolving = true
+		var completed_index := encounter_index
+		get_tree().create_timer(0.58).timeout.connect(_complete_encounter.bind(completed_index))
 
 
 func _on_boss_phase(phase: int) -> void:
@@ -197,7 +268,6 @@ func _on_player_expired() -> void:
 
 
 func _on_player_rewound(seconds_spent: float, maximum_lost: float) -> void:
-	hud.announce("WOUND REWOUND", "THE RIM BREAKS", 0.58)
 	emit_signal("score_event", &"wound_rewound", {
 		"cost": seconds_spent,
 		"scar": maximum_lost,
@@ -222,6 +292,94 @@ func get_hostile_time_scale() -> float:
 	if is_instance_valid(player) and player.watch_active:
 		return 0.18
 	return 1.0
+
+
+func request_impact(strength: float, at: Vector3) -> void:
+	impact_level = maxf(impact_level, strength)
+	var screen_position := Vector2(0.5, 0.5)
+	if is_instance_valid(player) and is_instance_valid(player.camera):
+		var pixels: Vector2 = player.camera.unproject_position(at)
+		var viewport_size := get_viewport().get_visible_rect().size
+		if viewport_size.x > 0.0 and viewport_size.y > 0.0:
+			screen_position = Vector2(pixels.x / viewport_size.x, pixels.y / viewport_size.y)
+	if is_instance_valid(hud) and hud.has_method("pulse_impact"):
+		hud.pulse_impact(strength, screen_position)
+	var freeze_msec := int(18.0 + strength * 28.0)
+	hitstop_until_msec = maxi(hitstop_until_msec, Time.get_ticks_msec() + freeze_msec)
+	Engine.time_scale = 0.10 if strength < 0.85 else 0.035
+	spawn_burst(at, Color(0.84, 0.76, 0.55), 5 if strength < 0.85 else 9)
+	_spawn_time_cut(at, strength)
+
+
+func request_wound_effect(source_position: Vector3) -> void:
+	wound_level = 1.0
+	hitstop_until_msec = maxi(hitstop_until_msec, Time.get_ticks_msec() + 34)
+	Engine.time_scale = 0.12
+	if is_instance_valid(hud) and hud.has_method("pulse_wound"):
+		var side := clampf((source_position.x - player.global_position.x) / 10.0, -1.0, 1.0)
+		hud.pulse_wound(side)
+
+
+func _update_hitstop() -> void:
+	if hitstop_until_msec <= 0:
+		return
+	if Time.get_ticks_msec() >= hitstop_until_msec:
+		hitstop_until_msec = 0
+		Engine.time_scale = 1.0
+
+
+func _exit_tree() -> void:
+	Engine.time_scale = 1.0
+
+
+func spawn_time_echo(at_transform: Transform3D) -> void:
+	var echo := MeshInstance3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(0.9, 1.8, 0.06)
+	echo.mesh = mesh
+	echo.global_transform = at_transform
+	echo.position.y += 0.9
+	var material := StandardMaterial3D.new()
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.albedo_color = Color(0.32, 0.25, 0.36, 0.30)
+	material.emission_enabled = true
+	material.emission = Color(0.23, 0.16, 0.28)
+	material.emission_energy_multiplier = 0.32
+	echo.material_override = material
+	add_child(echo)
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(echo, "scale", Vector3(1.7, 0.82, 1.0), 0.26)
+	tween.tween_property(material, "albedo_color:a", 0.0, 0.26)
+	tween.tween_property(material, "emission_energy_multiplier", 0.0, 0.26)
+	tween.set_parallel(false)
+	tween.tween_callback(echo.queue_free)
+
+
+func _spawn_time_cut(at: Vector3, strength: float) -> void:
+	var cut := MeshInstance3D.new()
+	var mesh := QuadMesh.new()
+	mesh.size = Vector2(1.3 + strength * 1.5, 0.045 + strength * 0.035)
+	cut.mesh = mesh
+	cut.global_position = at
+	if is_instance_valid(player):
+		cut.look_at(player.camera.global_position, Vector3.UP)
+	var material := StandardMaterial3D.new()
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.albedo_color = Color(0.92, 0.82, 0.58, 0.82)
+	material.emission_enabled = true
+	material.emission = Color(0.58, 0.45, 0.27)
+	material.emission_energy_multiplier = 1.1
+	cut.material_override = material
+	add_child(cut)
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(cut, "scale", Vector3(2.6, 0.2, 1.0), 0.16)
+	tween.tween_property(material, "albedo_color:a", 0.0, 0.16)
+	tween.set_parallel(false)
+	tween.tween_callback(cut.queue_free)
 
 
 func spawn_burst(at: Vector3, color: Color, count: int = 8) -> void:
@@ -371,6 +529,56 @@ func _build_level() -> void:
 	_add_ghost_asset("res://assets/kenney/figurine.glb", Vector3(-3.7, 0.0, -18.0), Vector3(1.45, 1.45, 1.45), Vector3.ZERO)
 	_add_ghost_asset("res://assets/kenney/figurine.glb", Vector3(3.7, 0.0, -18.0), Vector3(1.45, 1.45, 1.45), Vector3.ZERO)
 
+	encounter_gates.append(_create_encounter_gate(-5.0))
+	encounter_gates.append(_create_encounter_gate(-21.0))
+
+
+func _create_encounter_gate(z_position: float) -> StaticBody3D:
+	var gate := StaticBody3D.new()
+	gate.position = Vector3(0.0, 0.0, z_position)
+	gate.collision_layer = 1
+	gate.collision_mask = 0
+	gate.name = "EncounterSeal"
+	add_child(gate)
+
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(33.0, 5.0, 0.48)
+	collision.shape = shape
+	collision.position.y = 2.5
+	gate.add_child(collision)
+
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.13, 0.12, 0.105)
+	material.metallic = 0.42
+	material.roughness = 0.63
+	for x in range(-15, 16, 2):
+		var bar := MeshInstance3D.new()
+		var bar_mesh := BoxMesh.new()
+		bar_mesh.size = Vector3(0.18, 5.2, 0.30)
+		bar.mesh = bar_mesh
+		bar.position = Vector3(float(x), 2.6, 0.0)
+		bar.material_override = material
+		gate.add_child(bar)
+	for y in [0.8, 4.4]:
+		var brace := MeshInstance3D.new()
+		var brace_mesh := BoxMesh.new()
+		brace_mesh.size = Vector3(32.0, 0.24, 0.36)
+		brace.mesh = brace_mesh
+		brace.position = Vector3(0.0, y, 0.0)
+		brace.material_override = material
+		gate.add_child(brace)
+	return gate
+
+
+func _open_gate(gate: StaticBody3D) -> void:
+	if not is_instance_valid(gate):
+		return
+	gate.collision_layer = 0
+	var tween := create_tween()
+	tween.tween_property(gate, "position:y", -5.6, 0.62).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	spawn_burst(gate.global_position + Vector3.UP * 2.2, Color(0.41, 0.34, 0.25), 12)
+
 
 func _update_deterioration(delta: float) -> void:
 	var permanent_loss: float = 1.0 - player.max_time / player.STARTING_MAX_TIME
@@ -379,8 +587,7 @@ func _update_deterioration(delta: float) -> void:
 	deterioration = move_toward(deterioration, target, delta * 0.22)
 
 	for material in ghost_materials:
-		material.albedo_color.a = 0.025 + deterioration * 0.42
-		material.emission_energy_multiplier = 0.08 + deterioration * 0.22
+		material.set_shader_parameter("visibility", deterioration)
 
 	if world_environment_resource != null:
 		world_environment_resource.fog_density = 0.012 + deterioration * 0.012
@@ -453,15 +660,12 @@ func _add_ghost_asset(path: String, at: Vector3, asset_scale: Vector3, rotation:
 	_apply_ghost_material(instance, Color(0.27, 0.21, 0.30))
 
 
-func _make_ghost_material(color: Color) -> StandardMaterial3D:
-	var material := StandardMaterial3D.new()
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.albedo_color = Color(color.r, color.g, color.b, 0.025)
-	material.emission_enabled = true
-	material.emission = color * 0.22
-	material.emission_energy_multiplier = 0.08
-	material.no_depth_test = false
+func _make_ghost_material(color: Color) -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = load("res://shaders/deferred_history.gdshader")
+	material.set_shader_parameter("history_color", color)
+	material.set_shader_parameter("visibility", deterioration)
+	material.set_shader_parameter("phase_seed", float(ghost_materials.size()) * 0.137)
 	ghost_materials.append(material)
 	return material
 
@@ -504,6 +708,9 @@ func _ensure_input_actions() -> void:
 	_add_key_action(&"move_left", KEY_A)
 	_add_key_action(&"move_right", KEY_D)
 	_add_key_action(&"jump", KEY_SPACE)
+	_add_key_action(&"slide", KEY_CTRL)
+	_add_key_action(&"kick", KEY_E)
+	_add_key_action(&"chronostep", KEY_SHIFT)
 	_add_key_action(&"watch", KEY_Q)
 	_add_key_action(&"restart", KEY_R)
 	_add_key_action(&"toggle_debug", KEY_F3)

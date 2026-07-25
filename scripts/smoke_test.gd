@@ -42,24 +42,42 @@ func _run() -> void:
 	_check(is_equal_approx(player.watchfire, 100.0), "Watchfire is capped")
 
 	player.set_active(false)
+	var flame_before_throw: float = player.watchfire
 	player._throw_dagger()
-	await process_frame
 	_check(player.dagger_state == player.DaggerState.OUTBOUND, "right click can place the dagger outbound")
+	await process_frame
+	_check(is_equal_approx(player.watchfire, flame_before_throw), "throwing the one physical dagger is free")
 	var dagger = player.dagger_entity
 	_check(dagger != null and is_instance_valid(dagger), "the thrown dagger exists in world space")
 	if dagger != null and is_instance_valid(dagger):
 		dagger._set_stuck()
 		_check(player.dagger_state == player.DaggerState.STUCK, "the dagger can remain away instead of auto-returning")
+		var flame_before_rewind: float = player.watchfire
 		player._handle_dagger_input()
 		_check(player.dagger_state == player.DaggerState.REWINDING, "a second input manually begins dagger rewind")
-		dagger.pick_up()
+		_check(player.watchfire < flame_before_rewind, "manual dagger rewind spends a substantial flame charge")
+		dagger._finish_return(true)
+		await process_frame
+		_check(player.dagger_state == player.DaggerState.HELD, "completed rewind restores the held dagger")
+
+	var flame_before_retrieval: float = player.watchfire
+	player._throw_dagger()
+	var pickup_dagger = player.dagger_entity
+	if pickup_dagger != null and is_instance_valid(pickup_dagger):
+		pickup_dagger._set_stuck()
+		pickup_dagger.pick_up()
 		await process_frame
 		_check(player.dagger_state == player.DaggerState.HELD, "physical dagger pickup restores the held state")
+		_check(is_equal_approx(player.watchfire, flame_before_retrieval), "physical retrieval is the free recall fallback")
 
 	game._spawn_damage_number(13200, Vector3(0.0, 2.0, 0.0), true)
 	await process_frame
 	_check(not game.find_children("*", "Label3D", true, false).is_empty(), "damage numbers are Label3D world objects")
-	_check(not InputMap.has_action("dash"), "the generic dash input is absent")
+	_check(InputMap.has_action("chronostep"), "the chronosword movement burst is mapped")
+	_check(InputMap.has_action("slide"), "ground slide is mapped")
+	_check(InputMap.has_action("kick"), "kick has an independent combat input")
+	_check(game.encounter_gates.size() == 2, "combat rooms have authored lock thresholds")
+	_check(game.encounter_definitions.size() == 3, "encounters are data-defined instead of empty-list auto-waves")
 	_check(game.ghost_materials.size() > 0, "historical geometry is available for deterioration")
 
 	game.queue_free()

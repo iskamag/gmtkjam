@@ -1,30 +1,42 @@
 extends Node3D
 
-signal returned
+signal returned(via_recall: bool)
 signal state_changed(new_state: int)
 
 enum State {
 	OUTBOUND,
+	BALLISTIC,
 	STUCK,
 	REWINDING,
 }
 
+const LAUNCH_SPEED := 43.0
+const GUIDANCE_WINDOW := 0.58
+const GRAVITY := 24.0
+const REWIND_SPEED := 72.0
+const PATH_SPACING := 0.24
+
 var player: CharacterBody3D
 var direction := Vector3.FORWARD
+var velocity := Vector3.ZERO
 var state: int = State.OUTBOUND
-var outbound_speed := 24.0
-var rewind_speed := 38.0
-var outbound_time := 0.0
+var flight_time := 0.0
+var guided_time := 0.0
 var path: Array[Vector3] = []
 var path_index := 0
 var outbound_hits: Dictionary = {}
 var rewind_hits: Dictionary = {}
 var spin := 0.0
+var recalled := false
+var trail_mesh: MeshInstance3D
+var trail_material: StandardMaterial3D
 
 
 func _ready() -> void:
+	velocity = direction.normalized() * LAUNCH_SPEED
 	path.append(global_position)
 	_build_dagger()
+	_build_trail()
 	emit_signal("state_changed", state)
 
 
@@ -36,85 +48,145 @@ func _physics_process(delta: float) -> void:
 	match state:
 		State.OUTBOUND:
 			_process_outbound(delta)
+		State.BALLISTIC:
+			_process_ballistic(delta)
 		State.STUCK:
-			rotation.z = sin(Time.get_ticks_msec() * 0.006) * 0.025
+			pass
 		State.REWINDING:
 			_process_rewind(delta)
 
-	spin += delta * (13.0 if state != State.STUCK else 0.0)
-	rotation.z = spin
+	if state == State.OUTBOUND or state == State.BALLISTIC:
+		_orient_to_velocity()
+	elif state == State.REWINDING:
+		spin += delta * 24.0
+		rotation.z = spin
+	_update_trail()
 
 
-func begin_rewind() -> void:
+func begin_rewind() -> bool:
 	if state == State.REWINDING:
-		return
+		return false
+	if not player.request_dagger_rewind(_measure_rewind_path()):
+		return false
+	recalled = true
 	state = State.REWINDING
 	path_index = path.size() - 1
+	rewind_hits.clear()
 	emit_signal("state_changed", state)
+	return true
 
 
 func can_pick_up() -> bool:
-	return state == State.STUCK or state == State.OUTBOUND
+	return state == State.STUCK or state == State.BALLISTIC
 
 
 func pick_up() -> void:
-	_finish_return()
+	_finish_return(false)
 
 
 func _process_outbound(delta: float) -> void:
-	outbound_time += delta
-	var aim: Vector3 = -player.camera.global_transform.basis.z
-	var steering := clampf(delta * 3.8, 0.0, 1.0)
-	direction = direction.slerp(aim, steering).normalized()
+	flight_time += delta
+	guided_time += delta
+	var guiding := Input.is_action_pressed("throw_dagger") and guided_time < GUIDANCE_WINDOW
+	if guiding:
+		var desired: Vector3 = -player.camera.global_transform.basis.z
+		var speed := velocity.length()
+		var steered := velocity.normalized().slerp(desired, clampf(delta * 9.5, 0.0, 1.0))
+		velocity = steered.normalized() * speed
+	else:
+		state = State.BALLISTIC
+		emit_signal("state_changed", state)
+	_process_flight_segment(delta, false)
 
+
+func _measure_rewind_path() -> float:
+	var total := 0.0
+	var previous := global_position
+	for index in range(path.size() - 1, -1, -1):
+		total += previous.distance_to(path[index])
+		previous = path[index]
+	total += previous.distance_to(player.camera.global_position)
+	return total
+
+
+func _process_ballistic(delta: float) -> void:
+	flight_time += delta
+	velocity.y -= GRAVITY * delta
+	_process_flight_segment(delta, true)
+
+
+func _process_flight_segment(delta: float, can_embed_in_enemy: bool) -> void:
 	var from := global_position
-	var to := from + direction * outbound_speed * delta
+	var to := from + velocity * delta
 	var query := PhysicsRayQueryParameters3D.create(from, to, 1 | 2)
 	query.exclude = [player.get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	if not hit.is_empty():
 		var collider = hit.get("collider")
+		var position: Vector3 = hit.get("position", to)
 		if collider != null and collider.has_method("take_damage"):
 			var id: int = collider.get_instance_id()
 			if not outbound_hits.has(id):
 				outbound_hits[id] = true
-				collider.take_damage(14200, hit.get("position", to), false, 34.0)
+				collider.take_damage(14500, position, true, 62.0, 4.5)
 				player.play_sfx(&"dagger_hit")
-				player.gain_watchfire(7.0)
+				player._request_impact(1.0, position)
 			global_position = to
+			velocity *= 0.78
+			if can_embed_in_enemy and velocity.length() < 17.0:
+				global_position = position
+				_set_stuck()
+				return
 		else:
-			global_position = hit.get("position", to)
+			global_position = position + hit.get("normal", Vector3.UP) * 0.025
 			_set_stuck()
 			return
 	else:
 		global_position = to
 
-	if path.is_empty() or path[-1].distance_to(global_position) > 0.22:
-		path.append(global_position)
-	if outbound_time >= 1.65:
+	_record_path()
+	if flight_time > 3.5 and global_position.y < -4.0:
+		global_position = player.global_position + Vector3.UP * 0.4
 		_set_stuck()
 
 
+func _record_path() -> void:
+	if path.is_empty() or path[-1].distance_to(global_position) >= PATH_SPACING:
+		path.append(global_position)
+	if path.size() > 320:
+		path.remove_at(0)
+
+
 func _process_rewind(delta: float) -> void:
-	if path_index >= 0:
-		var target: Vector3 = path[path_index]
+	var distance_budget := REWIND_SPEED * delta
+	var safety := 0
+	while distance_budget > 0.001 and safety < 32:
+		safety += 1
+		var target: Vector3
+		if path_index >= 0:
+			target = path[path_index]
+		else:
+			target = player.camera.global_position - player.camera.global_transform.basis.z * 0.28
+		var distance := global_position.distance_to(target)
+		if distance <= 0.08:
+			if path_index >= 0:
+				path_index -= 1
+				continue
+			_finish_return(true)
+			return
+		var travel := minf(distance, distance_budget)
 		var from := global_position
-		var to := global_position.move_toward(target, rewind_speed * delta)
+		var to := global_position.move_toward(target, travel)
 		_damage_rewind_segment(from, to)
 		global_position = to
-		if global_position.distance_to(target) < 0.09:
+		distance_budget -= travel
+		if travel >= distance - 0.001 and path_index >= 0:
 			path_index -= 1
-	else:
-		var target: Vector3 = player.camera.global_position - player.camera.global_transform.basis.z * 0.28
-		var from := global_position
-		var to := global_position.move_toward(target, rewind_speed * delta)
-		_damage_rewind_segment(from, to)
-		global_position = to
-		if global_position.distance_to(target) < 0.65:
-			_finish_return()
 
 
 func _damage_rewind_segment(from: Vector3, to: Vector3) -> void:
+	if from.distance_squared_to(to) < 0.0001:
+		return
 	var query := PhysicsRayQueryParameters3D.create(from, to, 2)
 	query.exclude = [player.get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
@@ -127,22 +199,36 @@ func _damage_rewind_segment(from: Vector3, to: Vector3) -> void:
 	if rewind_hits.has(id):
 		return
 	rewind_hits[id] = true
-	collider.take_damage(18800, hit.get("position", to), true, 68.0)
+	var position: Vector3 = hit.get("position", to)
+	collider.take_damage(19600, position, true, 86.0, 5.8)
 	player.play_sfx(&"deflect")
-	player.gain_watchfire(11.0)
+	player._request_impact(1.15, position)
 
 
 func _set_stuck() -> void:
 	if state == State.STUCK:
 		return
 	state = State.STUCK
+	velocity = Vector3.ZERO
+	_record_path()
 	player.play_sfx(&"pickup")
 	emit_signal("state_changed", state)
 
 
-func _finish_return() -> void:
-	emit_signal("returned")
+func _finish_return(via_recall: bool) -> void:
+	emit_signal("returned", via_recall)
 	queue_free()
+
+
+func _orient_to_velocity() -> void:
+	if velocity.length_squared() < 0.01:
+		return
+	var up := Vector3.UP
+	if absf(velocity.normalized().dot(up)) > 0.96:
+		up = Vector3.RIGHT
+	look_at(global_position + velocity.normalized(), up)
+	spin += get_physics_process_delta_time() * 13.0
+	rotate_object_local(Vector3(0.0, 0.0, 1.0), spin * 0.08)
 
 
 func _build_dagger() -> void:
@@ -158,6 +244,66 @@ func _build_dagger() -> void:
 	_add_box(Vector3(0.08, 0.025, 0.62), Vector3(0.0, 0.0, -0.22), steel)
 	_add_box(Vector3(0.29, 0.052, 0.075), Vector3(0.0, 0.0, 0.12), steel)
 	_add_box(Vector3(0.11, 0.11, 0.34), Vector3(0.0, 0.0, 0.32), leather)
+
+
+func _build_trail() -> void:
+	trail_mesh = MeshInstance3D.new()
+	trail_mesh.name = "TimeCutTrail"
+	trail_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(trail_mesh)
+	trail_material = StandardMaterial3D.new()
+	trail_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	trail_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	trail_material.vertex_color_use_as_albedo = true
+	trail_material.albedo_color = Color.WHITE
+
+
+func _update_trail() -> void:
+	if not is_instance_valid(trail_mesh):
+		return
+	var points: Array[Vector3] = []
+	if state == State.REWINDING:
+		points.append(global_position)
+		var lower := maxi(path_index - 12, 0)
+		for index in range(path_index, lower - 1, -1):
+			if index >= 0 and index < path.size():
+				points.append(path[index])
+	else:
+		var lower := maxi(path.size() - 12, 0)
+		for index in range(lower, path.size()):
+			points.append(path[index])
+		points.append(global_position)
+	if points.size() < 2:
+		trail_mesh.mesh = null
+		return
+
+	var immediate := ImmediateMesh.new()
+	immediate.surface_begin(Mesh.PRIMITIVE_TRIANGLE_STRIP, trail_material)
+	for index in points.size():
+		var point := points[index]
+		var tangent: Vector3
+		if index == 0:
+			tangent = points[1] - point
+		else:
+			tangent = point - points[index - 1]
+		tangent = tangent.normalized()
+		var side := tangent.cross(Vector3.UP).normalized()
+		if side.length_squared() < 0.01:
+			side = Vector3.RIGHT
+		var life := float(index) / float(maxi(points.size() - 1, 1))
+		var alpha := life * (0.72 if state == State.REWINDING else 0.38)
+		var color := (
+			Color(0.73, 0.48, 0.82, alpha)
+			if state == State.REWINDING
+			else Color(0.72, 0.68, 0.55, alpha)
+		)
+		var width := (0.035 + life * 0.065) * (1.45 if state == State.REWINDING else 1.0)
+		immediate.surface_set_color(color)
+		immediate.surface_add_vertex(to_local(point + side * width))
+		immediate.surface_set_color(color)
+		immediate.surface_add_vertex(to_local(point - side * width))
+	immediate.surface_end()
+	trail_mesh.mesh = immediate
 
 
 func _add_box(size: Vector3, at: Vector3, material: Material) -> void:

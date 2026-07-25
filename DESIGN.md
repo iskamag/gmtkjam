@@ -150,13 +150,20 @@ Held:
 
 Thrown:
 
-- throwing is an explicit input;
-- the player can steer/control its outbound course with their aim;
+- throwing is an explicit input and is free;
+- holding the throw input briefly steers its outbound course with the player's
+  aim;
+- after the short guided interval it becomes a fast ballistic object with
+  gravity and must embed in geometry rather than hover;
 - it records its travelled path;
 - it does not automatically return on a timer;
-- another input rewinds it manually through its recorded path;
+- another input spends a substantial amount of Watchfire to rewind it manually
+  through its recorded path;
+- rewind cost scales with the path length, so it cannot be treated as an
+  effectively free infinite ranged attack;
 - the rewind path can damage targets again;
-- a stuck or resting dagger can be physically picked up by reaching it;
+- a stuck or resting dagger can be physically picked up for free by reaching
+  it, providing the no-meter fallback;
 - while the dagger is absent, the right hand visibly becomes unarmed.
 
 Unarmed:
@@ -178,22 +185,28 @@ Watchfire is not primarily a HUD bar or percentage.
 - Flame height communicates stored meter.
 - Successful close combat, deflection, and eliminations build it.
 - Holding the ability burns it to control hostile time.
+- Manually rewinding the dagger spends a large up-front portion of it; throwing
+  and physical retrieval do not.
 - Activation must be unmistakable: the left hand raises, the fire becomes
   violent, enemies/projectiles slow heavily, and the world presentation reacts.
 - Purple is deliberate but must not become neon cyberpunk sludge.
 - Watchfire and the life countdown are separate resources.
 
-The flame may later power more techniques, but the prototype uses hostile-time
-control so the meter has one readable purpose.
+The economic choice is concrete: burn flame over time to control a dangerous
+moment, or reserve enough to recall a deliberately placed dagger. If neither is
+affordable, close combat and physical retrieval remain available.
 
-### 5. Movement is fast but not a borrowed arena-shooter dash
+### 5. Movement belongs to the chronosword
 
-- Remove the current forward dash.
-- Base running, strafing, jumping, enemy knockback, dagger placement, and route
-  layout should create motion.
-- More distinctive traversal—vaults, slides, wall interaction, parkour, or
-  time-art movement—can be evaluated after the combat core works.
-- Do not add movement solely because another stylish action game has it.
+- The problem with the first dash was its generic arena-shooter packaging, not
+  the existence of a burst-movement verb.
+- Running preserves readable momentum and supports strong air steering.
+- Ground slides preserve speed; jumping out of one creates a long jump.
+- Wall-kicks make the authored route and room edges part of combat.
+- Chronostep is a short directional time-art burst with a ground/air cadence,
+  recovery cancel, afterimage, camera shear, and no unrelated resource tax.
+- The movement kit must support dagger retrieval, attack cancels, spacing, and
+  authored traversal. It is not a checklist of references.
 
 ### 6. Deterioration is historical, not graphical decay
 
@@ -276,6 +289,14 @@ spawning as interchangeable waves in a featureless room.
 - The watch uses noise, wear, missing casing, scratches, and broken mechanics
   rather than blood.
 - Shader effects must communicate a gameplay or story state.
+- Contact-localized time tears, brief channel misregistration, hit-stop, and
+  cut planes communicate impact.
+- Chronostep produces horizontal time shear and a fading history echo.
+- Dagger rewind temporarily misaligns recorded rows and draws its actual path.
+- Deferred architecture uses a world shader whose material becomes more
+  coherent as permanent damage and encounter depth increase.
+- These effects are transient or state-linked. There is no permanent
+  posterization layer.
 
 ## Audio and future score choreography
 
@@ -317,7 +338,9 @@ For the jam prototype:
 - Separate conventional player health bar.
 - Automatic timed dagger boomerang.
 - Unarmed state with no attack.
-- Arena-shooter forward dash copied by default.
+- Movement copied together with another game's character, audiovisual
+  packaging, and combat role; familiar verbs are allowed when they serve this
+  chronosword.
 - Screen-space damage numbers.
 - Full-screen hit teleport/inversion/glitch effect.
 - PS1 posterization.

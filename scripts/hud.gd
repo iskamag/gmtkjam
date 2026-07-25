@@ -24,6 +24,9 @@ var boss_label: Label
 var announcement_time := 0.0
 var event_log: Array[String] = []
 var debug_visible := false
+var impact_pulse := 0.0
+var wound_pulse := 0.0
+var impact_origin := Vector2(0.5, 0.5)
 
 
 func _ready() -> void:
@@ -38,6 +41,8 @@ func bind(player_node: CharacterBody3D, game_node: Node3D) -> void:
 
 
 func _process(delta: float) -> void:
+	impact_pulse = maxf(impact_pulse - delta * 7.8, 0.0)
+	wound_pulse = maxf(wound_pulse - delta * 3.8, 0.0)
 	if Input.is_action_just_pressed("toggle_debug"):
 		debug_visible = not debug_visible
 		debug_label.visible = debug_visible
@@ -54,6 +59,14 @@ func _process(delta: float) -> void:
 		subtitle.visible = false
 
 	if is_instance_valid(player):
+		post_material.set_shader_parameter("impact", impact_pulse)
+		post_material.set_shader_parameter("impact_origin", impact_origin)
+		post_material.set_shader_parameter("wound", maxf(wound_pulse, player.wound_visual))
+		post_material.set_shader_parameter("chronostep", player.chronostep_visual)
+		post_material.set_shader_parameter(
+			"dagger_rewind",
+			1.0 if player.dagger_state == player.DaggerState.REWINDING else 0.0
+		)
 		objective.text = "LV 50  //  LAST JOB"
 		if debug_visible:
 			debug_label.text = (
@@ -62,6 +75,8 @@ func _process(delta: float) -> void:
 				+ "maximum     %06.2f\n" % player.max_time
 				+ "max eroded  %06.2f\n" % (player.STARTING_MAX_TIME - player.max_time)
 				+ "watchfire   %06.2f\n" % player.watchfire
+				+ "speed       %06.2f\n" % player.planar_speed
+				+ "movement    %s\n" % ("SLIDE" if player.is_sliding else ("STEP" if player.chronostep_timer > 0.0 else "GROUND"))
 				+ "hostile x   %06.2f\n\n" % (0.18 if player.watch_active else 1.0)
 				+ "\n".join(event_log)
 			)
@@ -74,6 +89,16 @@ func set_effects(doom: float, scar: float, rewind: float, watchfire: float) -> v
 	post_material.set_shader_parameter("scar", clamp(scar, 0.0, 1.0))
 	post_material.set_shader_parameter("rewind", clamp(rewind, 0.0, 1.0))
 	post_material.set_shader_parameter("watchfire", clamp(watchfire, 0.0, 1.0))
+
+
+func pulse_impact(strength: float, at: Vector2) -> void:
+	impact_pulse = maxf(impact_pulse, strength)
+	impact_origin = Vector2(clampf(at.x, 0.0, 1.0), clampf(at.y, 0.0, 1.0))
+
+
+func pulse_wound(side: float) -> void:
+	wound_pulse = 1.0
+	impact_origin = Vector2(0.5 + side * 0.24, 0.56)
 
 
 func begin_run() -> void:
@@ -284,14 +309,15 @@ func _build_title() -> void:
 	var copy := Label.new()
 	copy.text = (
 		"YOUR TIME HAS COME.\n\n"
-		+ "WASD move   •   LMB attack   •   RMB throw / rewind\n"
-		+ "Q burn the watch   •   SPACE jump\n"
-		+ "fight barehanded while the dagger is away\n\n"
+		+ "WASD move   •   SHIFT chronostep   •   CTRL slide\n"
+		+ "SPACE jump / wall-kick   •   LMB combo   •   E kick\n"
+		+ "RMB hold to guide the throw   •   RMB again to pay for rewind\n"
+		+ "Q burn the watch   •   walking over the dagger retrieves it for free\n\n"
 		+ "[ CLICK TO BEGIN ]"
 	)
 	copy.set_anchors_preset(Control.PRESET_CENTER)
-	copy.position = Vector2(-420.0, 25.0)
-	copy.size = Vector2(840.0, 190.0)
+	copy.size = Vector2(940.0, 220.0)
+	copy.position = Vector2(-470.0, 18.0)
 	copy.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	copy.add_theme_font_size_override("font_size", 18)
 	copy.add_theme_color_override("font_color", Color(0.65, 0.62, 0.52))
