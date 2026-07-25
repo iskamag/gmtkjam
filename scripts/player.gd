@@ -199,6 +199,13 @@ func _move(delta: float) -> void:
 	var direction := (global_transform.basis * Vector3(input.x, 0.0, input.y)).normalized()
 	var horizontal := Vector3(velocity.x, 0.0, velocity.z)
 
+	# Resolve the ordinary vertical state before movement actions. Jump, wall-kick,
+	# and slide-jump must be allowed to overwrite it later in this frame.
+	if not grounded and chronostep_timer <= 0.0:
+		velocity.y -= GRAVITY * delta
+	elif grounded:
+		velocity.y = minf(velocity.y, -0.5)
+
 	if chronostep_timer > 0.0:
 		chronostep_timer -= delta
 		var step_steer := chronostep_direction
@@ -260,10 +267,6 @@ func _move(delta: float) -> void:
 
 	velocity.x = horizontal.x
 	velocity.z = horizontal.z
-	if not is_on_floor() and chronostep_timer <= 0.0:
-		velocity.y -= GRAVITY * delta
-	elif is_on_floor():
-		velocity.y = minf(velocity.y, -0.5)
 
 	var fall_speed := absf(velocity.y)
 	_was_on_floor = is_on_floor()
@@ -364,13 +367,13 @@ func _update_camera(delta: float) -> void:
 		1.0 - exp(-delta * 17.0)
 	)
 	var side_speed := global_transform.basis.x.dot(velocity)
-	var target_roll := clampf(-side_speed * 0.0045, -0.05, 0.05)
+	var target_roll := clampf(-side_speed * 0.0065, -0.072, 0.072)
 	if is_sliding:
-		target_roll += movement_sway * 0.035
+		target_roll += movement_sway * 0.052
 	camera.rotation.z = lerpf(
 		camera.rotation.z,
 		target_roll + camera_kick.x * 0.012,
-		1.0 - exp(-delta * 9.0)
+		1.0 - exp(-delta * 22.0)
 	)
 	camera.fov = lerpf(camera.fov, 79.0 + speed_factor * 9.0, 1.0 - exp(-delta * 8.0))
 

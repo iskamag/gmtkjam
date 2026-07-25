@@ -26,6 +26,23 @@ func _run() -> void:
 	_check(is_equal_approx(player.max_time, 60.0), "watch maximum starts at 60 seconds")
 
 	player.set_active(true)
+	for frame in 12:
+		await physics_frame
+		if player.is_on_floor():
+			break
+	_check(player.is_on_floor(), "player settles onto authored floor before movement")
+	var grounded_height: float = player.global_position.y
+	Input.action_press("jump")
+	await physics_frame
+	Input.action_release("jump")
+	await physics_frame
+	_check(player.global_position.y > grounded_height + 0.02, "jump impulse produces upward world movement")
+	player.velocity = player.global_transform.basis.x * player.RUN_SPEED
+	player.planar_speed = player.RUN_SPEED
+	player._update_camera(0.05)
+	_check(absf(player.camera.rotation.z) > 0.025, "view lean reaches a readable angle within 50 milliseconds")
+	player.velocity = Vector3.ZERO
+
 	player.time_left = 30.0
 	player.max_time = 60.0
 	player.invulnerability = 0.0
