@@ -6,6 +6,8 @@ var canvas_scale := 1.0
 var canvas_offset := Vector2.ZERO
 var displayed_fire_ratio := 0.0
 var displayed_watch_lift := 0.0
+var displayed_ignition := 0.0
+var displayed_overclock := 0.0
 var second_hand_angle := -PI * 0.5
 
 const DESIGN_SIZE := Vector2(1280.0, 720.0)
@@ -33,12 +35,34 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	visual_time += delta
 	if is_instance_valid(player):
-		var seconds_speed := deg_to_rad(29.0 if player.watch_active else 6.0)
+		var seconds_degrees := 6.0
+		if player.watch_active:
+			seconds_degrees = 96.0
+		if player.is_watch_overclocked():
+			seconds_degrees = 390.0
+		var seconds_speed := deg_to_rad(seconds_degrees)
 		second_hand_angle = wrapf(second_hand_angle - seconds_speed * delta, -PI, PI)
 		var target_ratio: float = clampf(player.watchfire / player.MAX_WATCHFIRE, 0.0, 1.0)
 		displayed_fire_ratio = move_toward(displayed_fire_ratio, target_ratio, delta * 1.9)
-		var target_lift := 48.0 if player.watch_active else 0.0
-		displayed_watch_lift = lerpf(displayed_watch_lift, target_lift, 1.0 - exp(-delta * 8.0))
+		var target_lift := 62.0 if player.watch_active else 0.0
+		if player.is_watch_overclocked():
+			target_lift = 82.0
+		displayed_watch_lift = lerpf(
+			displayed_watch_lift,
+			target_lift,
+			1.0 - exp(-delta * (17.0 if player.watch_active else 9.0))
+		)
+		var ignition_target: float = maxf(player.watch_entry_visual, player.overclock_visual)
+		displayed_ignition = lerpf(
+			displayed_ignition,
+			ignition_target,
+			1.0 - exp(-delta * (28.0 if ignition_target > displayed_ignition else 9.0))
+		)
+		displayed_overclock = lerpf(
+			displayed_overclock,
+			player.overclock_visual,
+			1.0 - exp(-delta * 18.0)
+		)
 	queue_redraw()
 
 
@@ -55,9 +79,11 @@ func _draw() -> void:
 		player.movement_sway * 3.0 + player.camera_kick.x * 3.0,
 		player.stride_bob * 3.0 + player.landing_visual * 12.0
 	)
+	movement_offset += Vector2(-18.0, -22.0) * displayed_ignition
 	var watch_center := Vector2(250.0, 584.0 - lift) + movement_offset
 
 	_draw_left_hand(watch_center)
+	_draw_time_aperture(watch_center)
 	_draw_watchfire(watch_center)
 	_draw_watch(watch_center)
 	_draw_right_hand()
@@ -69,14 +95,23 @@ func _draw_watchfire(center: Vector2) -> void:
 	var ratio := displayed_fire_ratio
 	if ratio <= 0.005:
 		return
-	var active_scale := 1.13 if player.watch_active else 1.0
+	var active_scale := 1.0
+	if player.watch_active:
+		active_scale = 1.32
+	if player.is_watch_overclocked():
+		active_scale = 1.58
 	var height := (48.0 + ratio * 182.0) * active_scale
 	var width := 72.0 + ratio * 42.0
-	var flutter := sin(visual_time * (13.0 if player.watch_active else 5.0))
+	var flame_rate := 24.0 if player.watch_active else 5.0
+	if player.is_watch_overclocked():
+		flame_rate = 43.0
+	var flutter := sin(visual_time * flame_rate)
+	var time_pull := (28.0 + displayed_overclock * 34.0) if player.watch_active else 0.0
 
 	for layer in 3:
 		var layer_scale := 1.0 - float(layer) * 0.2
 		var x_shift := (float(layer) - 1.0) * 25.0
+		x_shift -= time_pull * (1.0 - float(layer) * 0.24)
 		var tongue_height := height * layer_scale * (0.98 + sin(visual_time * 7.0 + float(layer) * 2.1) * 0.018)
 		var base_y := center.y - 4.0
 		var points := PackedVector2Array([
@@ -92,11 +127,46 @@ func _draw_watchfire(center: Vector2) -> void:
 		draw_colored_polygon(points, color)
 
 	if player.watch_active:
-		for index in 4:
-			var angle := float(index) * 0.91 + visual_time * 0.6
-			var mote := center + Vector2(cos(angle) * 58.0, -95.0 - float(index) * 18.0)
-			mote.x += sin(visual_time * 8.0 + float(index)) * 14.0
-			draw_circle(mote, 4.0 + float(index % 2) * 2.0, PURPLE_HOT)
+		# The hottest part is an ivory tear, not a larger purple glow. At
+		# Overclock it stretches backward like time is being pulled through the hand.
+		var core_height := height * (0.48 + displayed_overclock * 0.10)
+		draw_colored_polygon(PackedVector2Array([
+			center + Vector2(-19.0 - time_pull * 0.28, -2.0),
+			center + Vector2(-10.0 - time_pull * 0.46, -core_height * 0.48),
+			center + Vector2(-3.0 - time_pull * 0.62, -core_height),
+			center + Vector2(12.0, -core_height * 0.42),
+			center + Vector2(22.0, -2.0),
+		]), Color(0.86, 0.81, 0.67, 0.68 + displayed_overclock * 0.18))
+
+		for index in 5:
+			var trail := float(index) / 4.0
+			var mote := center + Vector2(
+				-58.0 - trail * (70.0 + displayed_overclock * 64.0),
+				-62.0 - trail * 36.0 + sin(visual_time * 9.0 + float(index)) * 8.0
+			)
+			var mote_color := Color(0.49, 0.30, 0.54, 0.44 - trail * 0.25)
+			draw_line(mote, mote + Vector2(22.0 + trail * 18.0, -5.0), mote_color, 3.0, true)
+
+
+func _draw_time_aperture(center: Vector2) -> void:
+	if not player.watch_active and displayed_ignition <= 0.01:
+		return
+	var aperture := maxf(displayed_ignition, displayed_overclock * 0.72)
+	var ring_radius: float = 86.0 + (1.0 - player.watch_entry_visual) * 35.0
+	var ring_color := Color(0.72, 0.67, 0.54, aperture * 0.34)
+	draw_arc(center, ring_radius, -PI, PI, 64, ring_color, 2.0, true)
+
+	# Twelve physical timing cuts make the state read as clockwork even when the
+	# flame sprite is eventually replaced by authored art.
+	for index in 12:
+		var angle := second_hand_angle + float(index) * TAU / 12.0
+		var inner := center + Vector2(cos(angle), sin(angle)) * (91.0 + displayed_overclock * 8.0)
+		var tick_length := 10.0 if index % 3 else 19.0
+		var outer := center + Vector2(cos(angle), sin(angle)) * (
+			91.0 + displayed_overclock * 8.0 + tick_length
+		)
+		var alpha := 0.18 + displayed_overclock * (0.22 if index % 3 else 0.34)
+		draw_line(inner, outer, Color(0.74, 0.69, 0.56, alpha), 2.0, true)
 
 
 func _draw_left_hand(center: Vector2) -> void:
@@ -158,15 +228,16 @@ func _draw_watch(center: Vector2) -> void:
 	# The thin seconds hand is the ability tell. The life hand stays truthful
 	# while Watchfire makes this mechanism race backward through discarded time.
 	if player.watch_active:
-		for echo in 3:
-			var echo_offsets := [deg_to_rad(4.0), deg_to_rad(9.0), deg_to_rad(15.0)]
-			var echo_alpha := [0.24, 0.11, 0.04]
-			var echo_angle: float = second_hand_angle + echo_offsets[echo]
+		var echo_count := 6 if player.is_watch_overclocked() else 3
+		for echo in echo_count:
+			var spacing := 11.0 if player.is_watch_overclocked() else 5.0
+			var echo_alpha := 0.24 * (1.0 - float(echo) / float(echo_count))
+			var echo_angle := second_hand_angle + deg_to_rad(spacing * float(echo + 1))
 			var echo_end := center + Vector2(cos(echo_angle), sin(echo_angle)) * 56.0
 			draw_line(
 				center,
 				echo_end,
-				Color(PURPLE_HOT.r, PURPLE_HOT.g, PURPLE_HOT.b, echo_alpha[echo]),
+				Color(PURPLE_HOT.r, PURPLE_HOT.g, PURPLE_HOT.b, echo_alpha),
 				2.0,
 				true
 			)

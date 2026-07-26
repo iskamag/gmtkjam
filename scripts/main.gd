@@ -5,6 +5,8 @@ signal score_event(tag: StringName, payload: Dictionary)
 const PlayerScript = preload("res://scripts/player.gd")
 const EnemyScript = preload("res://scripts/enemy.gd")
 const HudScript = preload("res://scripts/hud.gd")
+const WorldAestheticScript = preload("res://scripts/world_aesthetic.gd")
+const PackNightShader = preload("res://shaders/pack_night_material.gdshader")
 
 var player: CharacterBody3D
 var hud: CanvasLayer
@@ -34,6 +36,8 @@ var prologue_flags: Dictionary = {}
 var prologue_shell: Node3D
 var prologue_window_motion: Node3D
 var next_train_tick := 0.0
+var prologue_look_yaw := 0.0
+var prologue_look_pitch := 0.0
 
 
 func _ready() -> void:
@@ -88,6 +92,24 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if (
+		prologue_active
+		and event is InputEventMouseMotion
+	):
+		prologue_look_yaw = wrapf(
+			prologue_look_yaw - event.relative.x * 0.00225,
+			-PI,
+			PI
+		)
+		prologue_look_pitch = clampf(
+			prologue_look_pitch - event.relative.y * 0.0021,
+			-1.10,
+			1.05
+		)
+		player.pitch = prologue_look_pitch
+		get_viewport().set_input_as_handled()
+		return
+
 	if event is InputEventMouseButton and event.pressed:
 		if not started and not run_finished:
 			_begin_prologue()
@@ -120,14 +142,19 @@ func _begin_prologue() -> void:
 	prologue_time = 0.0
 	prologue_flags.clear()
 	next_train_tick = 0.0
+	prologue_look_yaw = 0.0
+	prologue_look_pitch = -0.035
 	run_finished = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	player.set_active(false)
-	player.global_position = Vector3(0.0, 0.05, 16.0)
+	# Begin seated off-centre near the rear of the carriage. This gives the
+	# player a composed view down the aisle, but mouse look is never taken away.
+	player.global_position = Vector3(0.12, 0.05, 18.05)
 	player.rotation = Vector3.ZERO
-	player.pitch = 0.0
-	player.camera.position = Vector3(0.0, 1.34, 0.0)
-	player.camera.rotation = Vector3(0.06, 0.0, 0.0)
+	player.pitch = prologue_look_pitch
+	player.camera.position = Vector3(0.0, 1.31, 0.0)
+	player.camera.rotation = Vector3(prologue_look_pitch, 0.0, 0.0)
+	player.camera.fov = 73.0
 	if is_instance_valid(prologue_shell):
 		prologue_shell.visible = true
 		prologue_shell.position = Vector3(0.0, 0.0, 16.0)
@@ -141,26 +168,22 @@ func _update_prologue(delta: float) -> void:
 	prologue_time += delta
 	hud.update_prologue(prologue_time)
 
-	if prologue_time >= next_train_tick and prologue_time < 5.8:
+	if prologue_time >= next_train_tick and prologue_time < 5.55:
 		player.play_sfx(&"train")
-		next_train_tick += 0.66 if prologue_time < 4.0 else 0.49
+		next_train_tick += 0.64 if prologue_time < 4.35 else 0.46
 
-	if is_instance_valid(prologue_window_motion):
-		prologue_window_motion.position.z = fmod(prologue_time * 11.0, 8.0) - 4.0
+	_update_prologue_exterior()
 
-	# The train ride is deliberately restrained. The camera follows the rail
-	# rhythm without an alternating lateral wobble.
-	if prologue_time < 5.55:
-		player.camera.position = Vector3(
-			sin(prologue_time * 1.8) * 0.006,
-			1.34 + sin(prologue_time * 9.52) * 0.007,
-			0.0
-		)
-		player.camera.rotation = Vector3(
-			0.06 + sin(prologue_time * 0.72) * 0.004,
-			sin(prologue_time * 0.41) * 0.006,
-			sin(prologue_time * 0.93) * 0.003
-		)
+	# Mouse look is the base orientation. Rail movement and the crash are only
+	# additive offsets, so the cutscene never wrestles the view away.
+	player.rotation.y = prologue_look_yaw
+	var camera_position := Vector3(
+		sin(prologue_time * 1.74) * 0.005,
+		1.31 + sin(prologue_time * 9.35) * 0.006,
+		0.0
+	)
+	var camera_pitch_offset := sin(prologue_time * 0.79) * 0.0035
+	var camera_roll := sin(prologue_time * 0.91) * 0.0025
 
 	if prologue_time >= 2.1 and not prologue_flags.has("stats"):
 		prologue_flags["stats"] = true
@@ -173,11 +196,15 @@ func _update_prologue(delta: float) -> void:
 		prologue_flags["memory"] = true
 		player.play_sfx(&"memory")
 		emit_signal("score_event", &"memory_intrusion", {"layer": 1})
-	if prologue_time >= 4.75 and not prologue_flags.has("premonition"):
+	if prologue_time >= 4.62 and not prologue_flags.has("premonition"):
 		prologue_flags["premonition"] = true
 		player.play_sfx(&"watch")
 		emit_signal("score_event", &"crash_premonition", {})
-	if prologue_time >= 5.72 and not prologue_flags.has("crash"):
+	if prologue_time >= 5.24 and not prologue_flags.has("first_jolt"):
+		prologue_flags["first_jolt"] = true
+		player.play_sfx(&"wound")
+		emit_signal("score_event", &"crash_premonition", {"impact": 1})
+	if prologue_time >= 5.48 and not prologue_flags.has("crash"):
 		prologue_flags["crash"] = true
 		player.play_sfx(&"crash")
 		player.play_sfx(&"wound")
@@ -185,45 +212,67 @@ func _update_prologue(delta: float) -> void:
 		player.watch_previous_time = player.STARTING_MAX_TIME
 		hud.set_intro_effects(1.0, 1.0)
 		emit_signal("score_event", &"crash_hit", {})
+	if prologue_time >= 5.78 and not prologue_flags.has("secondary_impact"):
+		prologue_flags["secondary_impact"] = true
+		player.play_sfx(&"crash")
+	if prologue_time >= 6.08 and not prologue_flags.has("final_impact"):
+		prologue_flags["final_impact"] = true
+		player.play_sfx(&"train")
 
-	if prologue_time >= 5.72 and prologue_time < 6.32:
-		var crash_phase := clampf((prologue_time - 5.72) / 0.60, 0.0, 1.0)
+	if prologue_time >= 5.24 and prologue_time < 6.34:
+		var crash_phase := clampf((prologue_time - 5.24) / 1.10, 0.0, 1.0)
+		var crash_ease := crash_phase * crash_phase * (3.0 - 2.0 * crash_phase)
+		var judder := sin(crash_phase * PI * 8.0) * (1.0 - crash_phase)
 		if is_instance_valid(prologue_shell):
 			prologue_shell.rotation = Vector3(
-				-crash_phase * 0.17,
-				crash_phase * 0.11,
-				crash_phase * 0.28
+				-crash_ease * 0.13 + judder * 0.025,
+				crash_ease * 0.08,
+				crash_ease * 0.31 + judder * 0.045
 			)
-			prologue_shell.position.y = -crash_phase * 0.42
-		player.camera.position = Vector3(
-			-crash_phase * 0.22,
-			1.34 - crash_phase * 0.34,
-			-crash_phase * 0.18
+			prologue_shell.position = Vector3(
+				judder * 0.08,
+				-crash_ease * 0.46,
+				16.0 - crash_ease * 0.16
+			)
+		camera_position += Vector3(
+			-crash_ease * 0.24 + judder * 0.085,
+			-crash_ease * 0.38 + absf(judder) * 0.045,
+			-crash_ease * 0.15
 		)
-		player.camera.rotation = Vector3(
-			0.06 + crash_phase * 0.16,
-			-crash_phase * 0.12,
-			-crash_phase * 0.42
-		)
-	elif prologue_time >= 6.32:
+		camera_pitch_offset += crash_ease * 0.18 + judder * 0.035
+		camera_roll += -crash_ease * 0.37 + judder * 0.075
+	elif prologue_time >= 6.34:
+		if not prologue_flags.has("aftermath"):
+			prologue_flags["aftermath"] = true
+			player.global_position = Vector3(0.0, 0.05, 16.0)
 		if is_instance_valid(prologue_shell):
 			prologue_shell.visible = false
-		var recovery := clampf((prologue_time - 6.32) / 3.5, 0.0, 1.0)
-		player.camera.position = player.camera.position.lerp(
-			Vector3(0.0, 1.55, 0.0),
-			1.0 - exp(-delta * 5.8)
+		var recovery := clampf((prologue_time - 6.34) / 2.85, 0.0, 1.0)
+		var recovery_ease := 1.0 - pow(1.0 - recovery, 3.0)
+		camera_position = Vector3(
+			lerpf(-0.19, 0.0, recovery_ease),
+			lerpf(0.72, 1.55, recovery_ease),
+			lerpf(-0.08, 0.0, recovery_ease)
 		)
-		player.camera.rotation = player.camera.rotation.lerp(
-			Vector3.ZERO,
-			1.0 - exp(-delta * 6.5)
+		camera_pitch_offset += lerpf(0.12, 0.0, recovery_ease)
+		camera_roll += lerpf(-0.31, 0.0, recovery_ease)
+		hud.set_intro_effects(
+			1.0 - recovery,
+			maxf(0.0, 1.0 - (prologue_time - 5.48) * 3.3)
 		)
-		hud.set_intro_effects(1.0 - recovery, maxf(0.0, 1.0 - (prologue_time - 5.72) * 3.3))
 
-	if prologue_time >= 8.15 and not prologue_flags.has("epilogue"):
+	player.camera.position = camera_position
+	player.camera.rotation = Vector3(
+		clampf(prologue_look_pitch + camera_pitch_offset, -1.22, 1.12),
+		0.0,
+		camera_roll
+	)
+
+	if prologue_time >= 7.82 and not prologue_flags.has("epilogue"):
 		prologue_flags["epilogue"] = true
 		emit_signal("score_event", &"title_epilogue", {"chapter": "the_first_job"})
 
-	if prologue_time >= 10.25:
+	if prologue_time >= 9.55:
 		_finish_prologue()
 
 
@@ -238,6 +287,7 @@ func _finish_prologue() -> void:
 	player.pitch = 0.0
 	player.camera.position = Vector3(0.0, 1.55, 0.0)
 	player.camera.rotation = Vector3.ZERO
+	player.camera.fov = 79.0
 	player.set_active(true)
 	hud.set_intro_effects(0.0, 0.0)
 	hud.end_prologue()
@@ -608,25 +658,25 @@ func _build_world() -> void:
 	var world_environment := WorldEnvironment.new()
 	var environment := Environment.new()
 	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color(0.055, 0.061, 0.063)
+	environment.background_color = Color(0.012, 0.016, 0.017)
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color(0.39, 0.41, 0.39)
-	environment.ambient_light_energy = 0.72
+	environment.ambient_light_color = Color(0.25, 0.285, 0.27)
+	environment.ambient_light_energy = 0.62
 	environment.reflected_light_source = Environment.REFLECTION_SOURCE_DISABLED
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	environment.glow_enabled = true
-	environment.glow_intensity = 0.72
-	environment.glow_bloom = 0.10
-	environment.glow_hdr_threshold = 1.12
-	environment.glow_hdr_scale = 1.55
+	environment.glow_intensity = 0.62
+	environment.glow_bloom = 0.08
+	environment.glow_hdr_threshold = 0.94
+	environment.glow_hdr_scale = 1.38
 	environment.adjustment_enabled = true
-	environment.adjustment_brightness = 0.96
-	environment.adjustment_contrast = 1.07
-	environment.adjustment_saturation = 0.88
+	environment.adjustment_brightness = 0.92
+	environment.adjustment_contrast = 1.16
+	environment.adjustment_saturation = 0.78
 	environment.fog_enabled = true
-	environment.fog_light_color = Color(0.13, 0.14, 0.135)
-	environment.fog_light_energy = 0.62
-	environment.fog_density = 0.012
+	environment.fog_light_color = Color(0.065, 0.078, 0.072)
+	environment.fog_light_energy = 0.52
+	environment.fog_density = 0.016
 	environment.fog_sky_affect = 0.9
 	world_environment_resource = environment
 	world_environment.environment = environment
@@ -634,8 +684,8 @@ func _build_world() -> void:
 
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-47.0, -33.0, 0.0)
-	sun.light_color = Color(0.73, 0.70, 0.61)
-	sun.light_energy = 1.05
+	sun.light_color = Color(0.51, 0.56, 0.52)
+	sun.light_energy = 0.74
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 60.0
 	add_child(sun)
@@ -774,6 +824,9 @@ func _build_level() -> void:
 
 	encounter_gates.append(_create_encounter_gate(-5.0))
 	encounter_gates.append(_create_encounter_gate(-21.0))
+	var art_direction := WorldAestheticScript.new()
+	art_direction.name = "ReturnRoadArtDirection"
+	add_child(art_direction)
 	_build_prologue_shell()
 
 
@@ -783,68 +836,268 @@ func _build_prologue_shell() -> void:
 	prologue_shell.position = Vector3(0.0, 0.0, 16.0)
 	add_child(prologue_shell)
 
-	var upholstery := Color(0.115, 0.105, 0.087)
-	var train_metal := Color(0.22, 0.23, 0.215)
-	var window_night := Color(0.028, 0.034, 0.036)
-	_add_child_visual_box(prologue_shell, Vector3(0.0, -0.06, 0.0), Vector3(6.2, 0.12, 9.4), train_metal)
-	_add_child_visual_box(prologue_shell, Vector3(0.0, 3.2, 0.0), Vector3(6.2, 0.18, 9.4), Color(0.13, 0.135, 0.125))
-	_add_child_visual_box(prologue_shell, Vector3(-3.02, 1.55, 0.0), Vector3(0.14, 3.1, 9.4), train_metal)
-	_add_child_visual_box(prologue_shell, Vector3(3.02, 1.55, 0.0), Vector3(0.14, 3.1, 9.4), train_metal)
-	_add_child_visual_box(prologue_shell, Vector3(-2.34, 1.6, -4.55), Vector3(1.34, 3.1, 0.16), train_metal)
-	_add_child_visual_box(prologue_shell, Vector3(2.34, 1.6, -4.55), Vector3(1.34, 3.1, 0.16), train_metal)
-	_add_child_visual_box(prologue_shell, Vector3(0.0, 2.85, -4.55), Vector3(3.34, 0.55, 0.16), train_metal)
+	var upholstery := Color(0.255, 0.125, 0.070)
+	var upholstery_wear := Color(0.37, 0.205, 0.092)
+	var train_metal := Color(0.37, 0.355, 0.305)
+	var inner_metal := Color(0.19, 0.18, 0.155)
+	var tarnished_brass := Color(0.44, 0.33, 0.15)
+	var tunnel_black := Color(0.012, 0.016, 0.017)
 
-	for light_z in [-2.8, 0.0, 2.8]:
+	# A complete carriage volume. The end bulkheads are intentionally opaque:
+	# before the wreck, no angle can expose the combat level outside.
+	_add_child_visual_box(prologue_shell, Vector3(0.0, -0.08, 0.0), Vector3(5.5, 0.16, 10.6), inner_metal, 0.66, 0.34)
+	_add_child_visual_box(prologue_shell, Vector3(0.0, 3.18, 0.0), Vector3(4.8, 0.16, 10.6), inner_metal, 0.62, 0.38)
+	_add_child_visual_box(prologue_shell, Vector3(-2.52, 2.91, 0.0), Vector3(0.55, 0.52, 10.6), train_metal.darkened(0.18), 0.58, 0.42)
+	_add_child_visual_box(prologue_shell, Vector3(2.52, 2.91, 0.0), Vector3(0.55, 0.52, 10.6), train_metal.darkened(0.18), 0.58, 0.42)
+	_add_child_visual_box(prologue_shell, Vector3(0.0, 1.55, -5.18), Vector3(5.5, 3.25, 0.18), train_metal, 0.62, 0.35)
+	_add_child_visual_box(prologue_shell, Vector3(0.0, 1.55, 5.18), Vector3(5.5, 3.25, 0.18), train_metal.darkened(0.08), 0.62, 0.35)
+	_add_child_visual_box(
+		prologue_shell,
+		Vector3(0.0, 0.012, 0.0),
+		Vector3(1.58, 0.022, 9.65),
+		Color(0.13, 0.12, 0.105),
+		0.97,
+		0.0
+	)
+	for floor_seam_z in [-3.2, -1.6, 0.0, 1.6, 3.2]:
+		_add_child_visual_box(
+			prologue_shell,
+			Vector3(0.0, 0.026, floor_seam_z),
+			Vector3(1.54, 0.012, 0.022),
+			Color(0.34, 0.29, 0.19),
+			0.78,
+			0.18
+		)
+
+	# Recessed end doors and their battered ceremonial route marks.
+	for end_z in [-5.075, 5.075]:
+		_add_child_visual_box(prologue_shell, Vector3(0.0, 1.48, end_z), Vector3(1.82, 2.68, 0.035), inner_metal, 0.58, 0.40)
+		_add_child_visual_box(prologue_shell, Vector3(-0.97, 1.48, end_z), Vector3(0.06, 2.76, 0.055), tarnished_brass, 0.48, 0.62)
+		_add_child_visual_box(prologue_shell, Vector3(0.97, 1.48, end_z), Vector3(0.06, 2.76, 0.055), tarnished_brass, 0.48, 0.62)
 		_add_child_emissive_box(
 			prologue_shell,
-			Vector3(0.0, 3.02, light_z),
-			Vector3(2.8, 0.05, 0.32),
-			Color(0.74, 0.53, 0.29),
-			1.6
+			Vector3(0.0, 2.48, end_z - signf(end_z) * 0.021),
+			Vector3(0.56, 0.055, 0.028),
+			Color(0.48, 0.29, 0.12),
+			0.72
 		)
-		var practical := OmniLight3D.new()
-		practical.position = Vector3(0.0, 2.65, light_z)
-		practical.light_color = Color(0.78, 0.57, 0.34)
-		practical.light_energy = 2.4
-		practical.omni_range = 5.6
-		practical.shadow_enabled = false
-		prologue_shell.add_child(practical)
 
-	for side in [-1.0, 1.0]:
-		for seat_z in [-2.5, -0.4, 1.7, 3.8]:
-			_add_child_visual_box(
-				prologue_shell,
-				Vector3(side * 2.28, 0.55, seat_z),
-				Vector3(1.0, 1.1, 1.45),
-				upholstery
-			)
-			_add_child_visual_box(
-				prologue_shell,
-				Vector3(side * 2.62, 1.25, seat_z + 0.46),
-				Vector3(0.28, 1.55, 1.42),
-				upholstery.darkened(0.22)
-			)
-
-	# Window darkness is interrupted by passing vertical bars. Moving only this
-	# child creates train motion without simulating a vehicle or stealing input.
+	# Side walls are built around real window openings rather than hiding an
+	# unbroken wall behind black rectangles.
 	for side in [-1.0, 1.0]:
 		_add_child_visual_box(
 			prologue_shell,
-			Vector3(side * 2.94, 2.05, 0.0),
-			Vector3(0.025, 1.05, 8.1),
-			window_night
+			Vector3(side * 2.69, 0.42, 0.0),
+			Vector3(0.17, 0.94, 10.6),
+			train_metal.darkened(0.08)
+		)
+		_add_child_visual_box(
+			prologue_shell,
+			Vector3(side * 2.69, 2.76, 0.0),
+			Vector3(0.17, 0.84, 10.6),
+			train_metal.darkened(0.15)
+		)
+		for pillar_z in [-5.0, -2.55, 0.0, 2.55, 5.0]:
+			_add_child_visual_box(
+				prologue_shell,
+				Vector3(side * 2.69, 1.62, pillar_z),
+				Vector3(0.19, 1.52, 0.22),
+				inner_metal
+			)
+		for window_z in [-3.78, -1.28, 1.28, 3.78]:
+			_add_child_glass_box(
+				prologue_shell,
+				Vector3(side * 2.71, 1.63, window_z),
+				Vector3(0.025, 1.31, 2.17)
+			)
+			# Thin reflected tubes make the windows read as glass while the
+			# dedicated tunnel remains visible through them.
+			_add_child_emissive_box(
+				prologue_shell,
+				Vector3(side * 2.665, 1.92, window_z - side * 0.42),
+				Vector3(0.018, 0.42, 0.026),
+				Color(0.42, 0.40, 0.33),
+				0.34
+			)
+
+	for light_z in [-3.65, -1.22, 1.22, 3.65]:
+		_add_child_emissive_box(
+			prologue_shell,
+			Vector3(0.0, 3.055, light_z),
+			Vector3(2.3, 0.045, 0.22),
+			Color(0.82, 0.77, 0.62),
+			2.05
+		)
+		var practical := OmniLight3D.new()
+		practical.position = Vector3(0.0, 2.72, light_z)
+		practical.light_color = Color(0.83, 0.79, 0.67)
+		practical.light_energy = 3.55
+		practical.omni_range = 5.2
+		practical.shadow_enabled = false
+		prologue_shell.add_child(practical)
+
+	# One low fill makes the seat fabric, scratched rails, and abandoned case
+	# readable from the starting position. It is still motivated by the ceiling
+	# fluorescents rather than behaving like a film-set key light.
+	var carriage_fill := OmniLight3D.new()
+	carriage_fill.position = Vector3(0.0, 1.38, 2.45)
+	carriage_fill.light_color = Color(0.68, 0.64, 0.53)
+	carriage_fill.light_energy = 1.65
+	carriage_fill.omni_range = 5.8
+	carriage_fill.shadow_enabled = false
+	prologue_shell.add_child(carriage_fill)
+
+	# Seats face the aisle, leaving a strong central sightline to the sealed
+	# door. Empty places, one abandoned case, and a hanging coat imply a last
+	# service without needing dialogue or a cutaway.
+	for side in [-1.0, 1.0]:
+		for seat_z in [-3.55, -1.18, 1.18, 3.55]:
+			_add_child_visual_box(
+				prologue_shell,
+				Vector3(side * 2.08, 0.49, seat_z),
+				Vector3(0.94, 0.36, 1.45),
+				upholstery,
+				0.97,
+				0.0
+			)
+			_add_child_visual_box(
+				prologue_shell,
+				Vector3(side * 2.42, 1.08, seat_z),
+				Vector3(0.24, 1.35, 1.43),
+				upholstery.darkened(0.16),
+				0.98,
+				0.0
+			)
+			_add_child_visual_box(
+				prologue_shell,
+				Vector3(side * 2.285, 1.11, seat_z),
+				Vector3(0.018, 0.92, 0.032),
+				upholstery_wear.darkened(0.12),
+				0.99,
+				0.0
+			)
+			_add_child_visual_box(
+				prologue_shell,
+				Vector3(side * 1.57, 0.56, seat_z - 0.69),
+				Vector3(0.10, 0.52, 0.09),
+				tarnished_brass,
+				0.46,
+				0.62
+			)
+
+		# Luggage rack, overhead rail, and hanging handles make looking up and
+		# behind as authored as the initial aisle composition.
+		_add_child_visual_box(
+			prologue_shell,
+			Vector3(side * 2.18, 2.43, 0.0),
+			Vector3(0.07, 0.07, 9.2),
+			tarnished_brass,
+			0.44,
+			0.66
+		)
+		for handle_z in [-3.6, -1.8, 0.0, 1.8, 3.6]:
+			_add_child_visual_box(
+				prologue_shell,
+				Vector3(side * 1.74, 2.18, handle_z),
+				Vector3(0.035, 0.48, 0.035),
+				tarnished_brass,
+				0.44,
+				0.66
+			)
+			_add_child_visual_box(
+				prologue_shell,
+				Vector3(side * 1.74, 1.94, handle_z),
+				Vector3(0.22, 0.035, 0.035),
+				tarnished_brass,
+				0.44,
+				0.66
+			)
+
+	# A worn case and discarded coat break the perfect procedural repetition.
+	_add_child_visual_box(prologue_shell, Vector3(-1.76, 0.22, 2.15), Vector3(0.58, 0.38, 0.92), upholstery_wear)
+	_add_child_visual_box(prologue_shell, Vector3(-1.76, 0.44, 2.15), Vector3(0.22, 0.06, 0.36), tarnished_brass)
+	_add_child_visual_box(prologue_shell, Vector3(2.37, 1.38, -1.18), Vector3(0.16, 1.12, 1.12), Color(0.078, 0.072, 0.063))
+	_add_child_visual_box(prologue_shell, Vector3(2.14, 1.62, -1.18), Vector3(0.42, 0.16, 1.18), Color(0.078, 0.072, 0.063))
+	_add_child_visual_box(
+		prologue_shell,
+		Vector3(2.592, 2.56, 1.30),
+		Vector3(0.024, 0.34, 0.66),
+		Color(0.64, 0.61, 0.50),
+		0.90,
+		0.0
+	)
+	for notice_line in [-0.19, -0.06, 0.08]:
+		_add_child_visual_box(
+			prologue_shell,
+			Vector3(2.575, 2.56 + notice_line, 1.30),
+			Vector3(0.012, 0.018, 0.48),
+			Color(0.15, 0.13, 0.095),
+			0.90,
+			0.0
+		)
+
+	# A small analogue route diagram repeats the watch motif without becoming
+	# glowing sci-fi signage.
+	_add_child_visual_box(prologue_shell, Vector3(-2.575, 2.64, 0.0), Vector3(0.025, 0.29, 3.65), inner_metal)
+	for mark_z in [-1.45, -0.72, 0.0, 0.72, 1.45]:
+		_add_child_emissive_box(
+			prologue_shell,
+			Vector3(-2.586, 2.64, mark_z),
+			Vector3(0.019, 0.105, 0.045),
+			Color(0.49, 0.28, 0.12),
+			0.62
+		)
+
+	# The windows look into a dedicated opaque service tunnel, never the combat
+	# map. Repeating buttresses and amber maintenance lamps slide past it.
+	for side in [-1.0, 1.0]:
+		_add_child_visual_box(
+			prologue_shell,
+			Vector3(side * 4.05, 1.58, 0.0),
+			Vector3(0.34, 3.65, 24.0),
+			tunnel_black
+		)
+		_add_child_visual_box(
+			prologue_shell,
+			Vector3(side * 3.72, 0.30, 0.0),
+			Vector3(0.44, 0.58, 24.0),
+			Color(0.055, 0.051, 0.043)
 		)
 	prologue_window_motion = Node3D.new()
-	prologue_window_motion.name = "PassingInfrastructure"
+	prologue_window_motion.name = "SealedPassingTunnel"
 	prologue_shell.add_child(prologue_window_motion)
-	for bar_z in [-4.0, -2.0, 0.0, 2.0, 4.0]:
+	for bar_index in range(9):
+		var bar_z := -12.0 + float(bar_index) * 3.0
 		for side in [-1.0, 1.0]:
-			_add_child_visual_box(
+			var buttress := _add_child_visual_box_return(
 				prologue_window_motion,
-				Vector3(side * 2.90, 2.05, bar_z),
-				Vector3(0.035, 1.05, 0.11),
-				Color(0.58, 0.43, 0.25)
+				Vector3(side * 3.65, 1.58, bar_z),
+				Vector3(0.55, 3.42, 0.32),
+				Color(0.115, 0.105, 0.085)
 			)
+			buttress.set_meta("travel_z", bar_z)
+			if bar_index % 2 == 0:
+				var lamp := _add_child_emissive_box_return(
+					prologue_window_motion,
+					Vector3(side * 3.43, 2.10, bar_z + 0.62),
+					Vector3(0.035, 0.17, 0.54),
+					Color(0.74, 0.39, 0.13),
+					1.9
+				)
+				lamp.set_meta("travel_z", bar_z + 0.62)
+
+	prologue_shell.visible = false
+
+
+func _update_prologue_exterior() -> void:
+	if not is_instance_valid(prologue_window_motion):
+		return
+	var travel := prologue_time * (14.0 if prologue_time < 4.65 else 18.5)
+	for feature in prologue_window_motion.get_children():
+		if not feature.has_meta("travel_z"):
+			continue
+		var base_z := float(feature.get_meta("travel_z"))
+		feature.position.z = wrapf(base_z + travel + 12.0, 0.0, 24.0) - 12.0
 
 
 func _create_encounter_gate(z_position: float) -> StaticBody3D:
@@ -904,9 +1157,9 @@ func _update_deterioration(delta: float) -> void:
 		material.set_shader_parameter("visibility", deterioration)
 
 	if world_environment_resource != null:
-		world_environment_resource.fog_density = 0.012 + deterioration * 0.012
-		world_environment_resource.fog_light_color = Color(0.13, 0.14, 0.135).lerp(
-			Color(0.105, 0.083, 0.112),
+		world_environment_resource.fog_density = 0.016 + deterioration * 0.014
+		world_environment_resource.fog_light_color = Color(0.065, 0.078, 0.072).lerp(
+			Color(0.095, 0.071, 0.102),
 			deterioration
 		)
 
@@ -991,7 +1244,25 @@ func _apply_ghost_material(node: Node, color: Color) -> void:
 		_apply_ghost_material(child, color)
 
 
-func _add_child_visual_box(parent: Node3D, at: Vector3, size: Vector3, color: Color) -> void:
+func _add_child_visual_box(
+	parent: Node3D,
+	at: Vector3,
+	size: Vector3,
+	color: Color,
+	roughness := 0.86,
+	metallic := 0.08
+) -> void:
+	_add_child_visual_box_return(parent, at, size, color, roughness, metallic)
+
+
+func _add_child_visual_box_return(
+	parent: Node3D,
+	at: Vector3,
+	size: Vector3,
+	color: Color,
+	roughness := 0.86,
+	metallic := 0.08
+) -> MeshInstance3D:
 	var mesh_instance := MeshInstance3D.new()
 	mesh_instance.position = at
 	var mesh := BoxMesh.new()
@@ -999,8 +1270,24 @@ func _add_child_visual_box(parent: Node3D, at: Vector3, size: Vector3, color: Co
 	mesh_instance.mesh = mesh
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
-	material.roughness = 0.86
-	material.metallic = 0.08
+	material.roughness = roughness
+	material.metallic = metallic
+	mesh_instance.material_override = material
+	parent.add_child(mesh_instance)
+	return mesh_instance
+
+
+func _add_child_glass_box(parent: Node3D, at: Vector3, size: Vector3) -> void:
+	var mesh_instance := MeshInstance3D.new()
+	mesh_instance.position = at
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	mesh_instance.mesh = mesh
+	var material := StandardMaterial3D.new()
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.albedo_color = Color(0.065, 0.075, 0.072, 0.24)
+	material.metallic = 0.16
+	material.roughness = 0.26
 	mesh_instance.material_override = material
 	parent.add_child(mesh_instance)
 
@@ -1012,6 +1299,16 @@ func _add_child_emissive_box(
 	color: Color,
 	energy: float
 ) -> void:
+	_add_child_emissive_box_return(parent, at, size, color, energy)
+
+
+func _add_child_emissive_box_return(
+	parent: Node3D,
+	at: Vector3,
+	size: Vector3,
+	color: Color,
+	energy: float
+) -> MeshInstance3D:
 	var mesh_instance := MeshInstance3D.new()
 	mesh_instance.position = at
 	var mesh := BoxMesh.new()
@@ -1025,6 +1322,7 @@ func _add_child_emissive_box(
 	material.roughness = 0.52
 	mesh_instance.material_override = material
 	parent.add_child(mesh_instance)
+	return mesh_instance
 
 
 func _add_optional_pack_asset(
@@ -1042,7 +1340,9 @@ func _add_optional_pack_asset(
 		asset_scale,
 		rotation,
 		tint,
-		"res://assets/user_pack/Atlas_Albedo_LPUP.png"
+		"res://assets/user_pack/Atlas_Albedo_LPUP.png",
+		"res://assets/user_pack/color-atlas-emission-night.png",
+		"res://assets/user_pack/color-atlas-specular.png"
 	)
 
 
@@ -1052,7 +1352,9 @@ func _add_asset(
 	asset_scale: Vector3,
 	rotation: Vector3,
 	tint: Color,
-	texture_path: String = ""
+	texture_path: String = "",
+	emission_path: String = "",
+	specular_path: String = ""
 ) -> Node3D:
 	var packed := load(path) as PackedScene
 	if packed == null:
@@ -1065,22 +1367,45 @@ func _add_asset(
 	var instance := packed.instantiate()
 	holder.add_child(instance)
 	var texture: Texture2D = null
+	var emission_texture: Texture2D = null
+	var specular_texture: Texture2D = null
 	if not texture_path.is_empty() and ResourceLoader.exists(texture_path):
 		texture = load(texture_path) as Texture2D
-	_tint_meshes(instance, tint, texture)
+	if not emission_path.is_empty() and ResourceLoader.exists(emission_path):
+		emission_texture = load(emission_path) as Texture2D
+	if not specular_path.is_empty() and ResourceLoader.exists(specular_path):
+		specular_texture = load(specular_path) as Texture2D
+	_tint_meshes(instance, tint, texture, emission_texture, specular_texture)
 	return holder
 
 
-func _tint_meshes(node: Node, tint: Color, texture: Texture2D = null) -> void:
+func _tint_meshes(
+	node: Node,
+	tint: Color,
+	texture: Texture2D = null,
+	emission_texture: Texture2D = null,
+	specular_texture: Texture2D = null
+) -> void:
 	if node is MeshInstance3D:
-		var material := StandardMaterial3D.new()
-		material.albedo_color = tint
-		material.albedo_texture = texture
-		material.roughness = 0.78
-		material.metallic = 0.18
+		var material: Material
+		if texture != null and emission_texture != null and specular_texture != null:
+			var night_material := ShaderMaterial.new()
+			night_material.shader = PackNightShader
+			night_material.set_shader_parameter("albedo_atlas", texture)
+			night_material.set_shader_parameter("night_emission_atlas", emission_texture)
+			night_material.set_shader_parameter("specular_atlas", specular_texture)
+			night_material.set_shader_parameter("tint", tint)
+			material = night_material
+		else:
+			var standard_material := StandardMaterial3D.new()
+			standard_material.albedo_color = tint
+			standard_material.albedo_texture = texture
+			standard_material.roughness = 0.78
+			standard_material.metallic = 0.18
+			material = standard_material
 		node.material_override = material
 	for child in node.get_children():
-		_tint_meshes(child, tint, texture)
+		_tint_meshes(child, tint, texture, emission_texture, specular_texture)
 
 
 func _ensure_input_actions() -> void:

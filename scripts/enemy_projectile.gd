@@ -15,6 +15,7 @@ var max_damage := 1.2
 var lifetime := 6.0
 var style := Style.NEEDLE
 var deflected := false
+var deflected_damage := 15600
 
 var visual_root: Node3D
 var silhouette: Node3D
@@ -61,8 +62,11 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	var hostile_scale := 1.0
-	if is_instance_valid(game) and not deflected:
-		hostile_scale = game.get_hostile_time_scale()
+	if not deflected:
+		if is_instance_valid(player) and player.has_method("get_hostile_time_scale"):
+			hostile_scale = player.get_hostile_time_scale()
+		elif is_instance_valid(game):
+			hostile_scale = game.get_hostile_time_scale()
 	var step_delta := delta * hostile_scale
 	lifetime -= step_delta
 	if lifetime <= 0.0:
@@ -82,7 +86,7 @@ func _physics_process(delta: float) -> void:
 	if not hit.is_empty():
 		var collider = hit.get("collider")
 		if deflected and collider != null and collider.has_method("take_damage"):
-			collider.take_damage(15600, hit.get("position", to), true)
+			collider.take_damage(deflected_damage, hit.get("position", to), true)
 		elif not deflected and collider == player:
 			player.hurt(time_damage, max_damage, global_position)
 		queue_free()
@@ -108,6 +112,15 @@ func deflect(new_direction: Vector3) -> void:
 	rust_material.emission = Color(0.44, 0.30, 0.11)
 	rust_material.emission_energy_multiplier = 1.45
 	_orient_visual()
+
+
+func empower_deflection(multiplier := 1.55) -> void:
+	if not deflected:
+		return
+	deflected_damage = int(float(deflected_damage) * multiplier)
+	speed *= 1.22
+	edge_material.emission_energy_multiplier = 2.15
+	rust_material.emission_energy_multiplier = 1.85
 
 
 func _build_materials() -> void:

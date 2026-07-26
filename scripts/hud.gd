@@ -1,6 +1,7 @@
 extends CanvasLayer
 
 const HandsScript = preload("res://scripts/hands_2d.gd")
+const InterfaceFont = preload("res://assets/fonts/BarlowCondensed-SemiBold.ttf")
 
 var player: CharacterBody3D
 var game: Node3D
@@ -28,8 +29,12 @@ var prologue_fragment: Label
 var prologue_title: Label
 var prologue_subtitle: Label
 var prologue_skip: Label
+var time_art_group: Control
+var time_art_label: Label
+var time_art_detail: Label
 
 var announcement_time := 0.0
+var time_art_time := 0.0
 var event_log: Array[String] = []
 var debug_visible := false
 var impact_pulse := 0.0
@@ -85,6 +90,14 @@ func _process(delta: float) -> void:
 		announcement.visible = false
 		subtitle.visible = false
 
+	if time_art_time > 0.0:
+		time_art_time = maxf(time_art_time - delta, 0.0)
+		var art_fade := clampf(time_art_time / 0.22, 0.0, 1.0)
+		time_art_group.modulate.a = art_fade
+		time_art_group.position.x = lerpf(-7.0, 0.0, art_fade)
+	else:
+		time_art_group.visible = false
+
 	if is_instance_valid(player):
 		post_material.set_shader_parameter("impact", impact_pulse)
 		post_material.set_shader_parameter("impact_origin", impact_origin)
@@ -104,7 +117,7 @@ func _process(delta: float) -> void:
 				+ "watchfire   %06.2f\n" % player.watchfire
 				+ "speed       %06.2f\n" % player.planar_speed
 				+ "movement    %s\n" % ("SLIDE" if player.is_sliding else ("STEP" if player.chronostep_timer > 0.0 else "GROUND"))
-				+ "hostile x   %06.2f\n\n" % (0.18 if player.watch_active else 1.0)
+				+ "hostile x   %06.3f\n\n" % player.get_hostile_time_scale()
 				+ "\n".join(event_log)
 			)
 
@@ -272,6 +285,31 @@ func receive_score_event(tag: StringName, payload: Dictionary) -> void:
 	event_log.push_front(compact)
 	if event_log.size() > 10:
 		event_log.pop_back()
+	if tag == &"watch_overclock":
+		time_art_label.text = "DEAD SECOND"
+		time_art_detail.text = "THE WORLD MISSED ITS TURN"
+		time_art_group.position.x = -18.0
+		time_art_group.modulate.a = 1.0
+		time_art_group.visible = true
+		time_art_time = maxf(float(payload.get("duration", 1.2)), 0.72)
+	elif tag == &"overclock_hit":
+		time_art_label.text = "TIME DEBT COLLECTED"
+		time_art_detail.text = "%s DAMAGE  //  BETWEEN TICKS" % _group_damage(
+			int(payload.get("damage", 0))
+		)
+		time_art_group.position.x = -10.0
+		time_art_group.modulate.a = 1.0
+		time_art_group.visible = true
+		time_art_time = maxf(time_art_time, 0.62)
+
+
+func _group_damage(value: int) -> String:
+	var text := str(absi(value))
+	var grouped := ""
+	while text.length() > 3:
+		grouped = "," + text.right(3) + grouped
+		text = text.left(text.length() - 3)
+	return ("-" if value < 0 else "") + text + grouped
 
 
 func _compact_payload(payload: Dictionary) -> String:
@@ -303,6 +341,10 @@ func _build_ui() -> void:
 	root = Control.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var interface_theme := Theme.new()
+	interface_theme.default_font = InterfaceFont
+	interface_theme.default_font_size = 17
+	root.theme = interface_theme
 	add_child(root)
 
 	post_rect = ColorRect.new()
@@ -371,6 +413,7 @@ func _build_ui() -> void:
 	_build_title()
 	_build_prologue()
 	_build_ending()
+	_build_time_art_callout()
 
 	debug_label = Label.new()
 	debug_label.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
@@ -385,6 +428,41 @@ func _build_ui() -> void:
 	debug_label.add_theme_constant_override("shadow_offset_y", 2)
 	debug_label.visible = false
 	root.add_child(debug_label)
+
+
+func _build_time_art_callout() -> void:
+	time_art_group = Control.new()
+	time_art_group.name = "DeadSecondCallout"
+	time_art_group.set_anchors_preset(Control.PRESET_CENTER_LEFT)
+	time_art_group.position = Vector2(42.0, 112.0)
+	time_art_group.size = Vector2(390.0, 92.0)
+	time_art_group.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	time_art_group.visible = false
+	root.add_child(time_art_group)
+
+	var rule := ColorRect.new()
+	rule.position = Vector2(0.0, 4.0)
+	rule.size = Vector2(4.0, 72.0)
+	rule.color = Color(0.52, 0.34, 0.56, 0.88)
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	time_art_group.add_child(rule)
+
+	time_art_label = Label.new()
+	time_art_label.position = Vector2(18.0, -6.0)
+	time_art_label.size = Vector2(360.0, 54.0)
+	time_art_label.add_theme_font_size_override("font_size", 36)
+	time_art_label.add_theme_color_override("font_color", Color(0.91, 0.86, 0.69))
+	time_art_label.add_theme_color_override("font_shadow_color", Color(0.07, 0.018, 0.075, 0.96))
+	time_art_label.add_theme_constant_override("shadow_offset_x", 4)
+	time_art_label.add_theme_constant_override("shadow_offset_y", 4)
+	time_art_group.add_child(time_art_label)
+
+	time_art_detail = Label.new()
+	time_art_detail.position = Vector2(20.0, 43.0)
+	time_art_detail.size = Vector2(360.0, 30.0)
+	time_art_detail.add_theme_font_size_override("font_size", 14)
+	time_art_detail.add_theme_color_override("font_color", Color(0.61, 0.57, 0.48))
+	time_art_group.add_child(time_art_detail)
 
 
 func _build_boss_bar() -> void:

@@ -152,6 +152,19 @@ func _run() -> void:
 	game._begin_prologue()
 	_check(game.prologue_active and not player.active, "the train opening holds gameplay until the crash survives")
 	_check(game.hud.prologue_layer.visible, "the train opening presents clear-data and epilogue layers")
+	var look_yaw_before: float = game.prologue_look_yaw
+	var look_event := InputEventMouseMotion.new()
+	look_event.relative = Vector2(96.0, -38.0)
+	game._unhandled_input(look_event)
+	_check(
+		not is_equal_approx(game.prologue_look_yaw, look_yaw_before)
+		and not is_zero_approx(game.prologue_look_pitch),
+		"the train opening preserves free mouse look"
+	)
+	_check(
+		game.prologue_shell.get_node_or_null("SealedPassingTunnel") != null,
+		"the train windows show a separate passing tunnel instead of the combat level"
+	)
 	game.prologue_time = 8.15
 	game._update_prologue(0.10)
 	_check(game.hud.prologue_title.visible, "the opening reveals EPILOGUE before returning control")
@@ -164,6 +177,10 @@ func _run() -> void:
 	_check(game.encounter_gates.size() == 2, "combat rooms have authored lock thresholds")
 	_check(game.encounter_definitions.size() == 3, "encounters are data-defined instead of empty-list auto-waves")
 	_check(game.ghost_materials.size() > 0, "historical geometry is available for deterioration")
+	_check(
+		game.get_node_or_null("ReturnRoadArtDirection") != null,
+		"the authored rail-town aesthetic layer is present"
+	)
 
 	game.queue_free()
 	await process_frame

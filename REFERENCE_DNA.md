@@ -219,6 +219,17 @@ Smoothness does not mean slowly lerping everything.
 - **Time bending:** hostile animation and projectiles slow, while the broken
   watch's seconds hand accelerates and leaves short analog hand echoes. This
   contradiction is the unmistakable ability read.
+- **Dominance:** ordinary Watchfire runs hostiles at `0.115x` without slowing
+  the player. A collision-path or last-windup activation earns `1.20s` of Dead
+  Second at `0.045x` hostile time, `1.28x` player motion, `1.62x` player combat,
+  and `2.12x` damage.
+- **Transition:** Watchfire must enter in roughly `80–120ms` and leave in
+  `100–160ms`. The mechanic responds immediately; these windows describe the
+  visual and audio settling, not input latency.
+
+The sourced production board that translates real train, rail-night, broken
+watch, concrete, fog, and power-line references into this project is
+[`AESTHETIC_BOARD.md`](AESTHETIC_BOARD.md).
 
 ## Eight-hour priority
 

@@ -193,7 +193,9 @@ func _physics_process(delta: float) -> void:
 		return
 
 	var hostile_scale := 1.0
-	if is_instance_valid(game):
+	if is_instance_valid(player) and player.has_method("get_hostile_time_scale"):
+		hostile_scale = player.get_hostile_time_scale()
+	elif is_instance_valid(game):
 		hostile_scale = game.get_hostile_time_scale()
 	var local_delta := delta * hostile_scale
 	visual_time += local_delta

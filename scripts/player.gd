@@ -10,6 +10,9 @@ const DaggerThrowScript = preload("res://scripts/dagger_throw.gd")
 const STARTING_MAX_TIME := 60.0
 const MAX_WATCHFIRE := 100.0
 const WATCH_SLOW_BURN := 15.0
+const WATCH_HOSTILE_SCALE := 0.115
+const OVERCLOCK_HOSTILE_SCALE := 0.045
+const OVERCLOCK_DURATION := 1.20
 const DAGGER_RECALL_BASE_COST := 18.0
 const RUN_SPEED := 10.8
 const GROUND_ACCELERATION := 48.0
@@ -43,6 +46,11 @@ var time_left := 54.0
 var max_time := STARTING_MAX_TIME
 var watchfire := 52.0
 var watch_active := false
+var watch_entry_visual := 0.0
+var overclock_timer := 0.0
+var overclock_visual := 0.0
+var watch_motion_visual := 0.0
+var overclock_reason: StringName = &""
 var active := false
 
 var camera: Camera3D
@@ -117,6 +125,12 @@ func set_active(value: bool) -> void:
 	active = value
 	if value:
 		expired_once = false
+	else:
+		watch_active = false
+		was_watch_active = false
+		overclock_timer = 0.0
+		overclock_visual = 0.0
+		_sync_watchfire_shader()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -141,7 +155,7 @@ func _physics_process(delta: float) -> void:
 	_update_watch(delta)
 	_read_action_inputs()
 	_move(delta)
-	_update_combat(delta)
+	_update_combat(delta * get_player_combat_time_scale())
 	_check_dagger_pickup()
 
 
@@ -159,21 +173,183 @@ func _update_visual_timers(delta: float) -> void:
 	chronostep_visual = maxf(chronostep_visual - delta * 5.0, 0.0)
 	impact_visual = maxf(impact_visual - delta * 7.5, 0.0)
 	camera_kick = camera_kick.lerp(Vector2.ZERO, 1.0 - exp(-delta * 13.0))
+	watch_entry_visual = maxf(watch_entry_visual - delta * 4.8, 0.0)
+	overclock_timer = maxf(overclock_timer - delta, 0.0)
+	var overclock_target := 1.0 if is_watch_overclocked() else 0.0
+	var overclock_response := 24.0 if overclock_target > overclock_visual else 10.0
+	overclock_visual = lerpf(
+		overclock_visual,
+		overclock_target,
+		1.0 - exp(-delta * overclock_response)
+	)
+	var motion_target := clampf(planar_speed / RUN_SPEED, 0.0, 1.35) if watch_active else 0.0
+	watch_motion_visual = lerpf(
+		watch_motion_visual,
+		motion_target,
+		1.0 - exp(-delta * (20.0 if watch_active else 8.0))
+	)
+	_sync_watchfire_shader()
 
 
 func _update_watch(delta: float) -> void:
 	watch_active = Input.is_action_pressed("watch") and watchfire > 0.0
 	if watch_active:
-		watchfire = maxf(watchfire - WATCH_SLOW_BURN * delta, 0.0)
+		var burn_rate := WATCH_SLOW_BURN * (1.18 if is_watch_overclocked() else 1.0)
+		watchfire = maxf(watchfire - burn_rate * delta, 0.0)
 	if watch_active != was_watch_active:
 		if watch_active:
+			watch_entry_visual = 1.0
+			camera.fov = maxf(camera.fov, 84.5)
+			camera_kick += Vector2(0.0, -0.32)
 			play_sfx(&"watch")
+			play_sfx(&"watch_snap")
+			var danger := _detect_last_instant_danger()
+			if not danger.is_empty():
+				_trigger_watch_overclock(
+					StringName(danger.get("reason", "last_instant")),
+					OVERCLOCK_DURATION,
+					float(danger.get("score", 1.0))
+				)
+		else:
+			overclock_timer = 0.0
+			overclock_reason = &""
 		emit_signal("score_event", &"watch_state", {
 			"active": watch_active,
 			"meter": watchfire,
 			"time": time_left,
+			"hostile_scale": get_hostile_time_scale(),
 		})
 		was_watch_active = watch_active
+		_sync_watchfire_shader()
+
+
+func is_watch_overclocked() -> bool:
+	return watch_active and overclock_timer > 0.0
+
+
+func get_hostile_time_scale() -> float:
+	if not watch_active:
+		return 1.0
+	return OVERCLOCK_HOSTILE_SCALE if is_watch_overclocked() else WATCH_HOSTILE_SCALE
+
+
+func get_player_time_dominance() -> float:
+	if is_watch_overclocked():
+		return 1.28
+	if watch_active:
+		return 1.09
+	return 1.0
+
+
+func get_player_combat_time_scale() -> float:
+	if is_watch_overclocked():
+		return 1.62
+	if watch_active:
+		return 1.18
+	return 1.0
+
+
+func _trigger_watch_overclock(
+	reason: StringName,
+	duration := OVERCLOCK_DURATION,
+	danger_score := 1.0
+) -> void:
+	overclock_timer = maxf(overclock_timer, duration)
+	overclock_reason = reason
+	overclock_visual = maxf(overclock_visual, 0.42)
+	watch_entry_visual = 1.0
+	camera.fov = maxf(camera.fov, 88.0)
+	camera_kick += Vector2(0.0, -0.55)
+	play_sfx(&"overclock")
+	emit_signal("score_event", &"watch_overclock", {
+		"reason": reason,
+		"duration": duration,
+		"danger": danger_score,
+		"hostile_scale": OVERCLOCK_HOSTILE_SCALE,
+		"player_motion_scale": get_player_time_dominance(),
+		"player_combat_scale": get_player_combat_time_scale(),
+		"meter": watchfire,
+		"time": time_left,
+	})
+	_sync_watchfire_shader()
+
+
+func _detect_last_instant_danger() -> Dictionary:
+	if not is_inside_tree():
+		return {}
+	var space := get_world_3d().direct_space_state
+	var target := global_position + Vector3.UP * 0.85
+
+	# Projectiles earn Overclock only when their current path will actually pass
+	# through the player's body soon. Merely standing near a bullet is not enough.
+	var projectile_sphere := SphereShape3D.new()
+	projectile_sphere.radius = 6.5
+	var projectile_query := PhysicsShapeQueryParameters3D.new()
+	projectile_query.shape = projectile_sphere
+	projectile_query.transform = Transform3D(Basis.IDENTITY, target)
+	projectile_query.collision_mask = 4
+	projectile_query.collide_with_areas = true
+	projectile_query.collide_with_bodies = false
+	projectile_query.exclude = [get_rid()]
+	for candidate in space.intersect_shape(projectile_query, 24):
+		var threat = candidate.get("collider")
+		if not threat is Area3D or not threat.has_method("deflect"):
+			continue
+		var projectile_direction: Vector3 = threat.get("direction")
+		var projectile_speed: float = float(threat.get("speed"))
+		if projectile_direction.length_squared() < 0.001 or projectile_speed <= 0.0:
+			continue
+		var projectile_velocity := projectile_direction.normalized() * projectile_speed
+		var to_player: Vector3 = target - threat.global_position
+		var arrival := to_player.dot(projectile_velocity) / projectile_velocity.length_squared()
+		if arrival < 0.0 or arrival > 0.62:
+			continue
+		var closest := (to_player - projectile_velocity * arrival).length()
+		if closest <= 1.02:
+			return {
+				"reason": &"last_instant",
+				"score": clampf(1.35 - arrival, 0.75, 1.35),
+			}
+
+	# A committed close-range strike provides the same skill check. This keeps
+	# the system useful in melee rooms rather than making it projectile-only.
+	var enemy_sphere := SphereShape3D.new()
+	enemy_sphere.radius = 4.6
+	var enemy_query := PhysicsShapeQueryParameters3D.new()
+	enemy_query.shape = enemy_sphere
+	enemy_query.transform = Transform3D(Basis.IDENTITY, target)
+	enemy_query.collision_mask = 2
+	enemy_query.collide_with_areas = false
+	enemy_query.collide_with_bodies = true
+	enemy_query.exclude = [get_rid()]
+	for candidate in space.intersect_shape(enemy_query, 16):
+		var threat = candidate.get("collider")
+		if not threat is CharacterBody3D or not threat.has_method("take_damage"):
+			continue
+		var remaining_windup: float = float(threat.get("windup"))
+		if remaining_windup > 0.015 and remaining_windup <= 0.30:
+			return {
+				"reason": &"last_instant",
+				"score": clampf(1.28 - remaining_windup, 0.82, 1.28),
+			}
+	return {}
+
+
+func _sync_watchfire_shader() -> void:
+	if not is_inside_tree():
+		return
+	var game := get_parent()
+	if game == null:
+		return
+	var hud = game.get("hud")
+	if hud == null:
+		return
+	var material = hud.get("post_material")
+	if not material is ShaderMaterial:
+		return
+	material.set_shader_parameter("time_snap", watch_entry_visual)
+	material.set_shader_parameter("overclock", overclock_visual)
+	material.set_shader_parameter("time_motion", watch_motion_visual)
 
 
 func _read_action_inputs() -> void:
@@ -201,6 +377,7 @@ func _move(delta: float) -> void:
 	movement_input = input
 	var direction := (global_transform.basis * Vector3(input.x, 0.0, input.y)).normalized()
 	var horizontal := Vector3(velocity.x, 0.0, velocity.z)
+	var time_dominance := get_player_time_dominance()
 
 	# Resolve the ordinary vertical state before movement actions. Jump, wall-kick,
 	# and slide-jump must be allowed to overwrite it later in this frame.
@@ -215,7 +392,7 @@ func _move(delta: float) -> void:
 		if direction != Vector3.ZERO:
 			step_steer = step_steer.slerp(direction, delta * 4.2).normalized()
 		chronostep_direction = step_steer
-		horizontal = step_steer * CHRONOSTEP_SPEED
+		horizontal = step_steer * CHRONOSTEP_SPEED * sqrt(time_dominance)
 		velocity.y = 0.0
 		if chronostep_timer <= 0.0:
 			horizontal *= 0.72
@@ -241,12 +418,18 @@ func _move(delta: float) -> void:
 			_end_slide()
 	elif grounded:
 		if direction != Vector3.ZERO:
-			horizontal = horizontal.move_toward(direction * RUN_SPEED, GROUND_ACCELERATION * delta)
+			horizontal = horizontal.move_toward(
+				direction * RUN_SPEED * time_dominance,
+				GROUND_ACCELERATION * time_dominance * delta
+			)
 		else:
 			horizontal = horizontal.move_toward(Vector3.ZERO, GROUND_FRICTION * delta)
 	else:
 		if direction != Vector3.ZERO:
-			horizontal = horizontal.move_toward(direction * AIR_SPEED_LIMIT, AIR_ACCELERATION * delta)
+			horizontal = horizontal.move_toward(
+				direction * AIR_SPEED_LIMIT * time_dominance,
+				AIR_ACCELERATION * time_dominance * delta
+			)
 
 	if Input.is_action_just_pressed("slide") and grounded and horizontal.length() >= 6.0:
 		_begin_slide(horizontal)
@@ -388,7 +571,14 @@ func _update_camera(delta: float) -> void:
 		target_roll + camera_kick.x * 0.012,
 		1.0 - exp(-delta * 30.0)
 	)
-	camera.fov = lerpf(camera.fov, 79.0 + speed_factor * 9.0, 1.0 - exp(-delta * 8.0))
+	var time_fov := 2.0 if watch_active else 0.0
+	if is_watch_overclocked():
+		time_fov = 5.5
+	camera.fov = lerpf(
+		camera.fov,
+		79.0 + speed_factor * 9.0 + time_fov,
+		1.0 - exp(-delta * (15.0 if watch_active else 8.0))
+	)
 
 
 func _queue_attack(action: StringName) -> void:
@@ -498,10 +688,15 @@ func _resolve_attack() -> void:
 	if collider == null:
 		return
 	if collider.has_method("deflect"):
+		var perfect_deflect := watch_active
 		collider.deflect(-camera.global_transform.basis.z)
+		if perfect_deflect:
+			_trigger_watch_overclock(&"perfect_deflect", OVERCLOCK_DURATION + 0.28, 1.4)
+			if collider.has_method("empower_deflection"):
+				collider.empower_deflection(1.55)
 		play_sfx(&"deflect")
-		gain_watchfire(14.0)
-		_request_impact(0.9, hit.get("position", collider.global_position))
+		gain_watchfire(20.0 if perfect_deflect else 14.0)
+		_request_impact(1.25 if perfect_deflect else 0.9, hit.get("position", collider.global_position))
 		return
 	if not collider.has_method("take_damage"):
 		return
@@ -510,16 +705,28 @@ func _resolve_attack() -> void:
 	var force := float(attack_data["force"])
 	var launch := float(attack_data["launch"])
 	var critical := bool(attack_data["critical"])
-	if watch_active:
+	if is_watch_overclocked():
+		damage = int(float(damage) * 2.12)
+		force *= 1.62
+		launch += 2.4
+		critical = true
+	elif watch_active:
 		damage = int(float(damage) * 1.42)
-		force *= 1.22
+		force *= 1.25
 		critical = true
 	var hit_position: Vector3 = hit.get("position", collider.global_position)
 	collider.take_damage(damage, hit_position, critical, force, launch)
 	play_sfx(&"dagger_hit" if combat_action == &"blade" else (&"kick" if combat_action == &"kick" else &"punch"))
 	var meter_gain := 11.0 if critical else (9.0 if combat_action != &"blade" else 6.0)
 	gain_watchfire(meter_gain)
-	_request_impact(0.9 if critical else 0.58, hit_position)
+	if is_watch_overclocked():
+		overclock_timer = maxf(overclock_timer, 0.34)
+		emit_signal("score_event", &"overclock_hit", {
+			"damage": damage,
+			"remaining": overclock_timer,
+			"reason": overclock_reason,
+		})
+	_request_impact(1.18 if is_watch_overclocked() else (0.9 if critical else 0.58), hit_position)
 	emit_signal("attack_landed", damage, critical)
 
 
@@ -758,8 +965,16 @@ func play_sfx(cue: StringName) -> void:
 			sound_pitch = 0.82
 		&"watch":
 			path = "res://assets/audio/impactBell_heavy_000.ogg"
-			volume_db = -9.0
-			sound_pitch = 0.72
+			volume_db = -7.0
+			sound_pitch = 0.58
+		&"watch_snap":
+			path = "res://assets/audio/impactGlass_heavy_001.ogg"
+			volume_db = -11.0
+			sound_pitch = 1.72
+		&"overclock":
+			path = "res://assets/audio/impactMetal_heavy_001.ogg"
+			volume_db = -8.0
+			sound_pitch = 0.47
 		&"jump", &"land", &"slide":
 			path = "res://assets/audio/footstep_concrete_001.ogg"
 			volume_db = -13.0 if cue == &"jump" else -10.0
@@ -800,4 +1015,7 @@ func _expire() -> void:
 	expired_once = true
 	time_left = 0.0
 	watch_active = false
+	overclock_timer = 0.0
+	overclock_visual = 0.0
+	_sync_watchfire_shader()
 	emit_signal("expired")

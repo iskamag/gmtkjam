@@ -12,6 +12,9 @@ uniform float wound : hint_range(0.0, 1.0) = 0.0;
 uniform float chronostep : hint_range(0.0, 1.0) = 0.0;
 uniform float dagger_rewind : hint_range(0.0, 1.0) = 0.0;
 uniform float time_bend : hint_range(0.0, 1.0) = 0.0;
+uniform float time_snap : hint_range(0.0, 1.0) = 0.0;
+uniform float overclock : hint_range(0.0, 1.0) = 0.0;
+uniform float time_motion : hint_range(0.0, 1.5) = 0.0;
 uniform float trauma : hint_range(0.0, 1.0) = 0.0;
 uniform float crash : hint_range(0.0, 1.0) = 0.0;
 
@@ -71,15 +74,29 @@ void fragment() {
 	vec2 discarded_uv = watch_anchor + from_watch * (1.0 + watch_field * 0.045);
 	uv = mix(uv, discarded_uv, watch_field * 0.42);
 
+	// Activation is a mechanical shutter sweeping out from the aiming point.
+	// The world visibly arrests in one beat instead of slowly fading into a filter.
+	vec2 from_center = uv - vec2(0.5);
+	float center_distance = length(from_center * vec2(1.0, 1.45));
+	float snap_radius = (1.0 - time_snap) * 0.92;
+	float snap_ring = exp(-abs(center_distance - snap_radius) * 52.0) * time_snap;
+	vec2 center_direction = from_center / max(length(from_center), 0.001);
+	uv -= center_direction * snap_ring * (0.012 + overclock * 0.009);
+
 	// Bending hostile time drags complete colour samples around the watch's
-	// temporal field. This is a restrained history smear, not chromatic noise.
+	// temporal field. Overclock pulls a second, harder exposure through it.
 	vec2 time_tangent = normalize(vec2(-from_watch.y, from_watch.x) + vec2(0.001));
-	float time_arc = sin(length(from_watch) * 19.0 - TIME * 2.3);
+	float time_arc = sin(length(from_watch) * 19.0 - TIME * (2.3 + overclock * 3.4));
 	float time_field = mix(0.42, 1.0, smoothstep(0.12, 0.88, length(from_watch)));
 	vec2 time_offset = time_tangent * time_bend * time_field * (
-		0.0011 + (time_arc * 0.5 + 0.5) * 0.0012
+		0.0024
+		+ (time_arc * 0.5 + 0.5) * 0.0028
+		+ overclock * 0.0042
 	);
-	uv += time_offset;
+	vec2 motion_offset = from_center * time_bend * time_motion * (
+		0.0032 + overclock * 0.0048
+	);
+	uv += time_offset + motion_offset;
 	uv = clamp(uv, pixel, vec2(1.0) - pixel);
 
 	// Channel separation exists only at violent temporal discontinuities.
@@ -101,11 +118,38 @@ void fragment() {
 		clamp(uv - time_offset * 4.6, pixel, vec2(1.0) - pixel)
 	).rgb;
 	vec3 temporal_smear = time_history_near * 0.68 + time_history_far * 0.32;
-	col = mix(col, temporal_smear, time_bend * 0.15);
+	vec3 motion_history = texture(
+		screen_texture,
+		clamp(uv - motion_offset * (3.0 + overclock * 2.0), pixel, vec2(1.0) - pixel)
+	).rgb;
+	col = mix(col, temporal_smear, time_bend * (0.22 + overclock * 0.14));
+	col = mix(col, motion_history, time_bend * time_motion * (0.10 + overclock * 0.12));
 
 	float luma = dot(col, vec3(0.299, 0.587, 0.114));
 	vec3 old_light = vec3(luma) * vec3(1.015, 0.995, 0.94);
 	col = mix(col, old_light, doom * 0.17 + scar * 0.07 + wound * 0.20);
+
+	// Time dominance removes colour from the hostile world while retaining
+	// graphite, old ivory and bruised plum. It is high contrast, not neon.
+	float time_state = clamp(time_bend * 0.68 + overclock * 0.48, 0.0, 1.0);
+	vec3 stopped_light = vec3(luma) * vec3(1.06, 1.015, 0.88);
+	stopped_light += vec3(0.022, 0.006, 0.029) * (1.0 - smoothstep(0.08, 0.62, luma));
+	stopped_light = (stopped_light - vec3(0.5)) * (1.10 + overclock * 0.18) + vec3(0.5);
+	col = mix(col, stopped_light, time_state * (0.62 + overclock * 0.16));
+
+	// The outer aperture is a twelve-cut clock face. It provides a stable spatial
+	// frame during player motion and avoids the generic coloured speed tunnel.
+	vec2 clock_space = (SCREEN_UV - vec2(0.5)) * vec2(1.0, 1.78);
+	float clock_radius = length(clock_space);
+	float clock_angle = atan(clock_space.y, clock_space.x) / 6.2831853 + 0.5;
+	float clock_cell = abs(fract(clock_angle * 12.0 - TIME * overclock * 0.16) - 0.5);
+	float clock_cut = 1.0 - smoothstep(0.055, 0.14, clock_cell);
+	float clock_band = smoothstep(0.61, 0.69, clock_radius) * (
+		1.0 - smoothstep(0.91, 1.04, clock_radius)
+	);
+	float clock_aperture = clock_cut * clock_band * time_bend * (0.22 + overclock * 0.34);
+	col += vec3(0.34, 0.30, 0.21) * clock_aperture;
+	col *= 1.0 - time_state * smoothstep(0.56, 1.02, clock_radius) * 0.12;
 
 	// PS2-era surface character: continuous colour and fine analogue grain.
 	// There is deliberately no palette quantization or posterization here.
@@ -136,6 +180,8 @@ void fragment() {
 	float vignette = 1.0 - dot(centered, centered) * vignette_weight;
 	col *= max(vignette, 0.56);
 	col += vec3(0.12, 0.085, 0.035) * hit_ring * 0.24;
+	col += vec3(0.42, 0.36, 0.22) * snap_ring * (0.20 + overclock * 0.14);
+	col *= 1.0 - time_snap * 0.11;
 	col *= 1.0 - crash_field * crash_cut * 0.16;
 
 	COLOR = vec4(col, 1.0);

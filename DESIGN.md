@@ -73,7 +73,10 @@ walk. Midnight/zero is the ending, not a villain to defeat.
 
 The opening must remain action-native: roughly ten seconds, skippable after its
 first second to the identical post-crash state, no dialogue tree, no lore
-panel, and no long loss of control.
+panel, and no long loss of agency. The player retains free mouse look for the
+entire ride and crash. The carriage is a sealed authored space with its own
+moving exterior; looking through a window must never reveal the later combat
+level.
 
 ## Reference DNA
 
@@ -110,7 +113,9 @@ Chronosword must not simply become either of those games. First person, the
 diegetic watch, stolen time, and a manually rewound dagger distinguish it.
 
 The complete taste map, translation rules, palette, texture references, and
-smoothness contract live in [`REFERENCE_DNA.md`](REFERENCE_DNA.md).
+smoothness contract live in [`REFERENCE_DNA.md`](REFERENCE_DNA.md). The
+license-traceable photographic studies and exact source-to-local-asset
+translations live in [`AESTHETIC_BOARD.md`](AESTHETIC_BOARD.md).
 
 ## Format
 
@@ -212,6 +217,26 @@ Watchfire is not primarily a HUD bar or percentage.
 The economic choice is concrete: burn flame over time to control a dangerous
 moment, or reserve enough to recall a deliberately placed dagger. If neither is
 affordable, close combat and physical retrieval remain available.
+
+Ordinary Watchfire is already overwhelming but expensive: hostile simulation
+runs at `0.115x`, while the chronosword remains fully responsive and gains
+`1.09x` movement and `1.18x` combat tempo. Activating during the collision path
+of an incoming projectile or the final `0.30s` of a committed melee windup
+earns a `1.20s` **Dead Second**:
+
+- hostile simulation falls to `0.045x`;
+- player movement rises to `1.28x`;
+- combat tempo rises to `1.62x`;
+- damage during the window is multiplied by `2.12x`;
+- a perfect Watchfire deflection extends the state and empowers the reflected
+  projectile.
+
+This is the skill expression that makes stopped time feel dominant instead of
+like a colored slow-motion filter. The snap-in is immediate; releasing `Q`
+restores hostile simulation immediately. The analog seconds hand races,
+velocity-aligned projectile histories remain hanging in the world, the camera
+widens, and a twelve-cut shutter/graphite-and-ivory grade marks the impossible
+instant. The player, hands, attacks, and hit feedback remain crisp.
 
 ### 5. Movement belongs to the chronosword
 
