@@ -121,6 +121,7 @@ var chronostep_cooldown := 0.0
 var chronostep_direction := Vector3.ZERO
 var air_step_available := true
 var air_baion_used := false
+var _baion_launch_frame := false
 var _was_on_floor := true
 var slam_active := false
 var _master_lowpass: AudioEffectLowPassFilter
@@ -177,6 +178,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	_update_visual_timers(delta)
+	_baion_launch_frame = false
 	if not active:
 		return
 
@@ -187,8 +189,8 @@ func _physics_process(delta: float) -> void:
 
 	_update_watch(delta)
 	_read_action_inputs()
-	_move(delta)
 	_update_combat(delta * get_player_combat_time_scale())
+	_move(delta)
 	_check_dagger_pickup()
 
 
@@ -410,7 +412,7 @@ func _read_action_inputs() -> void:
 
 func _move(delta: float) -> void:
 	var grounded := is_on_floor()
-	if grounded:
+	if grounded and not _baion_launch_frame:
 		coyote_timer = COYOTE_TIME
 		air_step_available = true
 		air_baion_used = false
@@ -427,7 +429,7 @@ func _move(delta: float) -> void:
 	# and slide-jump must be allowed to overwrite it later in this frame.
 	if not grounded and chronostep_timer <= 0.0:
 		velocity.y -= GRAVITY * delta
-	elif grounded:
+	elif grounded and not _baion_launch_frame:
 		velocity.y = minf(velocity.y, -0.5)
 
 	if chronostep_timer > 0.0:
@@ -1205,6 +1207,7 @@ func _rocket_jump(blast: Vector3) -> void:
 	chronostep_cooldown = 0.0
 	air_step_available = true
 	air_baion_used = true
+	_baion_launch_frame = true
 	emit_signal("score_event", &"rocket_jump", {"strength": strength})
 
 
