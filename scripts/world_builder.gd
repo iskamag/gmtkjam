@@ -12,6 +12,43 @@ const WorldAestheticScript = preload("res://scripts/world_aesthetic.gd")
 const PackNightShader = preload("res://shaders/pack_night_material.gdshader")
 
 
+# Build the entire world under main.world_root. Used by the --export-world
+# path to author scenes/world.tscn, which main.gd then loads at runtime so
+# the level and encounter trigger zones become editor-editable nodes.
+static func build_all(main) -> void:
+	main.world_root = Node3D.new()
+	main.world_root.name = "World"
+	main.add_child(main.world_root)
+	build_world(main)
+	build_level(main)
+	build_encounter_zones(main)
+
+
+# Pack main.world_root into a .tscn. Run once via `godot --headless -- --export-world`.
+static func export_scene(main, path: String) -> Error:
+	_set_owners(main.world_root)
+	var packed := PackedScene.new()
+	var err := packed.pack(main.world_root)
+	if err != OK:
+		push_error("WorldBuilder.export_scene: pack failed with error %d" % err)
+		return err
+	return ResourceSaver.save(packed, path)
+
+
+# pack() only serializes descendants whose owner is the scene root. Children
+# added in code have owner == null, so assign ownership recursively before
+# saving. Every descendant must share the SAME owner (the scene root), not its
+# immediate parent, or pack() skips it.
+static func _set_owners(scene_root: Node) -> void:
+	_recurse_owner(scene_root, scene_root)
+
+
+static func _recurse_owner(node: Node, scene_root: Node) -> void:
+	for child in node.get_children():
+		child.set_owner(scene_root)
+		_recurse_owner(child, scene_root)
+
+
 static func build_world(main) -> void:
 	var world_environment := WorldEnvironment.new()
 	var environment := Environment.new()
@@ -136,7 +173,7 @@ void sky() {
 	main.world_environment_resource = environment
 	world_environment.environment = environment
 	world_environment.name = "MoonlitRailEnvironment"
-	main.add_child(world_environment)
+	main.world_root.add_child(world_environment)
 
 	var sun := DirectionalLight3D.new()
 	sun.name = "ColdMoonKey"
@@ -145,7 +182,7 @@ void sky() {
 	sun.light_energy = 1.08
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 60.0
-	main.add_child(sun)
+	main.world_root.add_child(sun)
 
 	for data in [
 		[Vector3(-11.0, 3.5, 4.0), Color(1.0, 0.73, 0.43), 3.4, 13.5],
@@ -159,7 +196,7 @@ void sky() {
 		light.omni_range = data[3]
 		light.omni_attenuation = 1.45
 		light.shadow_enabled = false
-		main.add_child(light)
+		main.world_root.add_child(light)
 
 
 static func build_level(main) -> void:
@@ -291,7 +328,7 @@ static func build_level(main) -> void:
 	main.encounter_gates.append(_create_encounter_gate(main, -21.0))
 	var art_direction := WorldAestheticScript.new()
 	art_direction.name = "ReturnRoadArtDirection"
-	main.add_child(art_direction)
+	main.world_root.add_child(art_direction)
 	build_prologue_shell(main)
 
 
@@ -299,7 +336,7 @@ static func build_prologue_shell(main) -> void:
 	var shell := Node3D.new()
 	shell.name = "LastServiceCarriage"
 	shell.position = Vector3(0.0, 0.0, 16.0)
-	main.add_child(shell)
+	main.world_root.add_child(shell)
 	main.prologue_shell = shell
 
 	var upholstery := Color(0.255, 0.125, 0.070)
@@ -556,12 +593,15 @@ static func build_prologue_shell(main) -> void:
 	shell.visible = false
 
 
-static func build_encounter_definitions(main) -> void:
-	var defs: Array[Dictionary] = [
-			{
-				"trigger_z": 13.0,
-				"title": "THE ARREARS",
-				"subtitle": "The train brought an old collector with it.",
+# Encounter trigger zones and spawn markers are authored as scene nodes so
+# designers can move encounters and spawns in the editor. main.gd reads them
+# back into encounter_definitions / boss_reinforcement_definitions at runtime.
+static func build_encounter_zones(main) -> void:
+	var encounters: Array = [
+		{
+			"trigger_z": 13.0,
+			"title": "THE ARREARS",
+			"subtitle": "The train brought an old collector with it.",
 			"threat": 0.35,
 			"spawns": [
 				[Vector3(-3.7, 0.05, 5.5), EnemyScript.Kind.MELEE],
@@ -569,10 +609,10 @@ static func build_encounter_definitions(main) -> void:
 				[Vector3(5.0, 0.05, 0.0), EnemyScript.Kind.RANGED],
 			],
 		},
-			{
-				"trigger_z": -7.0,
-				"title": "THE SIGNAL WITNESS",
-				"subtitle": "Read the timetable. Break the buried guard.",
+		{
+			"trigger_z": -7.0,
+			"title": "THE SIGNAL WITNESS",
+			"subtitle": "Read the timetable. Break the buried guard.",
 			"threat": 0.70,
 			"spawns": [
 				[Vector3(-6.3, 0.05, -11.0), EnemyScript.Kind.MELEE],
@@ -581,29 +621,73 @@ static func build_encounter_definitions(main) -> void:
 				[Vector3(6.4, 0.05, -19.0), EnemyScript.Kind.RANGED],
 			],
 		},
-			{
-				"trigger_z": -22.0,
-				"title": "THE UNFINISHED",
-				"subtitle": "The first thing you postponed rises to meet the last.",
+		{
+			"trigger_z": -22.0,
+			"title": "THE UNFINISHED",
+			"subtitle": "The first thing you postponed rises to meet the last.",
 			"threat": 1.0,
 			"spawns": [
 				[Vector3(0.0, 0.05, -28.0), EnemyScript.Kind.BOSS],
 			],
 		},
 	]
-	main.encounter_definitions = defs
-	main.boss_reinforcement_definitions = {
-		# Phase one remains solo so the aimed fan teaches projectile returns.
+	for index in encounters.size():
+		var data: Dictionary = encounters[index]
+		var zone := Area3D.new()
+		zone.name = "Encounter%d" % index
+		zone.position = Vector3(0.0, 0.0, float(data["trigger_z"]))
+		zone.set_meta("title", data["title"])
+		zone.set_meta("subtitle", data["subtitle"])
+		zone.set_meta("threat", data["threat"])
+		var shape := BoxShape3D.new()
+		shape.size = Vector3(33.0, 5.0, 0.48)
+		var collision := CollisionShape3D.new()
+		collision.shape = shape
+		collision.position.y = 2.5
+		zone.add_child(collision)
+		var spawn_index := 0
+		for spawn in data["spawns"]:
+			var marker := Marker3D.new()
+			marker.position = Vector3(spawn[0]) - zone.position
+			marker.set_meta("kind", spawn[1])
+			marker.name = "Spawn_%s_%d" % [_kind_tag(spawn[1]), spawn_index]
+			zone.add_child(marker)
+			spawn_index += 1
+		main.world_root.add_child(zone)
+
+	var boss := Node3D.new()
+	boss.name = "BossReinforcements"
+	var phases: Dictionary = {
 		2: [
 			[Vector3(-7.0, 0.05, -20.0), EnemyScript.Kind.MELEE],
 			[Vector3(7.0, 0.05, -20.0), EnemyScript.Kind.MELEE],
 		],
-		# The last phase adds a guarded close-range anchor while the boss owns
-		# projectile pressure; another ranged add would only duplicate its job.
 		3: [
 			[Vector3(0.0, 0.05, -22.5), EnemyScript.Kind.ELITE],
 		],
 	}
+	for phase in [2, 3]:
+		var phase_node := Node3D.new()
+		phase_node.name = "Phase%d" % phase
+		var spawn_index := 0
+		for spawn in phases[phase]:
+			var marker := Marker3D.new()
+			marker.position = Vector3(spawn[0])
+			marker.set_meta("kind", spawn[1])
+			marker.name = "Spawn_%s_%d" % [_kind_tag(spawn[1]), spawn_index]
+			phase_node.add_child(marker)
+			spawn_index += 1
+		boss.add_child(phase_node)
+	main.world_root.add_child(boss)
+
+
+static func _kind_tag(kind: int) -> String:
+	match kind:
+		EnemyScript.Kind.MELEE: return "Melee"
+		EnemyScript.Kind.RANGED: return "Ranged"
+		EnemyScript.Kind.ELITE: return "Elite"
+		EnemyScript.Kind.BOSS: return "Boss"
+	return "Spawn"
 
 
 static func _create_encounter_gate(main, z_position: float) -> StaticBody3D:
@@ -611,8 +695,9 @@ static func _create_encounter_gate(main, z_position: float) -> StaticBody3D:
 	gate.position = Vector3(0.0, 0.0, z_position)
 	gate.collision_layer = 1
 	gate.collision_mask = 0
-	gate.name = "EncounterSeal"
-	main.add_child(gate)
+	gate.name = "EncounterSeal_%d" % int(z_position)
+	gate.add_to_group("encounter_gate", true)
+	main.world_root.add_child(gate)
 
 	var collision := CollisionShape3D.new()
 	var shape := BoxShape3D.new()
@@ -649,7 +734,7 @@ static func _add_static_box(main, at: Vector3, size: Vector3, color: Color) -> v
 	body.position = at
 	body.collision_layer = 1
 	body.collision_mask = 0
-	main.add_child(body)
+	main.world_root.add_child(body)
 
 	var collision := CollisionShape3D.new()
 	var shape := BoxShape3D.new()
@@ -679,7 +764,7 @@ static func _add_visual_box(main, at: Vector3, size: Vector3, color: Color) -> v
 	material.albedo_color = color
 	material.roughness = 0.94
 	mesh_instance.material_override = material
-	main.add_child(mesh_instance)
+	main.world_root.add_child(mesh_instance)
 
 
 static func _add_ghost_box(main, at: Vector3, size: Vector3, color: Color) -> void:
@@ -690,7 +775,7 @@ static func _add_ghost_box(main, at: Vector3, size: Vector3, color: Color) -> vo
 	mesh_instance.mesh = mesh
 	var material := _make_ghost_material(main, color)
 	mesh_instance.material_override = material
-	main.add_child(mesh_instance)
+	main.world_root.add_child(mesh_instance)
 
 
 static func _add_ghost_asset(main, path: String, at: Vector3, asset_scale: Vector3, rotation: Vector3) -> void:
@@ -701,7 +786,7 @@ static func _add_ghost_asset(main, path: String, at: Vector3, asset_scale: Vecto
 	holder.position = at
 	holder.scale = asset_scale
 	holder.rotation = rotation
-	main.add_child(holder)
+	main.world_root.add_child(holder)
 	var instance := packed.instantiate()
 	holder.add_child(instance)
 	_apply_ghost_material(main, instance, Color(0.27, 0.21, 0.30))
@@ -846,7 +931,7 @@ static func _add_asset(
 	holder.position = at
 	holder.scale = asset_scale
 	holder.rotation = rotation
-	main.add_child(holder)
+	main.world_root.add_child(holder)
 	var instance := packed.instantiate()
 	holder.add_child(instance)
 	var texture: Texture2D = null

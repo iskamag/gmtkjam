@@ -11,6 +11,7 @@ const PackNightShader = preload("res://shaders/pack_night_material.gdshader")
 var player: CharacterBody3D
 var hud: CanvasLayer
 var enemies_root: Node3D
+var world_root: Node3D
 var active_enemies: Array[Node] = []
 
 var started := false
@@ -43,9 +44,14 @@ var prologue_look_pitch := 0.0
 
 func _ready() -> void:
 	_ensure_input_actions()
-	WorldBuilder.build_world(self)
-	WorldBuilder.build_level(self)
-	WorldBuilder.build_encounter_definitions(self)
+	if "--export-world" in OS.get_cmdline_user_args():
+		WorldBuilder.build_all(self)
+		var err := WorldBuilder.export_scene(self, "res://scenes/world.tscn")
+		if err == OK:
+			print("WorldBuilder: wrote res://scenes/world.tscn")
+		get_tree().quit()
+		return
+	_load_world()
 
 	enemies_root = Node3D.new()
 	enemies_root.name = "Enemies"
@@ -69,6 +75,68 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	player.set_active(false)
 	emit_signal("score_event", &"boot", {"room": "return_road"})
+
+
+# Load the authored world scene (geometry + encounter trigger zones) and bind
+# its nodes back into the runtime state WorldBuilder used to populate directly.
+# To regenerate the scene after changing procedural construction, run:
+#   godot --headless -- --export-world
+func _load_world() -> void:
+	var packed := load("res://scenes/world.tscn") as PackedScene
+	if packed == null:
+		push_error("main: res://scenes/world.tscn missing. Run: godot --headless -- --export-world")
+		return
+	world_root = packed.instantiate()
+	world_root.name = "World"
+	add_child(world_root)
+	_bind_world_from_scene(world_root)
+
+
+func _bind_world_from_scene(root: Node3D) -> void:
+	var env_nodes := root.find_children("*", "WorldEnvironment", true)
+	if not env_nodes.is_empty():
+		world_environment_resource = env_nodes[0].environment
+
+	ghost_materials.clear()
+	var ghost_shader := load("res://shaders/deferred_history.gdshader")
+	for mi in root.find_children("*", "MeshInstance3D", true):
+		var mat = mi.material_override
+		if mat is ShaderMaterial and (mat as ShaderMaterial).shader == ghost_shader:
+			ghost_materials.append(mat)
+
+	prologue_shell = root.find_child("LastServiceCarriage", true)
+	prologue_window_motion = root.find_child("SealedPassingTunnel", true)
+
+	encounter_gates.clear()
+	var gates := get_tree().get_nodes_in_group("encounter_gate")
+	gates.sort_custom(func(a, b): return a.position.z > b.position.z)
+	for gate in gates:
+		encounter_gates.append(gate as StaticBody3D)
+
+	encounter_definitions.clear()
+	var zones: Array = root.find_children("Encounter*", "Area3D", true)
+	zones.sort_custom(func(a, b): return a.position.z > b.position.z)
+	for zone in zones:
+		var spawns: Array = []
+		for marker in zone.find_children("Spawn*", "Marker3D", true):
+			spawns.append([marker.global_position, int(marker.get_meta("kind", EnemyScript.Kind.MELEE))])
+		encounter_definitions.append({
+			"trigger_z": zone.position.z,
+			"title": String(zone.get_meta("title", "")),
+			"subtitle": String(zone.get_meta("subtitle", "")),
+			"threat": float(zone.get_meta("threat", 0.5)),
+			"spawns": spawns,
+		})
+
+	boss_reinforcement_definitions.clear()
+	var boss_node := root.find_child("BossReinforcements", true)
+	if boss_node != null:
+		for phase_node in boss_node.get_children():
+			var phase_num := int(phase_node.name.trim_prefix("Phase"))
+			var spawns: Array = []
+			for marker in phase_node.find_children("Spawn*", "Marker3D", true):
+				spawns.append([marker.global_position, int(marker.get_meta("kind", EnemyScript.Kind.MELEE))])
+			boss_reinforcement_definitions[phase_num] = spawns
 
 
 func _process(delta: float) -> void:
