@@ -658,7 +658,8 @@ static func build_prologue_shell(main) -> void:
 				)
 				lamp.set_meta("travel_z", bar_z + 0.62)
 
-	shell.visible = false
+	# The carriage is visible in its own scene. main.gd hides it during
+	# gameplay after the crash swaps to world.tscn.
 
 
 # Encounter trigger zones and spawn markers are authored as scene nodes so

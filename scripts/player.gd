@@ -12,6 +12,7 @@ const SFX_SWORD_DRAW := preload("res://sounds/sword-draw.wav")
 const SFX_GUNSHOT := preload("res://sounds/gunshot.wav")
 const SFX_HIT := preload("res://sounds/hit.ogg")
 const SFX_RECALL := preload("res://sounds/recall.wav")
+const SFX_SWING := preload("res://sounds/swing.wav")
 
 # Original purpose-built sounds (assets/audio/) — each has a clear role.
 const SFX_BELL := preload("res://assets/audio/impactBell_heavy_000.ogg")
@@ -571,7 +572,7 @@ func _try_chronostep() -> void:
 	chronostep_cooldown = 0.58
 	chronostep_visual = 1.0
 	_cancel_recovery()
-	play_sfx(&"step")
+	_play_stream(SFX_SWING, -6.0, randf_range(0.9, 1.1))
 	emit_signal("score_event", &"chronostep", {"time": time_left})
 	var game := get_parent()
 	if game.has_method("spawn_time_echo"):

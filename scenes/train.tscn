@@ -1385,868 +1385,867 @@ emission_energy_multiplier = 1.9
 [sub_resource type="BoxMesh" id="BoxMesh_xqjyt"]
 size = Vector3(0.035, 0.17, 0.54)
 
-[node name="Train" type="Node3D" unique_id=1018821054]
+[node name="Train" type="Node3D" unique_id=1800290457]
 
-[node name="MoonlitRailEnvironment" type="WorldEnvironment" parent="." unique_id=659823074]
+[node name="MoonlitRailEnvironment" type="WorldEnvironment" parent="." unique_id=309391417]
 environment = SubResource("Environment_6b7q7")
 
-[node name="ColdMoonKey" type="DirectionalLight3D" parent="." unique_id=1014555403]
+[node name="ColdMoonKey" type="DirectionalLight3D" parent="." unique_id=623895818]
 transform = Transform3D(0.8571673, 0.35125512, -0.376675, 0, 0.7313537, 0.6819984, 0.5150381, -0.5845867, 0.6268925, 0, 0, 0)
 light_color = Color(0.66, 0.72, 0.75, 1)
 light_energy = 1.08
 shadow_enabled = true
 directional_shadow_max_distance = 60.0
 
-[node name="@OmniLight3D@2" type="OmniLight3D" parent="." unique_id=1197333726]
+[node name="@OmniLight3D@2" type="OmniLight3D" parent="." unique_id=1916380968]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 3.5, 4)
 light_color = Color(1, 0.73, 0.43, 1)
 light_energy = 3.4
 omni_range = 13.5
 omni_attenuation = 1.45
 
-[node name="@OmniLight3D@3" type="OmniLight3D" parent="." unique_id=514134193]
+[node name="@OmniLight3D@3" type="OmniLight3D" parent="." unique_id=804534335]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 2.5, -17)
 light_color = Color(0.68, 0.75, 0.76, 1)
 light_energy = 2.25
 omni_range = 14.0
 omni_attenuation = 1.45
 
-[node name="@OmniLight3D@4" type="OmniLight3D" parent="." unique_id=104696504]
+[node name="@OmniLight3D@4" type="OmniLight3D" parent="." unique_id=287101969]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.5, -31)
 light_color = Color(1, 0.61, 0.34, 1)
 light_energy = 4.6
 omni_range = 15.5
 omni_attenuation = 1.45
 
-[node name="LastServiceCarriage" type="Node3D" parent="." unique_id=1195579532]
+[node name="LastServiceCarriage" type="Node3D" parent="." unique_id=1250910276]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 16)
-visible = false
 
-[node name="@MeshInstance3D@5" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=481829681]
+[node name="@MeshInstance3D@5" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=257149804]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
 material_override = SubResource("StandardMaterial3D_muh0j")
 mesh = SubResource("BoxMesh_o1hdh")
 
-[node name="@MeshInstance3D@6" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=776892653]
+[node name="@MeshInstance3D@6" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=778983738]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.18, 0)
 material_override = SubResource("StandardMaterial3D_fr42t")
 mesh = SubResource("BoxMesh_xwl36")
 
-[node name="@MeshInstance3D@7" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=2067989171]
+[node name="@MeshInstance3D@7" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=137849992]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.52, 2.91, 0)
 material_override = SubResource("StandardMaterial3D_flq6t")
 mesh = SubResource("BoxMesh_1caxn")
 
-[node name="@MeshInstance3D@8" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=926735680]
+[node name="@MeshInstance3D@8" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=2138675027]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.52, 2.91, 0)
 material_override = SubResource("StandardMaterial3D_m4isg")
 mesh = SubResource("BoxMesh_g7hjf")
 
-[node name="@MeshInstance3D@9" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1308425524]
+[node name="@MeshInstance3D@9" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=431082592]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, -5.18)
 material_override = SubResource("StandardMaterial3D_ti6s8")
 mesh = SubResource("BoxMesh_tfkm3")
 
-[node name="@MeshInstance3D@10" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1235760540]
+[node name="@MeshInstance3D@10" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=141194877]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 5.18)
 material_override = SubResource("StandardMaterial3D_bbvoe")
 mesh = SubResource("BoxMesh_1kvv8")
 
-[node name="@MeshInstance3D@11" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=97788161]
+[node name="@MeshInstance3D@11" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1619385596]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.012, 0)
 material_override = SubResource("StandardMaterial3D_risb3")
 mesh = SubResource("BoxMesh_5wkan")
 
-[node name="@MeshInstance3D@12" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1199129649]
+[node name="@MeshInstance3D@12" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=560795129]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.026, -3.2)
 material_override = SubResource("StandardMaterial3D_r2kyi")
 mesh = SubResource("BoxMesh_d8wpw")
 
-[node name="@MeshInstance3D@13" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1406863973]
+[node name="@MeshInstance3D@13" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1232656540]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.026, -1.6)
 material_override = SubResource("StandardMaterial3D_txwux")
 mesh = SubResource("BoxMesh_12qeo")
 
-[node name="@MeshInstance3D@14" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1829936302]
+[node name="@MeshInstance3D@14" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1071707418]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.026, 0)
 material_override = SubResource("StandardMaterial3D_lmhll")
 mesh = SubResource("BoxMesh_0504k")
 
-[node name="@MeshInstance3D@15" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1553749931]
+[node name="@MeshInstance3D@15" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1243161403]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.026, 1.6)
 material_override = SubResource("StandardMaterial3D_8vti3")
 mesh = SubResource("BoxMesh_gmphw")
 
-[node name="@MeshInstance3D@16" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=900184575]
+[node name="@MeshInstance3D@16" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=539214412]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.026, 3.2)
 material_override = SubResource("StandardMaterial3D_7iku6")
 mesh = SubResource("BoxMesh_dv8o2")
 
-[node name="@MeshInstance3D@17" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=219719041]
+[node name="@MeshInstance3D@17" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=169320642]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.48, -5.075)
 material_override = SubResource("StandardMaterial3D_k36hf")
 mesh = SubResource("BoxMesh_wpftp")
 
-[node name="@MeshInstance3D@18" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=44309628]
+[node name="@MeshInstance3D@18" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=528214968]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.97, 1.48, -5.075)
 material_override = SubResource("StandardMaterial3D_qp37i")
 mesh = SubResource("BoxMesh_qsn4w")
 
-[node name="@MeshInstance3D@19" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=278550337]
+[node name="@MeshInstance3D@19" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1280528664]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.97, 1.48, -5.075)
 material_override = SubResource("StandardMaterial3D_dwmb0")
 mesh = SubResource("BoxMesh_fxqph")
 
-[node name="@MeshInstance3D@20" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1826458713]
+[node name="@MeshInstance3D@20" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=613146372]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.48, -5.054)
 material_override = SubResource("StandardMaterial3D_isx3e")
 mesh = SubResource("BoxMesh_i0lsf")
 
-[node name="@MeshInstance3D@21" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=2131460761]
+[node name="@MeshInstance3D@21" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1442374683]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.48, 5.075)
 material_override = SubResource("StandardMaterial3D_g4ocw")
 mesh = SubResource("BoxMesh_64oej")
 
-[node name="@MeshInstance3D@22" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=850363930]
+[node name="@MeshInstance3D@22" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=818340980]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.97, 1.48, 5.075)
 material_override = SubResource("StandardMaterial3D_arf1a")
 mesh = SubResource("BoxMesh_m7c3d")
 
-[node name="@MeshInstance3D@23" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=94515176]
+[node name="@MeshInstance3D@23" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=941794141]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.97, 1.48, 5.075)
 material_override = SubResource("StandardMaterial3D_m4qs3")
 mesh = SubResource("BoxMesh_7k63k")
 
-[node name="@MeshInstance3D@24" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=270838249]
+[node name="@MeshInstance3D@24" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1028152248]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.48, 5.054)
 material_override = SubResource("StandardMaterial3D_xkp2q")
 mesh = SubResource("BoxMesh_4h5r8")
 
-[node name="@MeshInstance3D@25" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=56569089]
+[node name="@MeshInstance3D@25" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1543359450]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.69, 0.42, 0)
 material_override = SubResource("StandardMaterial3D_43xji")
 mesh = SubResource("BoxMesh_2osnv")
 
-[node name="@MeshInstance3D@26" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=611356080]
+[node name="@MeshInstance3D@26" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=277195211]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.69, 2.76, 0)
 material_override = SubResource("StandardMaterial3D_uf4t2")
 mesh = SubResource("BoxMesh_b2bwb")
 
-[node name="@MeshInstance3D@27" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1895966576]
+[node name="@MeshInstance3D@27" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1769408705]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.69, 1.62, -5)
 material_override = SubResource("StandardMaterial3D_erc3q")
 mesh = SubResource("BoxMesh_416ub")
 
-[node name="@MeshInstance3D@28" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1249517649]
+[node name="@MeshInstance3D@28" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1119404326]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.69, 1.62, -2.55)
 material_override = SubResource("StandardMaterial3D_cb1g6")
 mesh = SubResource("BoxMesh_vshh6")
 
-[node name="@MeshInstance3D@29" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1587184694]
+[node name="@MeshInstance3D@29" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1683850998]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.69, 1.62, 0)
 material_override = SubResource("StandardMaterial3D_bbqi1")
 mesh = SubResource("BoxMesh_ns5fg")
 
-[node name="@MeshInstance3D@30" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1517563751]
+[node name="@MeshInstance3D@30" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=250135495]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.69, 1.62, 2.55)
 material_override = SubResource("StandardMaterial3D_jlb3a")
 mesh = SubResource("BoxMesh_oxh53")
 
-[node name="@MeshInstance3D@31" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1088106566]
+[node name="@MeshInstance3D@31" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1684517413]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.69, 1.62, 5)
 material_override = SubResource("StandardMaterial3D_l1ieb")
 mesh = SubResource("BoxMesh_3vrg2")
 
-[node name="@MeshInstance3D@32" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1921784578]
+[node name="@MeshInstance3D@32" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=218827644]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.71, 1.63, -3.78)
 material_override = SubResource("StandardMaterial3D_qeg2r")
 mesh = SubResource("BoxMesh_nyc52")
 
-[node name="@MeshInstance3D@33" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=985563377]
+[node name="@MeshInstance3D@33" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=95013652]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.665, 1.92, -3.36)
 material_override = SubResource("StandardMaterial3D_vcd71")
 mesh = SubResource("BoxMesh_xdhtt")
 
-[node name="@MeshInstance3D@34" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1043485989]
+[node name="@MeshInstance3D@34" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=697489916]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.71, 1.63, -1.28)
 material_override = SubResource("StandardMaterial3D_ai1rj")
 mesh = SubResource("BoxMesh_clwlw")
 
-[node name="@MeshInstance3D@35" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1750703697]
+[node name="@MeshInstance3D@35" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1097567134]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.665, 1.92, -0.86)
 material_override = SubResource("StandardMaterial3D_8g5f8")
 mesh = SubResource("BoxMesh_yu1wb")
 
-[node name="@MeshInstance3D@36" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1042366398]
+[node name="@MeshInstance3D@36" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=852529589]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.71, 1.63, 1.28)
 material_override = SubResource("StandardMaterial3D_e2as4")
 mesh = SubResource("BoxMesh_1xaue")
 
-[node name="@MeshInstance3D@37" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=259851580]
+[node name="@MeshInstance3D@37" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=2103414326]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.665, 1.92, 1.7)
 material_override = SubResource("StandardMaterial3D_ri51x")
 mesh = SubResource("BoxMesh_mfwho")
 
-[node name="@MeshInstance3D@38" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=339709815]
+[node name="@MeshInstance3D@38" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=337462637]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.71, 1.63, 3.78)
 material_override = SubResource("StandardMaterial3D_c1cfj")
 mesh = SubResource("BoxMesh_t8gp6")
 
-[node name="@MeshInstance3D@39" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1549278348]
+[node name="@MeshInstance3D@39" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1554674550]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.665, 1.92, 4.2)
 material_override = SubResource("StandardMaterial3D_fhvyy")
 mesh = SubResource("BoxMesh_uv1ei")
 
-[node name="@MeshInstance3D@40" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=463844153]
+[node name="@MeshInstance3D@40" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1385261044]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.69, 0.42, 0)
 material_override = SubResource("StandardMaterial3D_jordf")
 mesh = SubResource("BoxMesh_dx4bn")
 
-[node name="@MeshInstance3D@41" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=926933695]
+[node name="@MeshInstance3D@41" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=794319328]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.69, 2.76, 0)
 material_override = SubResource("StandardMaterial3D_fx4ti")
 mesh = SubResource("BoxMesh_um7xk")
 
-[node name="@MeshInstance3D@42" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=2103736773]
+[node name="@MeshInstance3D@42" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1690409464]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.69, 1.62, -5)
 material_override = SubResource("StandardMaterial3D_dkaxr")
 mesh = SubResource("BoxMesh_r3x17")
 
-[node name="@MeshInstance3D@43" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=2080002998]
+[node name="@MeshInstance3D@43" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1392700875]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.69, 1.62, -2.55)
 material_override = SubResource("StandardMaterial3D_u5xf3")
 mesh = SubResource("BoxMesh_4gnyv")
 
-[node name="@MeshInstance3D@44" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=986996078]
+[node name="@MeshInstance3D@44" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1696272295]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.69, 1.62, 0)
 material_override = SubResource("StandardMaterial3D_6vtpb")
 mesh = SubResource("BoxMesh_0gq0s")
 
-[node name="@MeshInstance3D@45" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1316007306]
+[node name="@MeshInstance3D@45" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1550292522]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.69, 1.62, 2.55)
 material_override = SubResource("StandardMaterial3D_ng1fw")
 mesh = SubResource("BoxMesh_xb6bd")
 
-[node name="@MeshInstance3D@46" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1038546829]
+[node name="@MeshInstance3D@46" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=439897663]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.69, 1.62, 5)
 material_override = SubResource("StandardMaterial3D_2alg1")
 mesh = SubResource("BoxMesh_dvihj")
 
-[node name="@MeshInstance3D@47" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=705715395]
+[node name="@MeshInstance3D@47" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=552860832]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.71, 1.63, -3.78)
 material_override = SubResource("StandardMaterial3D_m0ijg")
 mesh = SubResource("BoxMesh_0735u")
 
-[node name="@MeshInstance3D@48" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=577003315]
+[node name="@MeshInstance3D@48" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1240905513]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.665, 1.92, -4.2)
 material_override = SubResource("StandardMaterial3D_fox8c")
 mesh = SubResource("BoxMesh_o0u1c")
 
-[node name="@MeshInstance3D@49" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=581466678]
+[node name="@MeshInstance3D@49" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1039380682]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.71, 1.63, -1.28)
 material_override = SubResource("StandardMaterial3D_ekts5")
 mesh = SubResource("BoxMesh_kdf3p")
 
-[node name="@MeshInstance3D@50" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1460051505]
+[node name="@MeshInstance3D@50" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=872204257]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.665, 1.92, -1.7)
 material_override = SubResource("StandardMaterial3D_m8so2")
 mesh = SubResource("BoxMesh_cja1i")
 
-[node name="@MeshInstance3D@51" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1297059884]
+[node name="@MeshInstance3D@51" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1330180673]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.71, 1.63, 1.28)
 material_override = SubResource("StandardMaterial3D_0yxa2")
 mesh = SubResource("BoxMesh_dsysd")
 
-[node name="@MeshInstance3D@52" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1627893588]
+[node name="@MeshInstance3D@52" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1791033262]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.665, 1.92, 0.86)
 material_override = SubResource("StandardMaterial3D_ft4vv")
 mesh = SubResource("BoxMesh_7sfkh")
 
-[node name="@MeshInstance3D@53" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=846430867]
+[node name="@MeshInstance3D@53" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1192561243]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.71, 1.63, 3.78)
 material_override = SubResource("StandardMaterial3D_ho2md")
 mesh = SubResource("BoxMesh_sb2u2")
 
-[node name="@MeshInstance3D@54" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=619255004]
+[node name="@MeshInstance3D@54" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=967605184]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.665, 1.92, 3.36)
 material_override = SubResource("StandardMaterial3D_tbuj6")
 mesh = SubResource("BoxMesh_f7n33")
 
-[node name="@MeshInstance3D@55" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1273991911]
+[node name="@MeshInstance3D@55" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=922591373]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.055, -3.65)
 material_override = SubResource("StandardMaterial3D_2s2fd")
 mesh = SubResource("BoxMesh_ioveh")
 
-[node name="@OmniLight3D@56" type="OmniLight3D" parent="LastServiceCarriage" unique_id=2010444792]
+[node name="@OmniLight3D@56" type="OmniLight3D" parent="LastServiceCarriage" unique_id=1685017424]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.72, -3.65)
 light_color = Color(0.83, 0.79, 0.67, 1)
 light_energy = 3.55
 omni_range = 5.2
 
-[node name="@MeshInstance3D@57" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1939703503]
+[node name="@MeshInstance3D@57" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=15029753]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.055, -1.22)
 material_override = SubResource("StandardMaterial3D_bvfhk")
 mesh = SubResource("BoxMesh_kur36")
 
-[node name="@OmniLight3D@58" type="OmniLight3D" parent="LastServiceCarriage" unique_id=665474709]
+[node name="@OmniLight3D@58" type="OmniLight3D" parent="LastServiceCarriage" unique_id=718150118]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.72, -1.22)
 light_color = Color(0.83, 0.79, 0.67, 1)
 light_energy = 3.55
 omni_range = 5.2
 
-[node name="@MeshInstance3D@59" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=777576598]
+[node name="@MeshInstance3D@59" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1897507848]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.055, 1.22)
 material_override = SubResource("StandardMaterial3D_2nvwr")
 mesh = SubResource("BoxMesh_w8yit")
 
-[node name="@OmniLight3D@60" type="OmniLight3D" parent="LastServiceCarriage" unique_id=435876675]
+[node name="@OmniLight3D@60" type="OmniLight3D" parent="LastServiceCarriage" unique_id=1980617896]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.72, 1.22)
 light_color = Color(0.83, 0.79, 0.67, 1)
 light_energy = 3.55
 omni_range = 5.2
 
-[node name="@MeshInstance3D@61" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1941119004]
+[node name="@MeshInstance3D@61" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1632184787]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.055, 3.65)
 material_override = SubResource("StandardMaterial3D_ugtkw")
 mesh = SubResource("BoxMesh_vabwq")
 
-[node name="@OmniLight3D@62" type="OmniLight3D" parent="LastServiceCarriage" unique_id=755529033]
+[node name="@OmniLight3D@62" type="OmniLight3D" parent="LastServiceCarriage" unique_id=289417964]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.72, 3.65)
 light_color = Color(0.83, 0.79, 0.67, 1)
 light_energy = 3.55
 omni_range = 5.2
 
-[node name="@OmniLight3D@63" type="OmniLight3D" parent="LastServiceCarriage" unique_id=369835720]
+[node name="@OmniLight3D@63" type="OmniLight3D" parent="LastServiceCarriage" unique_id=2071976988]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.38, 2.45)
 light_color = Color(0.68, 0.64, 0.53, 1)
 light_energy = 1.65
 omni_range = 5.8
 
-[node name="@MeshInstance3D@64" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=261893981]
+[node name="@MeshInstance3D@64" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1756330638]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.08, 0.49, -3.55)
 material_override = SubResource("StandardMaterial3D_cvsy5")
 mesh = SubResource("BoxMesh_af2wr")
 
-[node name="@MeshInstance3D@65" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1709962949]
+[node name="@MeshInstance3D@65" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=869813365]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.42, 1.08, -3.55)
 material_override = SubResource("StandardMaterial3D_3xjvs")
 mesh = SubResource("BoxMesh_a11cf")
 
-[node name="@MeshInstance3D@66" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1865378583]
+[node name="@MeshInstance3D@66" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1540082024]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.285, 1.11, -3.55)
 material_override = SubResource("StandardMaterial3D_8a81g")
 mesh = SubResource("BoxMesh_42nnh")
 
-[node name="@MeshInstance3D@67" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=583571547]
+[node name="@MeshInstance3D@67" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=178515457]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.57, 0.56, -4.24)
 material_override = SubResource("StandardMaterial3D_laxb5")
 mesh = SubResource("BoxMesh_u026i")
 
-[node name="@MeshInstance3D@68" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1136541075]
+[node name="@MeshInstance3D@68" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=112143623]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.08, 0.49, -1.18)
 material_override = SubResource("StandardMaterial3D_48mgf")
 mesh = SubResource("BoxMesh_1kbv6")
 
-[node name="@MeshInstance3D@69" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1543868725]
+[node name="@MeshInstance3D@69" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1930548761]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.42, 1.08, -1.18)
 material_override = SubResource("StandardMaterial3D_sajsn")
 mesh = SubResource("BoxMesh_t38gl")
 
-[node name="@MeshInstance3D@70" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1595679888]
+[node name="@MeshInstance3D@70" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1003761618]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.285, 1.11, -1.18)
 material_override = SubResource("StandardMaterial3D_rkj12")
 mesh = SubResource("BoxMesh_rcffh")
 
-[node name="@MeshInstance3D@71" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1228007962]
+[node name="@MeshInstance3D@71" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=231222029]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.57, 0.56, -1.87)
 material_override = SubResource("StandardMaterial3D_h8qfl")
 mesh = SubResource("BoxMesh_q4bhn")
 
-[node name="@MeshInstance3D@72" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=614737532]
+[node name="@MeshInstance3D@72" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1720881009]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.08, 0.49, 1.18)
 material_override = SubResource("StandardMaterial3D_dg1tr")
 mesh = SubResource("BoxMesh_0s6n8")
 
-[node name="@MeshInstance3D@73" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1805386865]
+[node name="@MeshInstance3D@73" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1671303270]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.42, 1.08, 1.18)
 material_override = SubResource("StandardMaterial3D_wy2or")
 mesh = SubResource("BoxMesh_nrssa")
 
-[node name="@MeshInstance3D@74" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1462752893]
+[node name="@MeshInstance3D@74" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=575254303]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.285, 1.11, 1.18)
 material_override = SubResource("StandardMaterial3D_5vxh3")
 mesh = SubResource("BoxMesh_s5ax0")
 
-[node name="@MeshInstance3D@75" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1904143486]
+[node name="@MeshInstance3D@75" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=958527046]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.57, 0.56, 0.49)
 material_override = SubResource("StandardMaterial3D_kd0pg")
 mesh = SubResource("BoxMesh_16oxk")
 
-[node name="@MeshInstance3D@76" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=2114854046]
+[node name="@MeshInstance3D@76" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=883546444]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.08, 0.49, 3.55)
 material_override = SubResource("StandardMaterial3D_p8k5c")
 mesh = SubResource("BoxMesh_3oc27")
 
-[node name="@MeshInstance3D@77" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=2125316903]
+[node name="@MeshInstance3D@77" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1901086042]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.42, 1.08, 3.55)
 material_override = SubResource("StandardMaterial3D_ww52v")
 mesh = SubResource("BoxMesh_rebjd")
 
-[node name="@MeshInstance3D@78" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1179079342]
+[node name="@MeshInstance3D@78" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=462184971]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.285, 1.11, 3.55)
 material_override = SubResource("StandardMaterial3D_b1j0q")
 mesh = SubResource("BoxMesh_lqm6o")
 
-[node name="@MeshInstance3D@79" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1747174685]
+[node name="@MeshInstance3D@79" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1261768329]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.57, 0.56, 2.86)
 material_override = SubResource("StandardMaterial3D_2tp02")
 mesh = SubResource("BoxMesh_1u4ky")
 
-[node name="@MeshInstance3D@80" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=372104313]
+[node name="@MeshInstance3D@80" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=501057156]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.18, 2.43, 0)
 material_override = SubResource("StandardMaterial3D_dhgxg")
 mesh = SubResource("BoxMesh_rp0nh")
 
-[node name="@MeshInstance3D@81" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=785143475]
+[node name="@MeshInstance3D@81" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1635654208]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.74, 2.18, -3.6)
 material_override = SubResource("StandardMaterial3D_jgulv")
 mesh = SubResource("BoxMesh_4xlui")
 
-[node name="@MeshInstance3D@82" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=643943124]
+[node name="@MeshInstance3D@82" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1873430706]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.74, 1.94, -3.6)
 material_override = SubResource("StandardMaterial3D_cgvlr")
 mesh = SubResource("BoxMesh_8q6cd")
 
-[node name="@MeshInstance3D@83" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1320792527]
+[node name="@MeshInstance3D@83" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1688430428]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.74, 2.18, -1.8)
 material_override = SubResource("StandardMaterial3D_s3cu7")
 mesh = SubResource("BoxMesh_4sgbh")
 
-[node name="@MeshInstance3D@84" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1256395099]
+[node name="@MeshInstance3D@84" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=453702251]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.74, 1.94, -1.8)
 material_override = SubResource("StandardMaterial3D_s37fb")
 mesh = SubResource("BoxMesh_njm4w")
 
-[node name="@MeshInstance3D@85" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=940519242]
+[node name="@MeshInstance3D@85" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=452951270]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.74, 2.18, 0)
 material_override = SubResource("StandardMaterial3D_13otf")
 mesh = SubResource("BoxMesh_xubuu")
 
-[node name="@MeshInstance3D@86" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1419823502]
+[node name="@MeshInstance3D@86" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=817193119]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.74, 1.94, 0)
 material_override = SubResource("StandardMaterial3D_d7gu5")
 mesh = SubResource("BoxMesh_o6iw0")
 
-[node name="@MeshInstance3D@87" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1270220516]
+[node name="@MeshInstance3D@87" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=196206305]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.74, 2.18, 1.8)
 material_override = SubResource("StandardMaterial3D_vj8wp")
 mesh = SubResource("BoxMesh_ulboe")
 
-[node name="@MeshInstance3D@88" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1004811329]
+[node name="@MeshInstance3D@88" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1688813339]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.74, 1.94, 1.8)
 material_override = SubResource("StandardMaterial3D_woq2o")
 mesh = SubResource("BoxMesh_dietn")
 
-[node name="@MeshInstance3D@89" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=93653527]
+[node name="@MeshInstance3D@89" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=2134864697]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.74, 2.18, 3.6)
 material_override = SubResource("StandardMaterial3D_5wns4")
 mesh = SubResource("BoxMesh_fafg0")
 
-[node name="@MeshInstance3D@90" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1721994421]
+[node name="@MeshInstance3D@90" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=205579991]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.74, 1.94, 3.6)
 material_override = SubResource("StandardMaterial3D_4wymt")
 mesh = SubResource("BoxMesh_ki0ln")
 
-[node name="@MeshInstance3D@91" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1338070590]
+[node name="@MeshInstance3D@91" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=132852636]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08, 0.49, -3.55)
 material_override = SubResource("StandardMaterial3D_l227i")
 mesh = SubResource("BoxMesh_ks7lh")
 
-[node name="@MeshInstance3D@92" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1972873657]
+[node name="@MeshInstance3D@92" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=640160675]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.42, 1.08, -3.55)
 material_override = SubResource("StandardMaterial3D_5c54e")
 mesh = SubResource("BoxMesh_lbwkn")
 
-[node name="@MeshInstance3D@93" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1271636946]
+[node name="@MeshInstance3D@93" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1393607291]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.285, 1.11, -3.55)
 material_override = SubResource("StandardMaterial3D_8jrd7")
 mesh = SubResource("BoxMesh_kyydk")
 
-[node name="@MeshInstance3D@94" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1862504775]
+[node name="@MeshInstance3D@94" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=13399039]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.57, 0.56, -4.24)
 material_override = SubResource("StandardMaterial3D_nfe7u")
 mesh = SubResource("BoxMesh_4pkek")
 
-[node name="@MeshInstance3D@95" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1006809540]
+[node name="@MeshInstance3D@95" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1215319246]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08, 0.49, -1.18)
 material_override = SubResource("StandardMaterial3D_qexpy")
 mesh = SubResource("BoxMesh_x54ck")
 
-[node name="@MeshInstance3D@96" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=919023994]
+[node name="@MeshInstance3D@96" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=971743216]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.42, 1.08, -1.18)
 material_override = SubResource("StandardMaterial3D_5ll2n")
 mesh = SubResource("BoxMesh_8yot0")
 
-[node name="@MeshInstance3D@97" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=297033676]
+[node name="@MeshInstance3D@97" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1093664188]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.285, 1.11, -1.18)
 material_override = SubResource("StandardMaterial3D_bijq5")
 mesh = SubResource("BoxMesh_sd7xa")
 
-[node name="@MeshInstance3D@98" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=114651392]
+[node name="@MeshInstance3D@98" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=96287801]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.57, 0.56, -1.87)
 material_override = SubResource("StandardMaterial3D_5to0b")
 mesh = SubResource("BoxMesh_kmejl")
 
-[node name="@MeshInstance3D@99" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=766583867]
+[node name="@MeshInstance3D@99" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=951346336]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08, 0.49, 1.18)
 material_override = SubResource("StandardMaterial3D_1lrtt")
 mesh = SubResource("BoxMesh_m7yhh")
 
-[node name="@MeshInstance3D@100" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=500080711]
+[node name="@MeshInstance3D@100" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1801094626]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.42, 1.08, 1.18)
 material_override = SubResource("StandardMaterial3D_w2co6")
 mesh = SubResource("BoxMesh_o2gmj")
 
-[node name="@MeshInstance3D@101" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=166411926]
+[node name="@MeshInstance3D@101" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1103128663]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.285, 1.11, 1.18)
 material_override = SubResource("StandardMaterial3D_hmnxd")
 mesh = SubResource("BoxMesh_ltyor")
 
-[node name="@MeshInstance3D@102" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=118691448]
+[node name="@MeshInstance3D@102" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1636138257]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.57, 0.56, 0.49)
 material_override = SubResource("StandardMaterial3D_622l8")
 mesh = SubResource("BoxMesh_xni4s")
 
-[node name="@MeshInstance3D@103" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1427991420]
+[node name="@MeshInstance3D@103" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=577037871]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.08, 0.49, 3.55)
 material_override = SubResource("StandardMaterial3D_s4jdv")
 mesh = SubResource("BoxMesh_nitej")
 
-[node name="@MeshInstance3D@104" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1011503555]
+[node name="@MeshInstance3D@104" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=447600144]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.42, 1.08, 3.55)
 material_override = SubResource("StandardMaterial3D_p5toq")
 mesh = SubResource("BoxMesh_tk48p")
 
-[node name="@MeshInstance3D@105" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1683052526]
+[node name="@MeshInstance3D@105" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=997070638]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.285, 1.11, 3.55)
 material_override = SubResource("StandardMaterial3D_q6cng")
 mesh = SubResource("BoxMesh_nfdin")
 
-[node name="@MeshInstance3D@106" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=874746803]
+[node name="@MeshInstance3D@106" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1638931251]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.57, 0.56, 2.86)
 material_override = SubResource("StandardMaterial3D_cybt7")
 mesh = SubResource("BoxMesh_uon0u")
 
-[node name="@MeshInstance3D@107" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=858922553]
+[node name="@MeshInstance3D@107" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1826554275]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.18, 2.43, 0)
 material_override = SubResource("StandardMaterial3D_tbkav")
 mesh = SubResource("BoxMesh_6xlmp")
 
-[node name="@MeshInstance3D@108" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1051048181]
+[node name="@MeshInstance3D@108" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=50508797]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.74, 2.18, -3.6)
 material_override = SubResource("StandardMaterial3D_47kom")
 mesh = SubResource("BoxMesh_00y8x")
 
-[node name="@MeshInstance3D@109" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1753785237]
+[node name="@MeshInstance3D@109" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=961322095]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.74, 1.94, -3.6)
 material_override = SubResource("StandardMaterial3D_64r0e")
 mesh = SubResource("BoxMesh_26fik")
 
-[node name="@MeshInstance3D@110" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1672480280]
+[node name="@MeshInstance3D@110" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=167169677]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.74, 2.18, -1.8)
 material_override = SubResource("StandardMaterial3D_b3uj2")
 mesh = SubResource("BoxMesh_3oqem")
 
-[node name="@MeshInstance3D@111" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1393757218]
+[node name="@MeshInstance3D@111" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1053859522]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.74, 1.94, -1.8)
 material_override = SubResource("StandardMaterial3D_8n3hv")
 mesh = SubResource("BoxMesh_3kgjm")
 
-[node name="@MeshInstance3D@112" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1959682529]
+[node name="@MeshInstance3D@112" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1259540604]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.74, 2.18, 0)
 material_override = SubResource("StandardMaterial3D_p6qfh")
 mesh = SubResource("BoxMesh_lhuu3")
 
-[node name="@MeshInstance3D@113" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1708112700]
+[node name="@MeshInstance3D@113" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1706572710]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.74, 1.94, 0)
 material_override = SubResource("StandardMaterial3D_xpjk2")
 mesh = SubResource("BoxMesh_6lobb")
 
-[node name="@MeshInstance3D@114" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1213128199]
+[node name="@MeshInstance3D@114" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1033045987]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.74, 2.18, 1.8)
 material_override = SubResource("StandardMaterial3D_7itv2")
 mesh = SubResource("BoxMesh_6eegl")
 
-[node name="@MeshInstance3D@115" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1428774910]
+[node name="@MeshInstance3D@115" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=2131187263]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.74, 1.94, 1.8)
 material_override = SubResource("StandardMaterial3D_7q1nd")
 mesh = SubResource("BoxMesh_crcyw")
 
-[node name="@MeshInstance3D@116" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=483187235]
+[node name="@MeshInstance3D@116" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1425546863]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.74, 2.18, 3.6)
 material_override = SubResource("StandardMaterial3D_8llee")
 mesh = SubResource("BoxMesh_sulix")
 
-[node name="@MeshInstance3D@117" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1197689494]
+[node name="@MeshInstance3D@117" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1947172503]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.74, 1.94, 3.6)
 material_override = SubResource("StandardMaterial3D_4kunt")
 mesh = SubResource("BoxMesh_78jhp")
 
-[node name="@MeshInstance3D@118" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=747608954]
+[node name="@MeshInstance3D@118" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1489914894]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.76, 0.22, 2.15)
 material_override = SubResource("StandardMaterial3D_wa34m")
 mesh = SubResource("BoxMesh_qkigp")
 
-[node name="@MeshInstance3D@119" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=900941185]
+[node name="@MeshInstance3D@119" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=37180313]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.76, 0.44, 2.15)
 material_override = SubResource("StandardMaterial3D_mf4lg")
 mesh = SubResource("BoxMesh_mdtpu")
 
-[node name="@MeshInstance3D@120" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=393701367]
+[node name="@MeshInstance3D@120" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1188441144]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.37, 1.38, -1.18)
 material_override = SubResource("StandardMaterial3D_nflc4")
 mesh = SubResource("BoxMesh_tos13")
 
-[node name="@MeshInstance3D@121" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1341051063]
+[node name="@MeshInstance3D@121" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1429633408]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.14, 1.62, -1.18)
 material_override = SubResource("StandardMaterial3D_1l3ux")
 mesh = SubResource("BoxMesh_en0kf")
 
-[node name="@MeshInstance3D@122" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1036596880]
+[node name="@MeshInstance3D@122" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=2031377569]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.592, 2.56, 1.3)
 material_override = SubResource("StandardMaterial3D_3imqd")
 mesh = SubResource("BoxMesh_7cxgf")
 
-[node name="@MeshInstance3D@123" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=671750883]
+[node name="@MeshInstance3D@123" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=2035299057]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.575, 2.37, 1.3)
 material_override = SubResource("StandardMaterial3D_mdfyf")
 mesh = SubResource("BoxMesh_uqwj0")
 
-[node name="@MeshInstance3D@124" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1576163540]
+[node name="@MeshInstance3D@124" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=108219107]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.575, 2.5, 1.3)
 material_override = SubResource("StandardMaterial3D_5admq")
 mesh = SubResource("BoxMesh_xt8op")
 
-[node name="@MeshInstance3D@125" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=731045820]
+[node name="@MeshInstance3D@125" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=863595302]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.575, 2.64, 1.3)
 material_override = SubResource("StandardMaterial3D_8jm7v")
 mesh = SubResource("BoxMesh_xkx2l")
 
-[node name="@MeshInstance3D@126" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=2108746872]
+[node name="@MeshInstance3D@126" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=254793760]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.575, 2.64, 0)
 material_override = SubResource("StandardMaterial3D_nd61v")
 mesh = SubResource("BoxMesh_i7p0m")
 
-[node name="@MeshInstance3D@127" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1136018537]
+[node name="@MeshInstance3D@127" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=380458324]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.586, 2.64, -1.45)
 material_override = SubResource("StandardMaterial3D_lxrjj")
 mesh = SubResource("BoxMesh_x6iji")
 
-[node name="@MeshInstance3D@128" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1147646993]
+[node name="@MeshInstance3D@128" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=749330294]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.586, 2.64, -0.72)
 material_override = SubResource("StandardMaterial3D_87hlg")
 mesh = SubResource("BoxMesh_dpan1")
 
-[node name="@MeshInstance3D@129" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1714364399]
+[node name="@MeshInstance3D@129" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1702558362]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.586, 2.64, 0)
 material_override = SubResource("StandardMaterial3D_a2fsf")
 mesh = SubResource("BoxMesh_8v3sf")
 
-[node name="@MeshInstance3D@130" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1079838957]
+[node name="@MeshInstance3D@130" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1918272147]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.586, 2.64, 0.72)
 material_override = SubResource("StandardMaterial3D_g0g60")
 mesh = SubResource("BoxMesh_6bsqu")
 
-[node name="@MeshInstance3D@131" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=239455897]
+[node name="@MeshInstance3D@131" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1247181436]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.586, 2.64, 1.45)
 material_override = SubResource("StandardMaterial3D_1x3rd")
 mesh = SubResource("BoxMesh_io7n3")
 
-[node name="@MeshInstance3D@132" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=395135945]
+[node name="@MeshInstance3D@132" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1368525823]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.05, 1.58, 0)
 material_override = SubResource("StandardMaterial3D_qr2ac")
 mesh = SubResource("BoxMesh_y71kr")
 
-[node name="@MeshInstance3D@133" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1900201888]
+[node name="@MeshInstance3D@133" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1498146601]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.72, 0.3, 0)
 material_override = SubResource("StandardMaterial3D_yjeqy")
 mesh = SubResource("BoxMesh_p8krb")
 
-[node name="@MeshInstance3D@134" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=189696000]
+[node name="@MeshInstance3D@134" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=1014948612]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.05, 1.58, 0)
 material_override = SubResource("StandardMaterial3D_oegp0")
 mesh = SubResource("BoxMesh_r2b6k")
 
-[node name="@MeshInstance3D@135" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=782257745]
+[node name="@MeshInstance3D@135" type="MeshInstance3D" parent="LastServiceCarriage" unique_id=976617663]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.72, 0.3, 0)
 material_override = SubResource("StandardMaterial3D_hedr3")
 mesh = SubResource("BoxMesh_sxiut")
 
-[node name="SealedPassingTunnel" type="Node3D" parent="LastServiceCarriage" unique_id=725414693]
+[node name="SealedPassingTunnel" type="Node3D" parent="LastServiceCarriage" unique_id=1047550091]
 
-[node name="@MeshInstance3D@136" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=565763059]
+[node name="@MeshInstance3D@136" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=248442020]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.65, 1.58, -12)
 material_override = SubResource("StandardMaterial3D_pk3du")
 mesh = SubResource("BoxMesh_pboym")
 metadata/travel_z = -12.0
 
-[node name="@MeshInstance3D@137" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=353154226]
+[node name="@MeshInstance3D@137" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=526528756]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.43, 2.1, -11.38)
 material_override = SubResource("StandardMaterial3D_1sg8u")
 mesh = SubResource("BoxMesh_ada8l")
 metadata/travel_z = -11.38
 
-[node name="@MeshInstance3D@138" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=150554504]
+[node name="@MeshInstance3D@138" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1097131233]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.65, 1.58, -12)
 material_override = SubResource("StandardMaterial3D_voipa")
 mesh = SubResource("BoxMesh_bb3v2")
 metadata/travel_z = -12.0
 
-[node name="@MeshInstance3D@139" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=801215016]
+[node name="@MeshInstance3D@139" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=232741732]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.43, 2.1, -11.38)
 material_override = SubResource("StandardMaterial3D_ueagr")
 mesh = SubResource("BoxMesh_stg13")
 metadata/travel_z = -11.38
 
-[node name="@MeshInstance3D@140" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=79717275]
+[node name="@MeshInstance3D@140" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=138809191]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.65, 1.58, -9)
 material_override = SubResource("StandardMaterial3D_t7fky")
 mesh = SubResource("BoxMesh_p5iyl")
 metadata/travel_z = -9.0
 
-[node name="@MeshInstance3D@141" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=536036966]
+[node name="@MeshInstance3D@141" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1591029902]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.65, 1.58, -9)
 material_override = SubResource("StandardMaterial3D_il47y")
 mesh = SubResource("BoxMesh_xfism")
 metadata/travel_z = -9.0
 
-[node name="@MeshInstance3D@142" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1471492690]
+[node name="@MeshInstance3D@142" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1171717467]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.65, 1.58, -6)
 material_override = SubResource("StandardMaterial3D_7cdym")
 mesh = SubResource("BoxMesh_aagyw")
 metadata/travel_z = -6.0
 
-[node name="@MeshInstance3D@143" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=379072836]
+[node name="@MeshInstance3D@143" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=878216188]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.43, 2.1, -5.38)
 material_override = SubResource("StandardMaterial3D_k5lxe")
 mesh = SubResource("BoxMesh_1e6hc")
 metadata/travel_z = -5.38
 
-[node name="@MeshInstance3D@144" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=869203219]
+[node name="@MeshInstance3D@144" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1534862710]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.65, 1.58, -6)
 material_override = SubResource("StandardMaterial3D_h0wum")
 mesh = SubResource("BoxMesh_wpa4y")
 metadata/travel_z = -6.0
 
-[node name="@MeshInstance3D@145" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=70847368]
+[node name="@MeshInstance3D@145" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=665552835]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.43, 2.1, -5.38)
 material_override = SubResource("StandardMaterial3D_cbqf6")
 mesh = SubResource("BoxMesh_brqxr")
 metadata/travel_z = -5.38
 
-[node name="@MeshInstance3D@146" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=426660309]
+[node name="@MeshInstance3D@146" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=2031769667]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.65, 1.58, -3)
 material_override = SubResource("StandardMaterial3D_okbim")
 mesh = SubResource("BoxMesh_nk2oo")
 metadata/travel_z = -3.0
 
-[node name="@MeshInstance3D@147" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=218051379]
+[node name="@MeshInstance3D@147" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1215981573]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.65, 1.58, -3)
 material_override = SubResource("StandardMaterial3D_hk44f")
 mesh = SubResource("BoxMesh_dyxj7")
 metadata/travel_z = -3.0
 
-[node name="@MeshInstance3D@148" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=765254111]
+[node name="@MeshInstance3D@148" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=242479419]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.65, 1.58, 0)
 material_override = SubResource("StandardMaterial3D_pwd3q")
 mesh = SubResource("BoxMesh_2kgdb")
 metadata/travel_z = 0.0
 
-[node name="@MeshInstance3D@149" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=323245855]
+[node name="@MeshInstance3D@149" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1466554287]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.43, 2.1, 0.62)
 material_override = SubResource("StandardMaterial3D_g1rne")
 mesh = SubResource("BoxMesh_sj3tr")
 metadata/travel_z = 0.62
 
-[node name="@MeshInstance3D@150" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=202761750]
+[node name="@MeshInstance3D@150" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1792662532]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.65, 1.58, 0)
 material_override = SubResource("StandardMaterial3D_ktepi")
 mesh = SubResource("BoxMesh_qb1vf")
 metadata/travel_z = 0.0
 
-[node name="@MeshInstance3D@151" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=2037238911]
+[node name="@MeshInstance3D@151" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1286951121]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.43, 2.1, 0.62)
 material_override = SubResource("StandardMaterial3D_5k0ea")
 mesh = SubResource("BoxMesh_sup62")
 metadata/travel_z = 0.62
 
-[node name="@MeshInstance3D@152" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1698229131]
+[node name="@MeshInstance3D@152" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1872674753]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.65, 1.58, 3)
 material_override = SubResource("StandardMaterial3D_g8g1f")
 mesh = SubResource("BoxMesh_jfe81")
 metadata/travel_z = 3.0
 
-[node name="@MeshInstance3D@153" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1762135917]
+[node name="@MeshInstance3D@153" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=675135636]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.65, 1.58, 3)
 material_override = SubResource("StandardMaterial3D_lodo4")
 mesh = SubResource("BoxMesh_ltnvs")
 metadata/travel_z = 3.0
 
-[node name="@MeshInstance3D@154" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=359157030]
+[node name="@MeshInstance3D@154" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1346590636]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.65, 1.58, 6)
 material_override = SubResource("StandardMaterial3D_ni2fj")
 mesh = SubResource("BoxMesh_mhw7o")
 metadata/travel_z = 6.0
 
-[node name="@MeshInstance3D@155" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1389663704]
+[node name="@MeshInstance3D@155" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=966075207]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.43, 2.1, 6.62)
 material_override = SubResource("StandardMaterial3D_lfsf7")
 mesh = SubResource("BoxMesh_aol3a")
 metadata/travel_z = 6.62
 
-[node name="@MeshInstance3D@156" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=2076088862]
+[node name="@MeshInstance3D@156" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=314086134]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.65, 1.58, 6)
 material_override = SubResource("StandardMaterial3D_jxnhf")
 mesh = SubResource("BoxMesh_co5po")
 metadata/travel_z = 6.0
 
-[node name="@MeshInstance3D@157" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=971801076]
+[node name="@MeshInstance3D@157" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=58255082]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.43, 2.1, 6.62)
 material_override = SubResource("StandardMaterial3D_ywosm")
 mesh = SubResource("BoxMesh_5lhdh")
 metadata/travel_z = 6.62
 
-[node name="@MeshInstance3D@158" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1425922797]
+[node name="@MeshInstance3D@158" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1428880032]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.65, 1.58, 9)
 material_override = SubResource("StandardMaterial3D_cvki0")
 mesh = SubResource("BoxMesh_1qnyo")
 metadata/travel_z = 9.0
 
-[node name="@MeshInstance3D@159" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1923920159]
+[node name="@MeshInstance3D@159" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=380952784]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.65, 1.58, 9)
 material_override = SubResource("StandardMaterial3D_jwkgx")
 mesh = SubResource("BoxMesh_gegin")
 metadata/travel_z = 9.0
 
-[node name="@MeshInstance3D@160" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=823018331]
+[node name="@MeshInstance3D@160" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1996798741]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.65, 1.58, 12)
 material_override = SubResource("StandardMaterial3D_ni4aw")
 mesh = SubResource("BoxMesh_4blwi")
 metadata/travel_z = 12.0
 
-[node name="@MeshInstance3D@161" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=2017216576]
+[node name="@MeshInstance3D@161" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=993656282]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.43, 2.1, 12.62)
 material_override = SubResource("StandardMaterial3D_e27i5")
 mesh = SubResource("BoxMesh_1f0tr")
 metadata/travel_z = 12.62
 
-[node name="@MeshInstance3D@162" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1317580735]
+[node name="@MeshInstance3D@162" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1180973047]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.65, 1.58, 12)
 material_override = SubResource("StandardMaterial3D_bwbgk")
 mesh = SubResource("BoxMesh_exqwl")
 metadata/travel_z = 12.0
 
-[node name="@MeshInstance3D@163" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1402748445]
+[node name="@MeshInstance3D@163" type="MeshInstance3D" parent="LastServiceCarriage/SealedPassingTunnel" unique_id=1998836300]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.43, 2.1, 12.62)
 material_override = SubResource("StandardMaterial3D_1oumh")
 mesh = SubResource("BoxMesh_xqjyt")

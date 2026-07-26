@@ -7,6 +7,8 @@ const EnemyScript = preload("res://scripts/enemy.gd")
 const HudScript = preload("res://scripts/hud.gd")
 const WorldAestheticScript = preload("res://scripts/world_aesthetic.gd")
 const PackNightShader = preload("res://shaders/pack_night_material.gdshader")
+const SFX_TRAIN_LOOP := preload("res://sounds/train.wav")
+const SFX_TRAIN_CRASH := preload("res://sounds/train-crash.wav")
 
 var player: CharacterBody3D
 var hud: CanvasLayer
@@ -14,6 +16,7 @@ var enemies_root: Node3D
 var world_root: Node3D
 var active_enemies: Array[Node] = []
 var _music: AudioStreamPlayer
+var _train_ambient: AudioStreamPlayer
 
 var started := false
 var run_finished := false
@@ -90,6 +93,13 @@ func _ready() -> void:
 	# seated inside the carriage, can look around, and clicks to start the
 	# crash sequence that transitions into gameplay.
 	_enter_train_menu()
+	# Train ambient loop plays during the menu/cutscene.
+	_train_ambient = AudioStreamPlayer.new()
+	_train_ambient.stream = SFX_TRAIN_LOOP
+	_train_ambient.volume_db = -8.0
+	_train_ambient.name = "TrainAmbient"
+	add_child(_train_ambient)
+	_train_ambient.play()
 	emit_signal("score_event", &"boot", {"room": "return_road"})
 
 	# Background music — loops continuously; pitch warps under witch time (below).
@@ -289,6 +299,16 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _start_crash_sequence() -> void:
 	in_train_menu = false
+	# Stop ambient train loop, play the crash sound.
+	if is_instance_valid(_train_ambient):
+		_train_ambient.stop()
+	var crash_voice := AudioStreamPlayer.new()
+	crash_voice.stream = SFX_TRAIN_CRASH
+	crash_voice.volume_db = -2.0
+	crash_voice.name = "TrainCrash"
+	add_child(crash_voice)
+	crash_voice.play()
+	crash_voice.finished.connect(crash_voice.queue_free)
 	_begin_prologue()
 
 
