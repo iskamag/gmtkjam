@@ -77,6 +77,10 @@ func _ready() -> void:
 
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	player.set_active(false)
+	# Boot directly into the train interior as the main menu. The player is
+	# seated inside the carriage, can look around, and clicks to start the
+	# crash sequence that transitions into gameplay.
+	_enter_train_menu()
 	emit_signal("score_event", &"boot", {"room": "return_road"})
 
 	# Background music — loops continuously; pitch warps under witch time (below).
@@ -89,6 +93,34 @@ func _ready() -> void:
 		_music.volume_db = -6.0
 		_music.name = "Music"
 		add_child(_music)
+
+
+var in_train_menu := true
+
+
+# Boot state: player seated inside the train carriage, can look around.
+# The arena is hidden. Clicking "play" starts the crash sequence.
+func _enter_train_menu() -> void:
+	in_train_menu = true
+	started = false
+	prologue_active = false
+	player.global_position = Vector3(0.12, 0.05, 18.05)
+	player.rotation = Vector3.ZERO
+	player.pitch = -0.035
+	player.camera.position = Vector3(0.0, 1.31, 0.0)
+	player.camera.rotation = Vector3(-0.035, 0.0, 0.0)
+	player.camera.fov = 73.0
+	player.camera.near = 0.1
+	if is_instance_valid(prologue_shell):
+		prologue_shell.visible = true
+		prologue_shell.position = Vector3(0.0, 0.0, 16.0)
+		prologue_shell.rotation = Vector3.ZERO
+	# Hide the arena floor/walls while in the menu.
+	if is_instance_valid(world_root):
+		for child in world_root.get_children():
+			if child is Node3D and child != prologue_shell:
+				child.visible = false
+	hud.begin_prologue()
 
 
 # Load the authored world scene (geometry + encounter trigger zones) and bind
@@ -185,7 +217,7 @@ func _process(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if (
-		prologue_active
+		(prologue_active or in_train_menu)
 		and event is InputEventMouseMotion
 	):
 		prologue_look_yaw = wrapf(
@@ -203,6 +235,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventMouseButton and event.pressed:
+		if in_train_menu and not started:
+			_start_crash_sequence()
+			get_viewport().set_input_as_handled()
+			return
 		if not started and not run_finished:
 			_begin_prologue()
 			get_viewport().set_input_as_handled()
@@ -226,6 +262,19 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event.is_action_pressed("restart") and run_finished:
 		get_tree().reload_current_scene()
+
+
+# Called when the player clicks "play" from the train menu. Reveals the arena
+# geometry (it was hidden during the menu) and starts the crash sequence that
+# transitions into gameplay.
+func _start_crash_sequence() -> void:
+	in_train_menu = false
+	# Reveal the arena.
+	if is_instance_valid(world_root):
+		for child in world_root.get_children():
+			if child is Node3D:
+				child.visible = true
+	_begin_prologue()
 
 
 func _begin_prologue() -> void:

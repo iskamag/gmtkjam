@@ -360,7 +360,7 @@ static func build_level(main) -> void:
 	rng.seed = 91337
 	for side in [-1.0, 1.0]:
 		var z := 14.0
-		for _i in 4:
+		for _i in 3:
 			var depth := rng.randf_range(5.0, 7.0)
 			var width := rng.randf_range(4.5, 6.0)
 			var height := rng.randf_range(7.0, 12.0)
@@ -368,11 +368,6 @@ static func build_level(main) -> void:
 			var col: Color = facade_colors[rng.randi() % facade_colors.size()]
 			_add_building(main, Vector3(x, 0.0, z), Vector2(width, depth), height, col)
 			z -= depth + rng.randf_range(2.0, 4.0)
-
-	# Ghost fragments.
-	_add_ghost_box(main, Vector3(0.0, 0.14, 5.0), Vector3(12.0, 0.28, 3.5), Color(0.24, 0.20, 0.27))
-	_add_ghost_asset(main, "res://assets/kenney/figurine.glb", Vector3(-3.7, 0.0, -12.0), Vector3(1.45, 1.45, 1.45), Vector3.ZERO)
-	_add_ghost_asset(main, "res://assets/kenney/figurine.glb", Vector3(3.7, 0.0, -12.0), Vector3(1.45, 1.45, 1.45), Vector3.ZERO)
 
 	# Encounter gates at arena chokepoints.
 	main.encounter_gates.append(_create_encounter_gate(main, 6.0))
