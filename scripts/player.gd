@@ -13,6 +13,16 @@ const SFX_GUNSHOT := preload("res://sounds/gunshot.wav")
 const SFX_HIT := preload("res://sounds/hit.ogg")
 const SFX_RECALL := preload("res://sounds/recall.wav")
 
+# Original purpose-built sounds (assets/audio/) — each has a clear role.
+const SFX_BELL := preload("res://assets/audio/impactBell_heavy_000.ogg")
+const SFX_GLASS := preload("res://assets/audio/impactGlass_heavy_001.ogg")
+const SFX_METAL_MED := preload("res://assets/audio/impactMetal_medium_000.ogg")
+const SFX_METAL_HVY := preload("res://assets/audio/impactMetal_heavy_001.ogg")
+const SFX_METAL_LT := preload("res://assets/audio/impactMetal_light_000.ogg")
+const SFX_PUNCH_MED := preload("res://assets/audio/impactPunch_medium_003.ogg")
+const SFX_PUNCH_HVY := preload("res://assets/audio/impactPunch_heavy_000.ogg")
+const SFX_FOOTSTEP := preload("res://assets/audio/footstep_concrete_001.ogg")
+
 const STARTING_MAX_TIME := 60.0
 const MAX_WATCHFIRE := 100.0
 const WATCH_SLOW_BURN := 15.0
@@ -1224,48 +1234,48 @@ func play_sfx(cue: StringName) -> void:
 	var sound_pitch := 1.0
 	match cue:
 		&"dagger_hit":
-			stream = SFX_SWORD_DRAW; sound_pitch = randf_range(0.92, 1.08)
+			stream = SFX_METAL_MED; sound_pitch = randf_range(0.92, 1.08)
 		&"deflect":
-			stream = SFX_SWORD_DRAW; volume_db = -4.0; sound_pitch = randf_range(0.8, 0.95)
+			stream = SFX_METAL_HVY; volume_db = -4.0; sound_pitch = randf_range(0.8, 0.95)
 		&"punch":
-			stream = SFX_HIT; sound_pitch = randf_range(0.94, 1.06)
+			stream = SFX_PUNCH_MED; sound_pitch = randf_range(0.94, 1.06)
 		&"kick":
-			stream = SFX_HIT; volume_db = -4.0; sound_pitch = 0.86
+			stream = SFX_PUNCH_HVY; volume_db = -4.0; sound_pitch = 0.86
 		&"projectile_kick":
-			stream = SFX_GUNSHOT; volume_db = -2.0; sound_pitch = 0.68
+			stream = SFX_METAL_HVY; volume_db = -2.0; sound_pitch = 0.68
 		&"blade_swing":
 			stream = SFX_SWORD_DRAW; volume_db = -10.0; sound_pitch = randf_range(1.1, 1.4)
 		&"fist_swing":
-			stream = SFX_HIT; volume_db = -14.0; sound_pitch = 1.2
+			stream = SFX_PUNCH_MED; volume_db = -14.0; sound_pitch = 1.2
 		&"throw":
 			stream = SFX_GUNSHOT; sound_pitch = randf_range(0.9, 1.2)
 		&"recall":
 			stream = SFX_RECALL; sound_pitch = randf_range(0.78, 0.88)
 		&"pickup":
-			stream = SFX_RECALL; volume_db = -11.0; sound_pitch = 1.25
+			stream = SFX_METAL_LT; volume_db = -11.0; sound_pitch = 1.25
 		&"empty":
-			stream = SFX_HIT; volume_db = -15.0; sound_pitch = 0.52
+			stream = SFX_METAL_LT; volume_db = -15.0; sound_pitch = 0.52
 		&"wound":
-			stream = SFX_HIT; volume_db = -3.5; sound_pitch = 0.82
+			stream = SFX_GLASS; volume_db = -3.5; sound_pitch = 0.82
 		&"watch":
-			stream = SFX_RECALL; volume_db = -7.0; sound_pitch = 0.58
+			stream = SFX_BELL; volume_db = -7.0; sound_pitch = 0.58
 		&"watch_snap":
-			stream = SFX_HIT; volume_db = -11.0; sound_pitch = 1.72
+			stream = SFX_GLASS; volume_db = -11.0; sound_pitch = 1.72
 		&"overclock":
-			stream = SFX_GUNSHOT; volume_db = -8.0; sound_pitch = 0.47
+			stream = SFX_METAL_HVY; volume_db = -8.0; sound_pitch = 0.47
 		&"jump", &"land":
-			stream = SFX_HIT; volume_db = -10.0
-			sound_pitch = randf_range(0.8, 1.2) if cue == &"jump" else randf_range(0.6, 0.8)
+			stream = SFX_FOOTSTEP; volume_db = -13.0 if cue == &"jump" else -10.0
+			sound_pitch = 1.2 if cue == &"jump" else 0.86
 		&"slide":
-			stream = SFX_SWORD_DRAW; volume_db = -8.0; sound_pitch = randf_range(0.9, 1.3)
+			stream = SFX_FOOTSTEP; volume_db = -10.0; sound_pitch = 0.72
 		&"step":
-			stream = SFX_HIT; volume_db = -14.0; sound_pitch = randf_range(0.5, 0.7)
+			stream = SFX_FOOTSTEP; volume_db = -14.0; sound_pitch = randf_range(0.5, 0.7)
 		&"train":
-			stream = SFX_HIT; volume_db = -22.0; sound_pitch = 0.4
+			stream = SFX_FOOTSTEP; volume_db = -20.0; sound_pitch = 0.48
 		&"memory":
-			stream = SFX_RECALL; volume_db = -16.0; sound_pitch = 1.62
+			stream = SFX_BELL; volume_db = -16.0; sound_pitch = 1.62
 		&"crash":
-			stream = SFX_GUNSHOT; volume_db = -1.5; sound_pitch = 0.58
+			stream = SFX_METAL_HVY; volume_db = -1.5; sound_pitch = 0.58
 		&"hit":
 			stream = SFX_HIT; volume_db = -6.0; sound_pitch = randf_range(0.95, 1.18)
 		_:
