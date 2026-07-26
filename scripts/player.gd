@@ -9,7 +9,6 @@ const DaggerThrowScript = preload("res://scripts/dagger_throw.gd")
 
 const SFX_BAION := preload("res://sounds/baion.wav")
 const SFX_SWORD_DRAW := preload("res://sounds/sword-draw.wav")
-const SFX_SWORD_SLASH := preload("res://sounds/441666__ethanchase7744__sword-slash.wav")
 const SFX_GUNSHOT := preload("res://sounds/gunshot.wav")
 const SFX_HIT := preload("res://sounds/hit.ogg")
 const SFX_RECALL := preload("res://sounds/recall.wav")
@@ -394,7 +393,12 @@ func _read_action_inputs() -> void:
 		else:
 			_queue_attack(&"blade" if dagger_state == DaggerState.HELD else &"fist")
 	if Input.is_action_just_pressed("kick"):
-		_queue_attack(&"kick")
+		if not is_on_floor() and not slam_active:
+			slam_active = true
+			velocity.y = -SLAM_SPEED
+			camera_kick.y -= 0.15
+		else:
+			_queue_attack(&"kick")
 	if Input.is_action_just_pressed("throw_dagger"):
 		_handle_dagger_input()
 	if Input.is_action_just_pressed("chronostep"):
@@ -496,8 +500,11 @@ func _move(delta: float) -> void:
 	if not _was_on_floor and is_on_floor():
 		landing_visual = clampf(fall_speed / 12.0, 0.25, 1.0)
 		camera_kick.y -= landing_visual * 0.55
-		slam_active = false
-		play_sfx(&"land")
+		if slam_active:
+			_slam_impact(fall_speed)
+			slam_active = false
+		else:
+			play_sfx(&"land")
 
 	planar_speed = Vector2(velocity.x, velocity.z).length()
 	var local_side_speed := global_transform.basis.x.dot(velocity)
@@ -1158,7 +1165,21 @@ func _request_impact(strength: float, at: Vector3) -> void:
 		game.request_impact(strength, at)
 
 
-# Rocket jump (baion-style): airborne kick explodes at the ground below and
+# Stomp (baion): airborne kick thrusts the player down; on landing, an AoE
+# ground-hit plays baion.wav with random pitch.
+func _slam_impact(fall_speed: float) -> void:
+	var strength := clampf(fall_speed / 20.0, 0.7, 1.6)
+	_play_stream(SFX_BAION, 0.0, randf_range(0.82, 1.0))
+	camera_kick.y -= strength * 0.8
+	camera_kick.x += randf_range(-0.15, 0.15) * strength
+	_request_impact(strength, global_position)
+	var game := get_parent()
+	if game != null and game.has_method("apply_slam"):
+		game.apply_slam(global_position, SLAM_RADIUS, int(18.0 * strength), 3.0 * strength, 4.0 * strength)
+	emit_signal("score_event", &"stomp", {"strength": strength})
+
+
+# Rocket jump (dash): airborne slash explodes at the ground below and
 # launches the player up + away from the blast. Damages enemies in the radius,
 # plays the annotated hit sound with random pitch.
 func _rocket_jump() -> void:
@@ -1173,7 +1194,8 @@ func _rocket_jump() -> void:
 	if not hit.is_empty():
 		blast = hit["position"]
 	var strength := 1.0
-	_play_stream(SFX_BAION, -2.0, randf_range(0.88, 1.12))
+	# Dash reuses the blade-swing sound; baion is reserved for the stomp.
+	_play_stream(SFX_SWORD_DRAW, -3.0, randf_range(0.7, 0.9))
 	camera_kick.y += strength * 0.7
 	camera_kick.x += randf_range(-0.15, 0.15) * strength
 	_request_impact(strength, blast)
@@ -1202,9 +1224,9 @@ func play_sfx(cue: StringName) -> void:
 	var sound_pitch := 1.0
 	match cue:
 		&"dagger_hit":
-			stream = SFX_SWORD_SLASH; sound_pitch = randf_range(0.92, 1.08)
+			stream = SFX_SWORD_DRAW; sound_pitch = randf_range(0.92, 1.08)
 		&"deflect":
-			stream = SFX_SWORD_SLASH; volume_db = -4.0; sound_pitch = randf_range(0.8, 0.95)
+			stream = SFX_SWORD_DRAW; volume_db = -4.0; sound_pitch = randf_range(0.8, 0.95)
 		&"punch":
 			stream = SFX_HIT; sound_pitch = randf_range(0.94, 1.06)
 		&"kick":
@@ -1231,13 +1253,15 @@ func play_sfx(cue: StringName) -> void:
 			stream = SFX_HIT; volume_db = -11.0; sound_pitch = 1.72
 		&"overclock":
 			stream = SFX_GUNSHOT; volume_db = -8.0; sound_pitch = 0.47
-		&"jump", &"land", &"slide":
-			stream = SFX_HIT; volume_db = -13.0 if cue == &"jump" else -10.0
-			sound_pitch = 1.2 if cue == &"jump" else (0.72 if cue == &"slide" else 0.86)
+		&"jump", &"land":
+			stream = SFX_HIT; volume_db = -10.0
+			sound_pitch = randf_range(0.8, 1.2) if cue == &"jump" else randf_range(0.6, 0.8)
+		&"slide":
+			stream = SFX_SWORD_DRAW; volume_db = -8.0; sound_pitch = randf_range(0.9, 1.3)
 		&"step":
-			stream = SFX_HIT; volume_db = -8.0; sound_pitch = 0.64
+			stream = SFX_HIT; volume_db = -14.0; sound_pitch = randf_range(0.5, 0.7)
 		&"train":
-			stream = SFX_HIT; volume_db = -20.0; sound_pitch = 0.48
+			stream = SFX_HIT; volume_db = -22.0; sound_pitch = 0.4
 		&"memory":
 			stream = SFX_RECALL; volume_db = -16.0; sound_pitch = 1.62
 		&"crash":

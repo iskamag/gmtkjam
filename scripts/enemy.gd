@@ -554,6 +554,7 @@ func _build_body() -> void:
 
 	visual_root = Node3D.new()
 	visual_root.name = "DeferredBody"
+	visual_root.scale = Vector3.ONE * (2.0 if kind == Kind.BOSS else 1.35)
 	add_child(visual_root)
 
 	var path := (

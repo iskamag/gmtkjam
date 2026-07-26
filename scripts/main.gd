@@ -89,7 +89,6 @@ func _ready() -> void:
 		_music.volume_db = -8.0
 		_music.name = "Music"
 		add_child(_music)
-		_music.play()
 
 
 # Load the authored world scene (geometry + encounter trigger zones) and bind
@@ -395,6 +394,8 @@ func _start_run() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	player.set_active(true)
 	hud.begin_run()
+	if _music != null:
+		_music.play()
 	emit_signal("score_event", &"run_started", {"time": player.time_left})
 
 
