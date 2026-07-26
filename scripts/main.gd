@@ -127,11 +127,10 @@ func _enter_train_menu() -> void:
 	in_train_menu = true
 	started = false
 	prologue_active = false
-	player.global_position = Vector3(0.12, 0.05, 17.0)
+	player.global_position = Vector3(-1.2, 0.05, 17.0)
 	player.rotation = Vector3.ZERO
 	player.pitch = -0.035
-	# Look left (-X) toward the window wall.
-	prologue_look_yaw = -PI * 0.5
+	prologue_look_yaw = -PI * 0.55
 	player.rotation.y = prologue_look_yaw
 	player.camera.position = Vector3(0.0, 1.31, 0.0)
 	player.camera.rotation = Vector3(-0.035, 0.0, 0.0)
