@@ -736,7 +736,7 @@ func _resolve_attack() -> void:
 			DEFLECT_ASSIST_ANGLE,
 			float(collider.get("speed")) * 1.75
 		)
-		collider.deflect(deflect_aim)
+		if combat_action == &"kick": collider.deflect(deflect_aim)
 		if perfect_deflect:
 			_trigger_watch_overclock(&"perfect_deflect", OVERCLOCK_DURATION + 0.28, 1.4)
 			if collider.has_method("empower_deflection"):
