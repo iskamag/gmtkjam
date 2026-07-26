@@ -13,6 +13,7 @@ var hud: CanvasLayer
 var enemies_root: Node3D
 var world_root: Node3D
 var active_enemies: Array[Node] = []
+var _music: AudioStreamPlayer
 
 var started := false
 var run_finished := false
@@ -77,6 +78,18 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	player.set_active(false)
 	emit_signal("score_event", &"boot", {"room": "return_road"})
+
+	# Background music — loops continuously; pitch warps under witch time (below).
+	var music_stream := load("res://music.ogg") as AudioStream
+	if music_stream != null:
+		if music_stream is AudioStreamOggVorbis:
+			(music_stream as AudioStreamOggVorbis).loop = true
+		_music = AudioStreamPlayer.new()
+		_music.stream = music_stream
+		_music.volume_db = -8.0
+		_music.name = "Music"
+		add_child(_music)
+		_music.play()
 
 
 # Load the authored world scene (geometry + encounter trigger zones) and bind
@@ -147,6 +160,14 @@ func _process(delta: float) -> void:
 		return
 
 	_update_deterioration(delta)
+	# Warp music pitch during witch time (the master low-pass muffles it too).
+	if is_instance_valid(_music) and is_instance_valid(player):
+		var target := 1.0
+		if player.is_watch_overclocked():
+			target = 0.5
+		elif player.watch_active:
+			target = 0.68
+		_music.pitch_scale = lerpf(_music.pitch_scale, target, 1.0 - exp(-delta * 8.0))
 	hud.set_effects(
 		1.0 - player.time_left / max(player.max_time, 0.001),
 		1.0 - player.max_time / player.STARTING_MAX_TIME,

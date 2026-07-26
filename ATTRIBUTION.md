@@ -93,3 +93,8 @@ the source pack as a general asset library.
 `play-web.sh` places this attribution file and the redistributable license
 notices beside every browser build. The same notices are also explicitly
 included by the Godot export preset so a manually produced package retains them.
+
+
+the sounds have their original filename containing freesound.org ids
+
+the music: https://modarchive.org/index.php?request=view_by_moduleid&query=169165
