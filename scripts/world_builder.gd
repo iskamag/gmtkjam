@@ -337,6 +337,38 @@ static func build_level(main) -> void:
 	]:
 		_add_asset(main, prop[0], prop[1], prop[2], prop[3], prop[4])
 
+	# Apocalypse kit — gives the arena a sense of place.
+	_add_optional_pack_asset(main, "res://assets/user_pack/SM_Train_Speed_Derailment_Apocalypse.fbx", Vector3(-9.0, 0.02, 14.0), Vector3.ONE, Vector3(-0.06, 1.26, 0.13), Color(0.74, 0.70, 0.61))
+	_add_optional_pack_asset(main, "res://assets/user_pack/SM_Building_House_Modern_Apocalypse_A.fbx", Vector3(-13.0, 0.0, -4.0), Vector3.ONE * 1.12, Vector3(0.0, 0.58, 0.0), Color(0.60, 0.59, 0.53))
+	_add_optional_pack_asset(main, "res://assets/user_pack/SM_Building_Cafe_Apocalypse.fbx", Vector3(13.0, 0.0, -12.0), Vector3.ONE * 1.05, Vector3(0.0, -0.64, 0.0), Color(0.60, 0.57, 0.49))
+	for rubble_data in [
+		[Vector3(-6.0, 0.0, 6.0), Vector3(0.9, 0.9, 0.9), 0.4],
+		[Vector3(8.0, 0.0, -2.0), Vector3(1.2, 1.2, 1.2), -0.8],
+		[Vector3(-9.0, 0.0, -18.0), Vector3(1.4, 1.4, 1.4), 1.1],
+	]:
+		_add_optional_pack_asset(main, "res://assets/user_pack/SM_Rubble_Concrete_Apocalypse_A.fbx", rubble_data[0], rubble_data[1], Vector3(0.0, rubble_data[2], 0.0), Color(0.58, 0.56, 0.50))
+	for lamp_data in [
+		[Vector3(-7.0, 0.0, 4.0), 0.15],
+		[Vector3(7.0, 0.0, -6.0), PI + 0.1],
+		[Vector3(-7.0, 0.0, -16.0), -0.08],
+	]:
+		_add_optional_pack_asset(main, "res://assets/user_pack/SM_Lamp_Road_Apocalypse_A.fbx", lamp_data[0], Vector3.ONE, Vector3(0.0, lamp_data[1], 0.0), Color(0.52, 0.50, 0.43))
+
+	# A few building facades behind the walls for depth (limited count for perf).
+	var facade_colors: Array[Color] = [concrete, soot, concrete.darkened(0.08), rust.darkened(0.45)]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 91337
+	for side in [-1.0, 1.0]:
+		var z := 14.0
+		for _i in 4:
+			var depth := rng.randf_range(5.0, 7.0)
+			var width := rng.randf_range(4.5, 6.0)
+			var height := rng.randf_range(7.0, 12.0)
+			var x: float = side * rng.randf_range(18.0, 22.0)
+			var col: Color = facade_colors[rng.randi() % facade_colors.size()]
+			_add_building(main, Vector3(x, 0.0, z), Vector2(width, depth), height, col)
+			z -= depth + rng.randf_range(2.0, 4.0)
+
 	# Ghost fragments.
 	_add_ghost_box(main, Vector3(0.0, 0.14, 5.0), Vector3(12.0, 0.28, 3.5), Color(0.24, 0.20, 0.27))
 	_add_ghost_asset(main, "res://assets/kenney/figurine.glb", Vector3(-3.7, 0.0, -12.0), Vector3(1.45, 1.45, 1.45), Vector3.ZERO)

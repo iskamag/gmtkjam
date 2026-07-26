@@ -393,7 +393,7 @@ func _read_action_inputs() -> void:
 		else:
 			_queue_attack(&"blade" if dagger_state == DaggerState.HELD else &"fist")
 	if Input.is_action_just_pressed("kick"):
-		if not is_on_floor() and not slam_active:
+		if not is_on_floor():
 			slam_active = true
 			velocity.y = -SLAM_SPEED
 			camera_kick.y -= 0.15
