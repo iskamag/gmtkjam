@@ -22,6 +22,7 @@ var encounter_active := false
 var encounter_resolving := false
 var encounter_gates: Array[StaticBody3D] = []
 var encounter_definitions: Array[Dictionary] = []
+var boss_reinforcement_definitions: Dictionary = {}
 var deterioration := 0.0
 var world_environment_resource: Environment
 var ghost_materials: Array[ShaderMaterial] = []
@@ -363,6 +364,7 @@ func _build_encounter_definitions() -> void:
 			"threat": 0.35,
 			"spawns": [
 				[Vector3(-3.7, 0.05, 5.5), EnemyScript.Kind.MELEE],
+				[Vector3(2.8, 0.05, 2.4), EnemyScript.Kind.MELEE],
 				[Vector3(5.0, 0.05, 0.0), EnemyScript.Kind.RANGED],
 			],
 		},
@@ -372,9 +374,10 @@ func _build_encounter_definitions() -> void:
 				"subtitle": "Read the timetable. Break the buried guard.",
 			"threat": 0.70,
 			"spawns": [
-				[Vector3(-6.3, 0.05, -10.0), EnemyScript.Kind.RANGED],
+				[Vector3(-6.3, 0.05, -11.0), EnemyScript.Kind.MELEE],
 				[Vector3(5.6, 0.05, -14.0), EnemyScript.Kind.MELEE],
 				[Vector3(-1.7, 0.05, -17.8), EnemyScript.Kind.ELITE],
+				[Vector3(6.4, 0.05, -19.0), EnemyScript.Kind.RANGED],
 			],
 		},
 			{
@@ -387,6 +390,18 @@ func _build_encounter_definitions() -> void:
 			],
 		},
 	]
+	boss_reinforcement_definitions = {
+		# Phase one remains solo so the aimed fan teaches projectile returns.
+		2: [
+			[Vector3(-7.0, 0.05, -20.0), EnemyScript.Kind.MELEE],
+			[Vector3(7.0, 0.05, -20.0), EnemyScript.Kind.MELEE],
+		],
+		# The last phase adds a guarded close-range anchor while the boss owns
+		# projectile pressure; another ranged add would only duplicate its job.
+		3: [
+			[Vector3(0.0, 0.05, -22.5), EnemyScript.Kind.ELITE],
+		],
+	}
 
 
 func _spawn_enemy(at: Vector3, kind: int, manifest_delay: float = 0.0) -> void:
@@ -449,10 +464,10 @@ func _on_enemy_died(enemy: Node, reward: float, was_boss: bool) -> void:
 func _on_boss_phase(phase: int) -> void:
 	hud.announce("THE UNFINISHED — PHASE %d" % phase, "Keep the hand moving")
 	emit_signal("score_event", &"boss_phase", {"phase": phase, "player_time": player.time_left})
-	if phase == 2:
-		_spawn_enemy(Vector3(-7.0, 0.05, -20.0), EnemyScript.Kind.MELEE, 0.2)
-	elif phase == 3:
-		_spawn_enemy(Vector3(7.0, 0.05, -20.0), EnemyScript.Kind.RANGED, 0.2)
+	var reinforcements: Array = boss_reinforcement_definitions.get(phase, [])
+	for index in reinforcements.size():
+		var spawn_data: Array = reinforcements[index]
+		_spawn_enemy(spawn_data[0], spawn_data[1], 0.16 + float(index) * 0.18)
 
 
 func _on_player_expired() -> void:
@@ -617,10 +632,13 @@ func _spawn_damage_number(amount: int, at: Vector3, critical: bool) -> void:
 	var label := Label3D.new()
 	label.text = _format_damage(amount) + ("!" if critical else "")
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	label.fixed_size = true
-	label.font_size = 88 if not critical else 108
-	label.pixel_size = 0.00265
-	label.outline_size = 12
+	# Perspective must own its apparent size. fixed_size made a distant hit
+	# occupy the same screen area as a close one, which only impersonated
+	# world-space feedback.
+	label.fixed_size = false
+	label.font_size = 58 if not critical else 66
+	label.pixel_size = 0.0032
+	label.outline_size = 8
 	label.modulate = Color(0.89, 0.85, 0.72) if not critical else Color(0.62, 0.29, 0.22)
 	label.outline_modulate = Color(0.025, 0.021, 0.016, 0.95)
 	label.no_depth_test = false
@@ -629,20 +647,34 @@ func _spawn_damage_number(amount: int, at: Vector3, critical: bool) -> void:
 	var camera_right := Vector3.RIGHT
 	if is_instance_valid(player) and is_instance_valid(player.camera):
 		camera_right = player.camera.global_transform.basis.x
-	label.global_position = at + camera_right * lane * 0.15
-	label.scale = Vector3.ONE * 0.68
+	label.global_position = at + Vector3.UP * 0.08 + camera_right * lane * 0.12
+	label.scale = Vector3.ONE * (0.88 if critical else 0.82)
 
-	var target := label.global_position + Vector3.UP * (1.05 if not critical else 1.22) + camera_right * lane * 0.24
+	var target := (
+		label.global_position
+		+ Vector3.UP * (0.72 if not critical else 0.88)
+		+ camera_right * lane * 0.12
+	)
 	var drift := create_tween()
 	drift.set_parallel(true)
-	drift.tween_property(label, "global_position", target, 0.66).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	drift.tween_property(label, "modulate:a", 0.0, 0.30).set_delay(0.36)
+	drift.tween_property(label, "global_position", target, 0.58).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	drift.tween_property(label, "modulate:a", 0.0, 0.24).set_delay(0.31)
 	drift.set_parallel(false)
 	drift.tween_callback(label.queue_free)
 
 	var pop := create_tween()
-	pop.tween_property(label, "scale", Vector3.ONE * (1.23 if critical else 1.14), 0.055).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	pop.tween_property(label, "scale", Vector3.ONE, 0.09).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	pop.tween_property(
+		label,
+		"scale",
+		Vector3.ONE * (1.06 if critical else 1.0),
+		0.045
+	).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	pop.tween_property(
+		label,
+		"scale",
+		Vector3.ONE * (1.0 if critical else 0.96),
+		0.08
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 
 
 func _format_damage(amount: int) -> String:
@@ -657,45 +689,124 @@ func _format_damage(amount: int) -> String:
 func _build_world() -> void:
 	var world_environment := WorldEnvironment.new()
 	var environment := Environment.new()
-	# A real sky gives the exterior a readable value ceiling.  ProceduralSkyMaterial
-	# is deliberately used instead of a panorama so this remains lightweight and
-	# reliable in the GL Compatibility browser export.
+
+	# The exterior needs depth, not a coloured ceiling. This static sky shader
+	# builds several broad cloud strata plus a sparse, subordinate star field.
+	# It avoids panorama dependencies and features unavailable to WebGL 2.
 	var night_sky := Sky.new()
-	var night_sky_material := ProceduralSkyMaterial.new()
-	night_sky_material.sky_top_color = Color(0.018, 0.028, 0.050)
-	night_sky_material.sky_horizon_color = Color(0.145, 0.168, 0.178)
-	night_sky_material.sky_curve = 0.12
-	night_sky_material.ground_bottom_color = Color(0.017, 0.019, 0.022)
-	night_sky_material.ground_horizon_color = Color(0.082, 0.096, 0.097)
-	night_sky_material.ground_curve = 0.24
-	night_sky_material.sun_angle_max = 2.2
-	night_sky_material.sun_curve = 0.085
+	night_sky.radiance_size = Sky.RADIANCE_SIZE_256
+	var night_sky_shader := Shader.new()
+	night_sky_shader.code = """
+shader_type sky;
+
+float sky_hash(vec2 p) {
+	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+}
+
+float sky_noise(vec2 p) {
+	vec2 cell = floor(p);
+	vec2 local = fract(p);
+	local = local * local * (3.0 - 2.0 * local);
+	float a = sky_hash(cell);
+	float b = sky_hash(cell + vec2(1.0, 0.0));
+	float c = sky_hash(cell + vec2(0.0, 1.0));
+	float d = sky_hash(cell + vec2(1.0, 1.0));
+	return mix(mix(a, b, local.x), mix(c, d, local.x), local.y);
+}
+
+float sky_fbm(vec2 p) {
+	float value = 0.0;
+	float weight = 0.52;
+	for (int octave = 0; octave < 4; octave++) {
+		value += sky_noise(p) * weight;
+		p = p * 2.03 + vec2(17.13, 9.71);
+		weight *= 0.48;
+	}
+	return value;
+}
+
+void sky() {
+	vec3 direction = normalize(EYEDIR);
+	float upward = clamp(direction.y, 0.0, 1.0);
+	float horizon = exp(-abs(direction.y) * 7.5);
+	vec2 sphere = vec2(
+		atan(direction.z, direction.x) * 0.15915494,
+		asin(clamp(direction.y, -1.0, 1.0)) * 0.31830989
+	);
+
+	vec3 zenith = vec3(0.006, 0.010, 0.017);
+	vec3 middle = vec3(0.018, 0.025, 0.031);
+	vec3 ash_horizon = vec3(0.082, 0.086, 0.082);
+	vec3 colour = mix(middle, zenith, pow(upward, 0.58));
+	colour = mix(colour, ash_horizon, horizon * 0.62);
+
+	// A low, heavy weather deck and a finer high layer move in different
+	// directions visually, despite being static. Neither reads as purple fog.
+	float low_noise = sky_fbm(sphere * vec2(4.2, 10.5) + vec2(3.7, 1.2));
+	float low_strata = smoothstep(0.40, 0.62, low_noise + horizon * 0.17);
+	low_strata *= smoothstep(-0.10, 0.22, direction.y);
+	low_strata *= 1.0 - smoothstep(0.54, 0.92, direction.y);
+	vec3 low_cloud = vec3(0.105, 0.108, 0.102);
+	colour = mix(colour, low_cloud, low_strata * 0.70);
+
+	float high_noise = sky_fbm(sphere * vec2(10.0, 24.0) + vec2(-8.4, 4.1));
+	float high_strata = smoothstep(0.49, 0.68, high_noise);
+	high_strata *= smoothstep(0.08, 0.42, direction.y);
+	high_strata *= 1.0 - smoothstep(0.76, 0.99, direction.y);
+	colour += vec3(0.044, 0.047, 0.046) * high_strata * 0.78;
+
+	// Tiny old-ivory stars establish scale without a moon/sun billboard dot.
+	vec2 star_grid = sphere * vec2(520.0, 260.0);
+	vec2 star_cell = floor(star_grid);
+	vec2 star_local = fract(star_grid) - vec2(0.5);
+	float star_seed = sky_hash(star_cell);
+	float star_shape = 1.0 - smoothstep(0.012, 0.055, length(star_local));
+	float star = step(0.9905, star_seed) * star_shape;
+	star *= smoothstep(0.10, 0.38, direction.y);
+	star *= 1.0 - clamp(low_strata + high_strata * 0.8, 0.0, 1.0);
+	colour += vec3(0.50, 0.47, 0.38) * star;
+
+	if (direction.y < 0.0) {
+		float ground_depth = clamp(-direction.y, 0.0, 1.0);
+		vec3 ground = mix(
+			vec3(0.040, 0.043, 0.042),
+			vec3(0.008, 0.009, 0.010),
+			pow(ground_depth, 0.32)
+		);
+		colour = mix(colour, ground, smoothstep(0.0, 0.16, ground_depth));
+	}
+
+	COLOR = colour;
+}
+"""
+	var night_sky_material := ShaderMaterial.new()
+	night_sky_material.shader = night_sky_shader
 	night_sky.sky_material = night_sky_material
 	environment.background_mode = Environment.BG_SKY
 	environment.sky = night_sky
-	environment.background_energy_multiplier = 0.78
+	environment.background_energy_multiplier = 0.90
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	# Moonlit ambient fill establishes shape on soot, concrete and characters.
-	# It is intentionally neutral-cool: amber is reserved for physical lamps.
-	environment.ambient_light_color = Color(0.50, 0.555, 0.59)
-	environment.ambient_light_energy = 0.92
+	# Cool ash fill reveals forms; the warmer values remain attached to actual
+	# service lamps, train practicals, hits, and the broken watch.
+	environment.ambient_light_color = Color(0.39, 0.43, 0.45)
+	environment.ambient_light_energy = 0.84
 	environment.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	environment.tonemap_exposure = 1.12
+	environment.tonemap_exposure = 1.05
 	environment.glow_enabled = true
-	environment.glow_intensity = 0.46
-	environment.glow_bloom = 0.06
-	environment.glow_hdr_threshold = 1.08
-	environment.glow_hdr_scale = 1.20
+	environment.glow_intensity = 0.36
+	environment.glow_bloom = 0.045
+	environment.glow_hdr_threshold = 1.18
+	environment.glow_hdr_scale = 1.10
 	environment.adjustment_enabled = true
-	environment.adjustment_brightness = 1.08
-	environment.adjustment_contrast = 1.035
-	environment.adjustment_saturation = 0.88
+	environment.adjustment_brightness = 1.02
+	environment.adjustment_contrast = 1.065
+	environment.adjustment_saturation = 0.82
 	environment.fog_enabled = true
-	environment.fog_light_color = Color(0.145, 0.166, 0.17)
-	environment.fog_light_energy = 0.72
-	environment.fog_density = 0.011
-	environment.fog_sky_affect = 0.62
+	environment.fog_light_color = Color(0.098, 0.105, 0.104)
+	environment.fog_light_energy = 0.66
+	environment.fog_density = 0.0105
+	environment.fog_sky_affect = 0.48
 	world_environment_resource = environment
 	world_environment.environment = environment
 	world_environment.name = "MoonlitRailEnvironment"
@@ -703,9 +814,9 @@ func _build_world() -> void:
 
 	var sun := DirectionalLight3D.new()
 	sun.name = "ColdMoonKey"
-	sun.rotation_degrees = Vector3(-38.0, -27.0, 0.0)
-	sun.light_color = Color(0.77, 0.84, 0.91)
-	sun.light_energy = 1.32
+	sun.rotation_degrees = Vector3(-43.0, -31.0, 0.0)
+	sun.light_color = Color(0.66, 0.72, 0.75)
+	sun.light_energy = 1.08
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 60.0
 	add_child(sun)

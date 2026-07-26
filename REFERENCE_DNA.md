@@ -181,10 +181,12 @@ Browser builds use Godot's Compatibility renderer. “HDR” therefore means an
 HDR internal lighting pipeline, Filmic tonemapping, overbright emissive accents,
 and restrained glow; web output itself is SDR.
 
-Night is not underexposure. A blue-black procedural sky and slate horizon set a
-legible exterior ceiling; neutral-cool moon fill keeps bodies and routes above
-black; sparse sodium practicals own the warm pools. True black belongs to
-occlusion, windows, and negative space—not the ground the player must read.
+Night is not underexposure. An ash-black shader sky uses separate low and high
+cloud strata, a slate horizon, and sparse old-ivory stars rather than a solid
+purple field or white sun dot. Neutral-cool directional fill keeps bodies and
+routes above black; sparse sodium practicals own the warm pools. True black
+belongs to occlusion, windows, and negative space—not the ground the player
+must read.
 
 Good public material references:
 
@@ -218,7 +220,8 @@ Smoothness does not mean slowly lerping everything.
   pure strafing must not swing both hands left-right.
 - **Actions:** jump, strike contact, projectile kick, throw, deflect, and
   Watchfire activation happen immediately when their committed input window
-  begins. A valid kick sends the projectile exactly along current camera aim.
+  begins. Returns may bend toward a line-of-sight enemy inside a tight
+  crosshair cone; outside it, current camera aim remains exact.
 - **Follow-through:** recovery, recoil, flame lag, damage-number drift, and
   environmental response can ease after the action. They may never delay the
   action itself.

@@ -2,6 +2,8 @@ extends CanvasLayer
 
 const HandsScript = preload("res://scripts/hands_2d.gd")
 const InterfaceFont = preload("res://assets/fonts/BarlowCondensed-SemiBold.ttf")
+const STATUS_BAR_WIDTH := 840.0
+const STATUS_BAR_HEIGHT := 36.0
 
 var player: CharacterBody3D
 var game: Node3D
@@ -32,6 +34,12 @@ var prologue_skip: Label
 var time_art_group: Control
 var time_art_label: Label
 var time_art_detail: Label
+var status_group: Control
+var status_capacity_bar: ProgressBar
+var status_current_bar: ProgressBar
+var status_cap_marker: ColorRect
+var status_current_fill: StyleBoxFlat
+var status_condition: Label
 
 var announcement_time := 0.0
 var time_art_time := 0.0
@@ -47,6 +55,8 @@ var intro_trauma_target := 0.0
 var intro_trauma_visual := 0.0
 var intro_crash_target := 0.0
 var intro_crash_visual := 0.0
+var intro_wound_target := 0.0
+var intro_wound_visual := 0.0
 
 
 func _ready() -> void:
@@ -71,6 +81,12 @@ func _process(delta: float) -> void:
 	intro_trauma_visual = move_toward(intro_trauma_visual, intro_trauma_target, delta * 2.4)
 	var crash_speed := 18.0 if intro_crash_target > intro_crash_visual else 4.8
 	intro_crash_visual = move_toward(intro_crash_visual, intro_crash_target, delta * crash_speed)
+	var intro_wound_speed := 10.0 if intro_wound_target > intro_wound_visual else 1.15
+	intro_wound_visual = move_toward(
+		intro_wound_visual,
+		intro_wound_target,
+		delta * intro_wound_speed
+	)
 	if is_instance_valid(post_material):
 		post_material.set_shader_parameter("time_bend", time_bend_visual)
 		post_material.set_shader_parameter("trauma", intro_trauma_visual)
@@ -101,13 +117,22 @@ func _process(delta: float) -> void:
 	if is_instance_valid(player):
 		post_material.set_shader_parameter("impact", impact_pulse)
 		post_material.set_shader_parameter("impact_origin", impact_origin)
-		post_material.set_shader_parameter("wound", maxf(wound_pulse, player.wound_visual))
+		var localized_intro_wound := intro_wound_visual
+		if prologue_active and prologue_time >= 6.25:
+			# The crash aftermath breathes around the broken watch instead of
+			# holding a flat red grade over the entire exterior reveal.
+			localized_intro_wound *= 0.90 + sin(prologue_time * 4.1) * 0.10
+		post_material.set_shader_parameter(
+			"wound",
+			maxf(maxf(wound_pulse, player.wound_visual), localized_intro_wound)
+		)
 		post_material.set_shader_parameter("chronostep", player.chronostep_visual)
 		post_material.set_shader_parameter(
 			"dagger_rewind",
 			1.0 if player.dagger_state == player.DaggerState.REWINDING else 0.0
 		)
-		objective.text = "LV 50  //  LAST JOB"
+		objective.text = "CHRONOSWORD  //  LV 50"
+		_update_status_bar()
 		if debug_visible:
 			debug_label.text = (
 				"PROTOTYPE TELEMETRY\n"
@@ -148,6 +173,7 @@ func begin_prologue() -> void:
 	title_layer.visible = false
 	crosshair.visible = false
 	objective.visible = false
+	status_group.visible = false
 	boss_group.visible = false
 	announcement.visible = false
 	subtitle.visible = false
@@ -228,10 +254,16 @@ func end_prologue() -> void:
 	objective.visible = true
 	intro_crash_target = 0.0
 	intro_trauma_target = 0.0
+	intro_wound_target = 0.0
+	status_group.visible = true
 
 
 func set_intro_effects(trauma: float, crash: float) -> void:
-	intro_trauma_target = clampf(trauma, 0.0, 1.0)
+	var injury := clampf(trauma, 0.0, 1.0)
+	# Trauma is now only the restrained, dried-rust grade. Most of the injury
+	# travels through the localized watch-side wound field.
+	intro_trauma_target = pow(injury, 1.45) * 0.34
+	intro_wound_target = pow(injury, 0.72)
 	intro_crash_target = clampf(crash, 0.0, 1.0)
 
 
@@ -239,6 +271,7 @@ func begin_run() -> void:
 	title_layer.visible = false
 	crosshair.visible = true
 	objective.visible = true
+	status_group.visible = true
 	announce("CHRONOSWORD — LV 50", "Your time has come.", 1.7)
 
 
@@ -271,6 +304,7 @@ func hide_boss() -> void:
 func show_ending(job_complete: bool) -> void:
 	ending_layer.visible = true
 	objective.visible = false
+	status_group.visible = false
 	boss_group.visible = false
 	if job_complete:
 		ending_title.text = "YOUR TIME HAS COME"
@@ -373,10 +407,10 @@ func _build_ui() -> void:
 	root.add_child(crosshair)
 
 	objective = Label.new()
-	objective.position = Vector2(26.0, 22.0)
-	objective.size = Vector2(310.0, 80.0)
+	objective.position = Vector2(28.0, 18.0)
+	objective.size = Vector2(520.0, 30.0)
 	objective.add_theme_font_size_override("font_size", 17)
-	objective.add_theme_color_override("font_color", Color(0.70, 0.68, 0.57, 0.82))
+	objective.add_theme_color_override("font_color", Color(0.76, 0.72, 0.59, 0.90))
 	objective.add_theme_color_override("font_shadow_color", Color.BLACK)
 	objective.add_theme_constant_override("shadow_offset_x", 2)
 	objective.add_theme_constant_override("shadow_offset_y", 2)
@@ -385,7 +419,7 @@ func _build_ui() -> void:
 
 	announcement = Label.new()
 	announcement.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	announcement.position = Vector2(-340.0, 70.0)
+	announcement.position = Vector2(-340.0, 194.0)
 	announcement.size = Vector2(680.0, 54.0)
 	announcement.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	announcement.add_theme_font_size_override("font_size", 32)
@@ -398,7 +432,7 @@ func _build_ui() -> void:
 
 	subtitle = Label.new()
 	subtitle.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	subtitle.position = Vector2(-340.0, 116.0)
+	subtitle.position = Vector2(-340.0, 240.0)
 	subtitle.size = Vector2(680.0, 38.0)
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.add_theme_font_size_override("font_size", 17)
@@ -409,6 +443,7 @@ func _build_ui() -> void:
 	subtitle.visible = false
 	root.add_child(subtitle)
 
+	_build_status_bar()
 	_build_boss_bar()
 	_build_title()
 	_build_prologue()
@@ -428,6 +463,133 @@ func _build_ui() -> void:
 	debug_label.add_theme_constant_override("shadow_offset_y", 2)
 	debug_label.visible = false
 	root.add_child(debug_label)
+
+
+func _build_status_bar() -> void:
+	status_group = Control.new()
+	status_group.name = "ChronoswordStatus"
+	status_group.position = Vector2(28.0, 48.0)
+	status_group.size = Vector2(STATUS_BAR_WIDTH, 65.0)
+	status_group.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	status_group.visible = false
+	root.add_child(status_group)
+
+	# The rear bar is the watch's surviving capacity. Because both bars share
+	# the original sixty-second scale, the empty section at the right is the
+	# permanent maximum that wounds have physically taken away.
+	status_capacity_bar = ProgressBar.new()
+	status_capacity_bar.name = "SurvivingMaximum"
+	status_capacity_bar.position = Vector2.ZERO
+	status_capacity_bar.size = Vector2(STATUS_BAR_WIDTH, STATUS_BAR_HEIGHT)
+	status_capacity_bar.min_value = 0.0
+	status_capacity_bar.max_value = 60.0
+	status_capacity_bar.show_percentage = false
+	status_capacity_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var capacity_background := StyleBoxFlat.new()
+	capacity_background.bg_color = Color(0.025, 0.024, 0.021, 0.96)
+	capacity_background.border_color = Color(0.32, 0.29, 0.225, 0.92)
+	capacity_background.set_border_width_all(2)
+	var capacity_fill := StyleBoxFlat.new()
+	capacity_fill.bg_color = Color(0.285, 0.265, 0.215, 0.96)
+	capacity_fill.border_color = Color(0.49, 0.44, 0.335, 0.88)
+	capacity_fill.set_border_width_all(2)
+	status_capacity_bar.add_theme_stylebox_override("background", capacity_background)
+	status_capacity_bar.add_theme_stylebox_override("fill", capacity_fill)
+	status_group.add_child(status_capacity_bar)
+
+	# Current life lies over the surviving maximum. The exposed dull strip is
+	# time that may still be restored; the black scar beyond the cap may not.
+	status_current_bar = ProgressBar.new()
+	status_current_bar.name = "CurrentTime"
+	status_current_bar.position = Vector2(3.0, 3.0)
+	status_current_bar.size = Vector2(STATUS_BAR_WIDTH - 6.0, STATUS_BAR_HEIGHT - 6.0)
+	status_current_bar.min_value = 0.0
+	status_current_bar.max_value = 60.0
+	status_current_bar.show_percentage = false
+	status_current_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var transparent_background := StyleBoxEmpty.new()
+	status_current_fill = StyleBoxFlat.new()
+	status_current_fill.bg_color = Color(0.67, 0.285, 0.105, 0.98)
+	status_current_fill.border_color = Color(0.81, 0.62, 0.34, 0.66)
+	status_current_fill.border_width_top = 2
+	status_current_bar.add_theme_stylebox_override("background", transparent_background)
+	status_current_bar.add_theme_stylebox_override("fill", status_current_fill)
+	status_group.add_child(status_current_bar)
+
+	for fraction in [0.25, 0.5, 0.75]:
+		var division := ColorRect.new()
+		division.position = Vector2(STATUS_BAR_WIDTH * fraction - 1.0, 3.0)
+		division.size = Vector2(2.0, STATUS_BAR_HEIGHT - 6.0)
+		division.color = Color(0.025, 0.022, 0.018, 0.58)
+		division.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		status_group.add_child(division)
+
+	status_cap_marker = ColorRect.new()
+	status_cap_marker.name = "MaximumScar"
+	status_cap_marker.position = Vector2(STATUS_BAR_WIDTH - 4.0, -3.0)
+	status_cap_marker.size = Vector2(4.0, STATUS_BAR_HEIGHT + 6.0)
+	status_cap_marker.color = Color(0.72, 0.66, 0.50, 0.88)
+	status_cap_marker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	status_group.add_child(status_cap_marker)
+
+	var life_caption := Label.new()
+	life_caption.text = "TIME  //  LIFE"
+	life_caption.position = Vector2(1.0, 39.0)
+	life_caption.size = Vector2(250.0, 23.0)
+	life_caption.add_theme_font_size_override("font_size", 13)
+	life_caption.add_theme_color_override("font_color", Color(0.63, 0.59, 0.48, 0.84))
+	status_group.add_child(life_caption)
+
+	status_condition = Label.new()
+	status_condition.text = "LAST JOB"
+	status_condition.position = Vector2(550.0, 39.0)
+	status_condition.size = Vector2(289.0, 23.0)
+	status_condition.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	status_condition.add_theme_font_size_override("font_size", 13)
+	status_condition.add_theme_color_override("font_color", Color(0.63, 0.59, 0.48, 0.84))
+	status_group.add_child(status_condition)
+
+
+func _update_status_bar() -> void:
+	if not is_instance_valid(status_group):
+		return
+	status_capacity_bar.max_value = player.STARTING_MAX_TIME
+	status_current_bar.max_value = player.STARTING_MAX_TIME
+	status_capacity_bar.value = clampf(player.max_time, 0.0, player.STARTING_MAX_TIME)
+	status_current_bar.value = clampf(player.time_left, 0.0, player.STARTING_MAX_TIME)
+	var maximum_ratio: float = clampf(
+		player.max_time / maxf(player.STARTING_MAX_TIME, 0.001),
+		0.0,
+		1.0
+	)
+	status_cap_marker.position.x = clampf(
+		STATUS_BAR_WIDTH * maximum_ratio - 2.0,
+		0.0,
+		STATUS_BAR_WIDTH - 4.0
+	)
+	status_cap_marker.visible = maximum_ratio < 0.995
+
+	var life_ratio: float = clampf(
+		player.time_left / maxf(player.max_time, 0.001),
+		0.0,
+		1.0
+	)
+	var healthy_color := Color(0.67, 0.285, 0.105, 0.98)
+	var critical_color := Color(0.43, 0.075, 0.045, 0.98)
+	status_current_fill.bg_color = healthy_color.lerp(
+		critical_color,
+		clampf((0.42 - life_ratio) / 0.42, 0.0, 1.0)
+	)
+	status_current_fill.border_color = Color(0.81, 0.62, 0.34, 0.66).lerp(
+		Color(0.66, 0.25, 0.13, 0.76),
+		clampf((0.42 - life_ratio) / 0.42, 0.0, 1.0)
+	)
+	if player.wound_visual > 0.01:
+		status_current_fill.bg_color = status_current_fill.bg_color.lerp(
+			Color(0.87, 0.76, 0.52, 0.98),
+			player.wound_visual * 0.58
+		)
+	status_condition.text = "WATCH FRACTURED" if maximum_ratio < 0.82 else "LAST JOB"
 
 
 func _build_time_art_callout() -> void:
@@ -468,33 +630,46 @@ func _build_time_art_callout() -> void:
 func _build_boss_bar() -> void:
 	boss_group = Control.new()
 	boss_group.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	boss_group.position = Vector2(-360.0, 24.0)
-	boss_group.size = Vector2(720.0, 54.0)
+	boss_group.position = Vector2(-440.0, 118.0)
+	boss_group.size = Vector2(880.0, 65.0)
 	boss_group.visible = false
 	root.add_child(boss_group)
 
 	boss_label = Label.new()
 	boss_label.text = "THE UNFINISHED  //  FIRST DEBT"
 	boss_label.position = Vector2(0.0, 0.0)
-	boss_label.size = Vector2(720.0, 24.0)
-	boss_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	boss_label.add_theme_font_size_override("font_size", 15)
-	boss_label.add_theme_color_override("font_color", Color(0.74, 0.68, 0.53))
+	boss_label.size = Vector2(880.0, 25.0)
+	boss_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	boss_label.add_theme_font_size_override("font_size", 16)
+	boss_label.add_theme_color_override("font_color", Color(0.75, 0.69, 0.55, 0.92))
+	boss_label.add_theme_color_override("font_shadow_color", Color.BLACK)
+	boss_label.add_theme_constant_override("shadow_offset_x", 2)
+	boss_label.add_theme_constant_override("shadow_offset_y", 2)
 	boss_group.add_child(boss_label)
 
 	boss_bar = ProgressBar.new()
-	boss_bar.position = Vector2(0.0, 28.0)
-	boss_bar.size = Vector2(720.0, 12.0)
+	boss_bar.position = Vector2(0.0, 27.0)
+	boss_bar.size = Vector2(880.0, 29.0)
 	boss_bar.show_percentage = false
 	var background := StyleBoxFlat.new()
-	background.bg_color = Color(0.045, 0.04, 0.032, 0.92)
-	background.border_color = Color(0.28, 0.25, 0.20)
-	background.set_border_width_all(1)
+	background.bg_color = Color(0.025, 0.024, 0.021, 0.96)
+	background.border_color = Color(0.32, 0.29, 0.225, 0.92)
+	background.set_border_width_all(2)
 	var fill := StyleBoxFlat.new()
-	fill.bg_color = Color(0.62, 0.26, 0.09)
+	fill.bg_color = Color(0.50, 0.105, 0.065, 0.98)
+	fill.border_color = Color(0.72, 0.31, 0.16, 0.72)
+	fill.border_width_top = 2
 	boss_bar.add_theme_stylebox_override("background", background)
 	boss_bar.add_theme_stylebox_override("fill", fill)
 	boss_group.add_child(boss_bar)
+
+	for fraction in [0.25, 0.5, 0.75]:
+		var division := ColorRect.new()
+		division.position = Vector2(880.0 * fraction - 1.0, 30.0)
+		division.size = Vector2(2.0, 23.0)
+		division.color = Color(0.025, 0.022, 0.018, 0.58)
+		division.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		boss_group.add_child(division)
 
 
 func _build_title() -> void:
@@ -541,6 +716,19 @@ func _build_title() -> void:
 	copy.add_theme_constant_override("shadow_offset_x", 3)
 	copy.add_theme_constant_override("shadow_offset_y", 3)
 	title_layer.add_child(copy)
+
+	var credits := Label.new()
+	credits.text = "ASSET CREDITS  //  ATTRIBUTION.md"
+	credits.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	credits.position = Vector2(-346.0, -31.0)
+	credits.size = Vector2(318.0, 20.0)
+	credits.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	credits.add_theme_font_size_override("font_size", 12)
+	credits.add_theme_color_override("font_color", Color(0.57, 0.54, 0.46, 0.52))
+	credits.add_theme_color_override("font_shadow_color", Color.BLACK)
+	credits.add_theme_constant_override("shadow_offset_x", 2)
+	credits.add_theme_constant_override("shadow_offset_y", 2)
+	title_layer.add_child(credits)
 
 
 func _build_prologue() -> void:

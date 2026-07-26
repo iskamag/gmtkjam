@@ -24,8 +24,8 @@ returns.
 | Mouse | Look |
 | `Shift` | Chronostep (one air use before landing) |
 | `Ctrl` | Ground slide; jump out to preserve speed |
-| Left mouse | Buffered dagger combo / deflect; punch while unarmed |
-| `E` | Kick / guard break / launch; punt hostile projectiles down the crosshair |
+| Left mouse | Buffered dagger combo / deflect; punch while unarmed; reflected shots get tight crosshair assist |
+| `E` | Kick / guard break / launch; punt hostile projectiles with wider crosshair assist |
 | Right mouse | Free throw (hold briefly to guide); press again to pay Watchfire for rewind |
 | `Q` | Arrest hostile time; a last-instant activation earns a Dead Second |
 | `Space` | Jump / slide-jump / wall-kick |
@@ -69,6 +69,10 @@ The full design record and explicit rejected directions are in
 references, and measurable smoothness contract are in
 [`REFERENCE_DNA.md`](REFERENCE_DNA.md). The license-traceable production
 moodboard and local-asset map are in [`AESTHETIC_BOARD.md`](AESTHETIC_BOARD.md).
+Every shipped engine, font, sound, model, texture, supplied shader, and optional
+commercial-pack dependency is recorded in [`ATTRIBUTION.md`](ATTRIBUTION.md);
+browser builds place that file and the redistributable license notices beside
+the game.
 
 ## Optional supplied art
 
@@ -88,9 +92,9 @@ its `DeferredBody` visual child, and the first-person hands are isolated in
 ## Rendering boundary
 
 The browser build uses Godot's Compatibility/WebGL 2 renderer. It uses Filmic
-tonemapping, restrained glow, emissive highlights, fog, temporal history
-samples, and event-linked distortion. Browser output is SDR; it does not claim
-true HDR display output.
+tonemapping, a code-authored layered cloud/star sky, restrained glow, emissive
+highlights, fog, temporal history samples, and event-linked distortion. Browser
+output is SDR; it does not claim true HDR display output.
 
 ## Scope
 
@@ -106,12 +110,18 @@ short sequence of encounters and a boss-shaped finale to test:
    retrieval;
 6. gated authored encounters and PS2-style historical deterioration rather
    than posterization;
-7. the level-50 damage-number presentation without a conventional HUD health bar.
-8. authored enemy manifestation, geometric projectile families, and an
+7. perspective-correct world damage numbers plus a long non-numeric status bar
+   separating current life, recoverable time, and permanently eroded capacity;
+8. authored enemy manifestation, predictive multi-shot pressure, denser mixed
+   roles, geometric projectile families, and an
    action-native train-crash epilogue opening.
 9. ordinary Watchfire dominance plus a timing-earned Dead Second that nearly
    arrests threats while accelerating the chronosword's movement, attacks, and
-   damage.
+   damage, without allowing ordinary slowed-time melee to refill the ability
+   forever.
+10. a three-phase boss with downward arena cuts, close-pressure reinforcements,
+    a related late-game-scale health bar, and combat rays that respect solid
+    cover.
 
 The project emits neutral gameplay signals for future score choreography. It
 deliberately does **not** contain a shallow adaptive-music mixer. A genuinely

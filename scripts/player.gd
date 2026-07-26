@@ -26,6 +26,9 @@ const JUMP_BUFFER_TIME := 0.13
 const SLIDE_DURATION := 0.72
 const CHRONOSTEP_SPEED := 19.5
 const CHRONOSTEP_DURATION := 0.16
+const DEFLECT_ASSIST_ANGLE := 15.0
+const KICK_ASSIST_ANGLE := 23.0
+const REFLECT_ASSIST_RANGE := 34.0
 
 enum DaggerState {
 	HELD,
@@ -698,7 +701,17 @@ func _resolve_attack() -> void:
 		return
 	if collider.has_method("deflect"):
 		if combat_action == &"kick" and collider.has_method("kick"):
-			var aim := -camera.global_transform.basis.z
+			var raw_aim := -camera.global_transform.basis.z
+			var expected_speed := maxf(
+				float(collider.get("speed")) * 2.65,
+				36.0
+			)
+			var aim := _assisted_reflect_direction(
+				collider,
+				raw_aim,
+				KICK_ASSIST_ANGLE,
+				expected_speed
+			)
 			if not bool(collider.kick(aim)):
 				return
 			var reward := 22.0
@@ -709,13 +722,21 @@ func _resolve_attack() -> void:
 			emit_signal("score_event", &"projectile_kicked", {
 				"speed": float(collider.get("speed")),
 				"damage": int(collider.get("deflected_damage")),
+				"aim_assisted": aim.dot(raw_aim) < 0.9995,
 				"watchfire_reward": reward,
 				"meter": watchfire,
 				"time": time_left,
 			})
 			return
 		var perfect_deflect := watch_active
-		collider.deflect(-camera.global_transform.basis.z)
+		var raw_deflect_aim := -camera.global_transform.basis.z
+		var deflect_aim := _assisted_reflect_direction(
+			collider,
+			raw_deflect_aim,
+			DEFLECT_ASSIST_ANGLE,
+			float(collider.get("speed")) * 1.75
+		)
+		collider.deflect(deflect_aim)
 		if perfect_deflect:
 			_trigger_watch_overclock(&"perfect_deflect", OVERCLOCK_DURATION + 0.28, 1.4)
 			if collider.has_method("empower_deflection"):
@@ -743,7 +764,7 @@ func _resolve_attack() -> void:
 	var hit_position: Vector3 = hit.get("position", collider.global_position)
 	collider.take_damage(damage, hit_position, critical, force, launch)
 	play_sfx(&"dagger_hit" if combat_action == &"blade" else (&"kick" if combat_action == &"kick" else &"punch"))
-	var meter_gain := 11.0 if critical else (9.0 if combat_action != &"blade" else 6.0)
+	var meter_gain := _melee_watchfire_reward(critical, combat_action)
 	gain_watchfire(meter_gain)
 	if is_watch_overclocked():
 		overclock_timer = maxf(overclock_timer, 0.34)
@@ -752,8 +773,25 @@ func _resolve_attack() -> void:
 			"remaining": overclock_timer,
 			"reason": overclock_reason,
 		})
-	_request_impact(1.18 if is_watch_overclocked() else (0.9 if critical else 0.58), hit_position)
+	var impact_strength := 0.72
+	if combat_action == &"kick":
+		impact_strength = 1.02
+	elif critical:
+		impact_strength = 1.08
+	if is_watch_overclocked():
+		impact_strength = 1.32
+	_request_impact(impact_strength, hit_position)
 	emit_signal("attack_landed", damage, critical)
+
+
+func _melee_watchfire_reward(critical: bool, action: StringName) -> float:
+	# Watchfire is an earned burst, not a self-sustaining stance. Ordinary hits
+	# made while hostile time is arrested keep their damage advantage but cannot
+	# refill the meter faster than it burns. Projectile returns and eliminations
+	# remain the deliberate ways to extend a strong sequence.
+	if watch_active:
+		return 0.0
+	return 11.0 if critical else (9.0 if action != &"blade" else 6.0)
 
 
 func _cancel_recovery() -> void:
@@ -766,7 +804,9 @@ func _find_melee_target(reach: float, sweep_radius: float) -> Dictionary:
 	var from := camera.global_position
 	var forward := -camera.global_transform.basis.z
 	var to := from + forward * reach
-	var ray_query := PhysicsRayQueryParameters3D.create(from, to, 2 | 4)
+	# World geometry participates in the primary cast so a target cannot be
+	# struck through a barrier merely because combat lives on another layer.
+	var ray_query := PhysicsRayQueryParameters3D.create(from, to, 1 | 2 | 4)
 	ray_query.exclude = [get_rid()]
 	ray_query.collide_with_areas = true
 	ray_query.collide_with_bodies = true
@@ -794,14 +834,23 @@ func _find_melee_target(reach: float, sweep_radius: float) -> Dictionary:
 		var distance := offset.length()
 		if distance <= 0.001 or distance > reach + 0.8:
 			continue
+		var contact: Vector3 = candidate_collider.global_position + Vector3.UP * 0.8
+		if not _melee_path_clear(from, contact, candidate_collider):
+			continue
 		var alignment := forward.dot(offset / distance)
 		if alignment > best_alignment:
 			best_alignment = alignment
 			best = {
 				"collider": candidate_collider,
-				"position": candidate_collider.global_position + Vector3.UP * 0.8,
+				"position": contact,
 			}
 	return best
+
+
+func _melee_path_clear(from: Vector3, to: Vector3, candidate: Node3D) -> bool:
+	var cover_query := PhysicsRayQueryParameters3D.create(from, to, 1)
+	cover_query.exclude = [get_rid(), candidate.get_rid()]
+	return get_world_3d().direct_space_state.intersect_ray(cover_query).is_empty()
 
 
 func _find_kickable_projectile(reach: float, sweep_radius: float) -> Dictionary:
@@ -834,6 +883,8 @@ func _find_kickable_projectile(reach: float, sweep_radius: float) -> Dictionary:
 		var distance := offset.length()
 		if distance <= 0.001 or distance > reach + 0.8:
 			continue
+		if not _melee_path_clear(from, projectile.global_position, projectile):
+			continue
 		var alignment := forward.dot(offset / distance)
 		if alignment < 0.12:
 			continue
@@ -847,6 +898,87 @@ func _find_kickable_projectile(reach: float, sweep_radius: float) -> Dictionary:
 				"position": projectile.global_position,
 			}
 	return best
+
+
+func _assisted_reflect_direction(
+	projectile: Node3D,
+	requested_direction: Vector3,
+	max_angle_degrees: float,
+	expected_speed: float
+) -> Vector3:
+	if (
+		not is_inside_tree()
+		or not is_instance_valid(camera)
+		or not is_instance_valid(projectile)
+		or requested_direction.length_squared() < 0.001
+	):
+		return requested_direction.normalized()
+
+	var requested := requested_direction.normalized()
+	var origin := projectile.global_position
+	var view_origin := camera.global_position
+	var search := SphereShape3D.new()
+	search.radius = REFLECT_ASSIST_RANGE
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = search
+	query.transform = Transform3D(Basis.IDENTITY, origin)
+	query.collision_mask = 2
+	query.collide_with_areas = false
+	query.collide_with_bodies = true
+	query.exclude = [get_rid(), projectile.get_rid()]
+
+	# Selection is based on the player's crosshair, not merely proximity to the
+	# projectile. A tight cone keeps an intentional shot into empty space from
+	# being bent toward an enemy off-screen.
+	var minimum_alignment := cos(deg_to_rad(max_angle_degrees))
+	var best_score := -INF
+	var best_direction := requested
+	for candidate_data in get_world_3d().direct_space_state.intersect_shape(query, 24):
+		var candidate = candidate_data.get("collider")
+		if (
+			not candidate is CharacterBody3D
+			or not candidate.has_method("take_damage")
+			or not bool(candidate.get("alive"))
+		):
+			continue
+		var aim_height := 2.15 if int(candidate.get("kind")) == 3 else 1.0
+		var target_point: Vector3 = candidate.global_position + Vector3.UP * aim_height
+		var view_offset := target_point - view_origin
+		var distance := origin.distance_to(target_point)
+		if view_offset.length_squared() < 0.001 or distance > REFLECT_ASSIST_RANGE:
+			continue
+		var alignment := requested.dot(view_offset.normalized())
+		if alignment < minimum_alignment:
+			continue
+
+		var cover_query := PhysicsRayQueryParameters3D.create(
+			origin,
+			target_point,
+			1
+		)
+		cover_query.exclude = [get_rid(), projectile.get_rid()]
+		if not get_world_3d().direct_space_state.intersect_ray(cover_query).is_empty():
+			continue
+
+		var lead_time := clampf(
+			distance / maxf(expected_speed, 1.0),
+			0.0,
+			0.62
+		)
+		var target_velocity := Vector3(
+			candidate.velocity.x,
+			0.0,
+			candidate.velocity.z
+		)
+		var assisted_point := target_point + target_velocity * lead_time * 0.58
+		var assisted_direction := (assisted_point - origin).normalized()
+		if assisted_direction.dot(requested) < cos(deg_to_rad(max_angle_degrees + 5.0)):
+			continue
+		var score := alignment * 5.0 - distance / REFLECT_ASSIST_RANGE * 0.28
+		if score > best_score:
+			best_score = score
+			best_direction = assisted_direction
+	return best_direction
 
 
 func _handle_dagger_input() -> void:
@@ -943,7 +1075,7 @@ func _check_dagger_pickup() -> void:
 func hurt(seconds_spent: float, maximum_lost: float, source_position: Vector3) -> bool:
 	if not active or invulnerability > 0.0 or expired_once:
 		return false
-	invulnerability = 0.54
+	invulnerability = 0.38
 	watch_previous_time = time_left
 	max_time = maxf(11.0, max_time - maximum_lost)
 	time_left = clampf(time_left - seconds_spent, 0.0, max_time)

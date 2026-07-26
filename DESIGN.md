@@ -157,7 +157,8 @@ The protagonist begins complete.
 - Enemies have late-game attack patterns and meaningful pressure.
 - The protagonist can be fragile even though the numbers are enormous.
 - Large damage numbers appear in world space, rise above the target, and vanish,
-  in the spirit of Hotline Miami score feedback.
+  in the spirit of Hotline Miami score feedback. They obey perspective and
+  scene depth rather than holding a fixed screen size.
 - Screen-space UI remains sparse.
 
 ### 3. The dagger has an absence state
@@ -197,10 +198,15 @@ Unarmed:
 
 The independent kick is also a projectile verb. It prioritizes a hostile shot
 inside its broad foot sweep even when an enemy body crosses the center ray, then
-punts the shot exactly down the player's aim with much greater speed and damage
-than an ordinary dagger deflection. It costs no Watchfire and a successful
-return builds flame, so entering projectile range creates an aggressive answer
-rather than another tax on the time-slow economy.
+punts the shot with much greater speed and damage than an ordinary dagger
+deflection. Reflected shots acquire visible enemies inside restrained,
+line-of-sight crosshair cones—tighter for the blade and wider for the kick—but
+preserve raw aim outside the cone. It costs no Watchfire and a successful return
+builds flame, so entering projectile range creates an aggressive answer rather
+than another tax on the time-slow economy. Returned shots and both sides'
+melee attacks still obey solid world cover; assistance never makes walls
+intangible. A clean kicked return is deliberately strong enough to eliminate a
+standard ranged attacker.
 
 This creates the central combat decision: keep the reliable melee tool, or place
 the dagger in the world and fight barehanded while constructing a lethal rewind
@@ -212,8 +218,13 @@ Watchfire is not primarily a HUD bar or percentage.
 
 - It appears as an actual deep-purple flame rising from the left hand/watch.
 - Flame height communicates stored meter.
+- Ability activation changes flame motion, heat, and pull, never its apparent
+  amount; its envelope is derived only from stored meter.
 - Successful close combat, deflection, and eliminations build it.
 - Holding the ability burns it to control hostile time.
+- Ordinary hits made while Watchfire is already active do not refill it.
+  Projectile returns and eliminations are the skill checks that can extend a
+  strong sequence, so hostile-time arrest cannot sustain itself on a boss.
 - Manually rewinding the dagger spends a large up-front portion of it; throwing
   and physical retrieval do not.
 - Activation must be unmistakable: the left hand raises, the fire becomes
@@ -305,13 +316,14 @@ Each role must create a different spatial question:
 - **Arrears / rail collector:** a melee pursuer whose long committed cut returns
   along an old track; susceptible to spacing and stagger.
 - **Signal witness:** a ranged attacker framed by a broken clock/signal halo. It
-  fires stamped seal, vane, and fan patterns worth deflecting or routing the
-  dagger through.
+  predicts lateral movement and fires a narrow three-seal rake worth deflecting
+  or routing the dagger through.
 - **Buried retainer:** a post-game elite whose segmented guard rewards
   kick/recall combinations.
 - **The Unfinished:** the first postponed job. It rises bodily through the
-  asphalt and ballast; phases create openings through authored patterns and
-  secondary threats rather than only inflating health.
+  asphalt and ballast; phases create openings through aimed fans, a low
+  descending clock-face cut, and melee/elite reinforcements rather than only
+  inflating health.
 
 The dagger's path, projectile patterns, Watchfire, and enemy positioning should
 interact. Encounters should be arranged along the connected location instead of
@@ -326,8 +338,10 @@ spawning as interchangeable waves in a featureless room.
 - Right hand: dagger, fist, or kick pose depending on combat state.
 - No digital time text anywhere.
 - No persistent Watchfire percentage.
-- No player HP bar.
-- Boss health bar is allowed.
+- One deliberately oversized, non-numeric player status bar is required. It
+  layers current life over recoverable capacity and leaves permanent erosion
+  black instead of becoming a separate conventional HP system.
+- The boss uses a related long health bar.
 - Small objective/title text is allowed.
 - Damage numbers exist in 3D world space.
 - Debug telemetry is optional and hidden.
@@ -343,10 +357,11 @@ spawning as interchangeable waves in a featureless room.
 - Palette: asphalt, dirty plaster, tarnished steel, old paper, faded blue,
   bruised brown, dead green-grey, dried rust, and controlled deep purple.
 - No "neon slop."
-- Exterior exposure has a readable value floor: a blue-black procedural sky,
-  slate horizon and cold moon fill reveal silhouettes and navigation, while
-  sparse sodium lamps make warm authored islands. Occlusion may reach black;
-  the playable road and enemies may not disappear into crushed shadow.
+- Exterior exposure has a readable value floor: an ash-black shader sky has two
+  cloud strata, a slate horizon and sparse ivory stars, with no white
+  sun/moon billboard. Cold directional fill reveals silhouettes and navigation,
+  while sparse sodium lamps make warm authored islands. Occlusion may reach
+  black; the playable road and enemies may not disappear into crushed shadow.
 - The watch uses noise, wear, missing casing, scratches, and broken mechanics
   rather than blood.
 - Shader effects must communicate a gameplay or story state.
@@ -354,6 +369,8 @@ spawning as interchangeable waves in a featureless room.
   cut planes communicate impact.
 - Chronostep produces horizontal time shear and a fading history echo.
 - Dagger rewind temporarily misaligns recorded rows and draws its actual path.
+- Post-crash injury is a watch-anchored peripheral double exposure with dried
+  rust in shadows and a readable center, not a flat red fullscreen multiply.
 - Deferred architecture uses a world shader whose material becomes more
   coherent as permanent damage and encounter depth increase.
 - These effects are transient or state-linked. There is no permanent
@@ -396,7 +413,8 @@ For the jam prototype:
 - Killing Death or escaping the protagonist's appointed death.
 - Enemies as lifespan farms that imply the hero can live forever.
 - Digital watch/numeric countdown display.
-- Separate conventional player health bar.
+- A separate conventional HP system or numeric health readout; the requested
+  non-numeric time/life status bar is part of the watch model.
 - Automatic timed dagger boomerang.
 - Unarmed state with no attack.
 - Movement copied together with another game's character, audiovisual
@@ -422,6 +440,10 @@ The next prototype pass succeeds only if:
 5. Throw, steering, manual rewind, pickup, and unarmed attacks all work.
 6. A player can intentionally route the returning dagger through an enemy.
 7. Damage numbers rise in the 3D world.
-8. The first encounter poses a combat decision rather than a damage race.
-9. The space reads as a specific modern-fantasy place, not the backrooms.
-10. The browser export starts and the mechanics smoke test passes.
+8. The first encounter poses multi-role pressure rather than a damage race.
+9. Reflections assist a visible crosshair target without stealing deliberate
+   aim outside the assist cone.
+10. The boss's clock-face projectiles contest the arena instead of travelling
+    upward over the fight.
+11. The space reads as a specific modern-fantasy place, not the backrooms.
+12. The browser export starts and the mechanics smoke test passes.

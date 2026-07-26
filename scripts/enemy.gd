@@ -252,26 +252,27 @@ func _physics_process(delta: float) -> void:
 func _choose_motion(flat_to_player: Vector3, distance: float, delta: float) -> void:
 	var desired := Vector3.ZERO
 	if kind == Kind.RANGED:
-		if distance > 10.0:
+		if distance > 12.0:
 			desired = flat_to_player.normalized() * move_speed
-		elif distance < 5.0:
-			desired = -flat_to_player.normalized() * move_speed * 0.85
+		elif distance < 6.2:
+			desired = -flat_to_player.normalized() * move_speed * 0.92
 		else:
 			# Signal Witnesses choose a side and hold it. They do not oscillate
 			# like turrets on a sine wave.
 			var tangent := flat_to_player.normalized().cross(Vector3.UP)
 			desired = tangent * move_speed * 0.42 * strafe_bias
 	elif kind == Kind.BOSS:
-		if distance > 5.8:
-			desired = flat_to_player.normalized() * move_speed
-		elif distance < 3.2:
+		var phase_speed := move_speed * (1.0 + float(phase - 1) * 0.13)
+		if distance > 6.4:
+			desired = flat_to_player.normalized() * phase_speed
+		elif distance < 3.5:
 			desired = -flat_to_player.normalized() * move_speed * 0.22
 	else:
-		if distance > 4.7:
+		if distance > 5.1:
 			desired = flat_to_player.normalized() * move_speed
-		elif distance > 2.55:
-			var approach := flat_to_player.normalized() * move_speed * 0.18
-			var orbit := flat_to_player.normalized().cross(Vector3.UP) * move_speed * 0.36 * strafe_bias
+		elif distance > 2.65:
+			var approach := flat_to_player.normalized() * move_speed * 0.28
+			var orbit := flat_to_player.normalized().cross(Vector3.UP) * move_speed * 0.32 * strafe_bias
 			desired = approach + orbit
 		else:
 			desired = -flat_to_player.normalized() * move_speed * 0.22
@@ -281,15 +282,15 @@ func _choose_motion(flat_to_player: Vector3, distance: float, delta: float) -> v
 
 
 func _consider_attack(distance: float) -> void:
-	if kind == Kind.RANGED and distance < 18.0:
-		_begin_attack(&"shot", 0.64, 1.85)
+	if kind == Kind.RANGED and distance < 22.0:
+		_begin_attack(&"shot", 0.48, 1.22)
 	elif kind == Kind.BOSS:
-		if distance < 3.1:
-			_begin_attack(&"heavy", 0.78, 1.42)
+		if distance < 4.1:
+			_begin_attack(&"heavy", 0.56, 1.10)
 		else:
-			_begin_attack(&"volley", 0.88, 1.72)
-	elif distance < (3.65 if kind == Kind.ELITE else 3.35):
-		_begin_attack(&"melee", 0.58 if kind == Kind.MELEE else 0.68, 1.32)
+			_begin_attack(&"volley", 0.68, 1.34 if phase == 1 else (1.18 if phase == 2 else 1.02))
+	elif distance < (4.25 if kind == Kind.ELITE else 4.05):
+		_begin_attack(&"melee", 0.42 if kind == Kind.MELEE else 0.50, 0.96 if kind == Kind.MELEE else 1.08)
 
 
 func _begin_attack(which: StringName, delay: float, recovery: float) -> void:
@@ -301,7 +302,7 @@ func _begin_attack(which: StringName, delay: float, recovery: float) -> void:
 		attack_commit_direction.y = 0.0
 		if attack_commit_direction.length_squared() > 0.001:
 			attack_commit_direction = attack_commit_direction.normalized()
-		attack_commit_speed = 7.4 if kind == Kind.MELEE else 5.6
+		attack_commit_speed = 12.8 if kind == Kind.MELEE else 10.4
 	for material in body_materials:
 		material.emission_enabled = true
 		material.emission = Color(0.76, 0.55, 0.28)
@@ -313,23 +314,39 @@ func _resolve_attack() -> void:
 		&"melee":
 			cut_flash = 1.0
 			if global_position.distance_to(player.global_position) < (
-				3.25 if kind == Kind.ELITE else 2.85
-			):
+				3.55 if kind == Kind.ELITE else 3.25
+			) and _has_clear_line_to_player():
 				player.hurt(
-					7.6 if kind == Kind.ELITE else 5.8,
-					1.65 if kind == Kind.ELITE else 1.0,
+					11.5 if kind == Kind.ELITE else 8.5,
+					2.25 if kind == Kind.ELITE else 1.5,
 					global_position
 				)
 		&"heavy":
-			if global_position.distance_to(player.global_position) < 3.8:
-				player.hurt(10.5, 2.4, global_position)
+			if (
+				global_position.distance_to(player.global_position) < 4.25
+				and _has_clear_line_to_player()
+			):
+				player.hurt(15.0, 3.6, global_position)
 			if is_instance_valid(game):
 				game.spawn_burst(global_position + Vector3.UP * 0.35, Color(0.55, 0.37, 0.18), 14)
 		&"shot":
-			_fire_at_player(11.5, 7.0, 1.25, 0.0, &"SEAL")
+			# A narrow three-seal rake is readable as a single decision: cut
+			# one back, or commit to moving through the gap.
+			for offset in [-0.075, 0.0, 0.075]:
+				_fire_at_player(15.5, 8.0, 1.45, offset, &"SEAL")
 		&"volley":
 			_fire_boss_pattern()
 	pending_attack = &""
+
+
+func _has_clear_line_to_player() -> bool:
+	if not is_inside_tree() or not is_instance_valid(player):
+		return false
+	var from := global_position + Vector3.UP * 0.9
+	var to := player.global_position + Vector3.UP * 0.9
+	var query := PhysicsRayQueryParameters3D.create(from, to, 1)
+	query.exclude = [get_rid(), player.get_rid()]
+	return get_world_3d().direct_space_state.intersect_ray(query).is_empty()
 
 
 func _fire_at_player(
@@ -347,8 +364,11 @@ func _fire_at_player(
 	projectile.speed = speed
 	projectile.time_damage = time_damage
 	projectile.max_damage = max_damage
-	var target := player.global_position + Vector3.UP * 0.9
 	var origin := global_position + Vector3.UP * (1.15 if kind != Kind.BOSS else 2.1)
+	var target := player.global_position + Vector3.UP * 0.9
+	var flight_time := clampf(origin.distance_to(target) / maxf(speed, 1.0), 0.0, 0.72)
+	var player_motion := Vector3(player.velocity.x, 0.0, player.velocity.z)
+	target += player_motion * flight_time * (0.42 if kind == Kind.BOSS else 0.58)
 	var direction := (target - origin).normalized()
 	if absf(angular_offset) > 0.001:
 		direction = direction.rotated(Vector3.UP, angular_offset)
@@ -360,36 +380,47 @@ func _fire_at_player(
 
 func _fire_boss_pattern() -> void:
 	if phase == 1:
-		for offset in [-0.28, -0.14, 0.0, 0.14, 0.28]:
-			_fire_at_player(9.0, 7.0, 1.15, offset, &"BLADE")
+		for offset in [-0.30, -0.15, 0.0, 0.15, 0.30]:
+			_fire_at_player(13.0, 8.5, 1.55, offset, &"BLADE")
 	elif phase == 2:
-		for index in 9:
-			var angle := TAU * float(index) / 9.0
+		# The old ring started above head height with a positive Y component,
+		# so its cross-shaped seals visibly sailed upward. These are now a low,
+		# descending clock-face cut that actually contests the arena floor.
+		for index in 12:
+			var angle := TAU * float(index) / 12.0
 			_fire_direction(
-				Vector3(cos(angle), 0.025, sin(angle)).normalized(),
-				8.0,
-				&"SEAL"
+				_boss_ring_direction(angle),
+				11.5,
+				&"SEAL",
+				0.82
 			)
+		for offset in [-0.18, 0.0, 0.18]:
+			_fire_at_player(14.5, 9.0, 1.7, offset, &"BLADE")
 	else:
 		for offset in [-0.42, -0.28, -0.14, 0.0, 0.14, 0.28, 0.42]:
-			_fire_at_player(12.0, 8.0, 1.4, offset, &"BLADE")
+			_fire_at_player(17.0, 10.0, 1.9, offset, &"BLADE")
+
+
+func _boss_ring_direction(angle: float) -> Vector3:
+	return Vector3(cos(angle), -0.065, sin(angle)).normalized()
 
 
 func _fire_direction(
 	shot_direction: Vector3,
 	shot_speed: float,
-	style_name: StringName = &"NEEDLE"
+	style_name: StringName = &"NEEDLE",
+	origin_height: float = 1.15
 ) -> void:
 	var projectile := ProjectileScript.new()
 	projectile.player = player
 	projectile.game = game
 	projectile.speed = shot_speed
-	projectile.time_damage = 7.5
-	projectile.max_damage = 1.35
+	projectile.time_damage = 9.0
+	projectile.max_damage = 1.7
 	projectile.direction = shot_direction
 	_set_projectile_style(projectile, style_name)
 	get_tree().current_scene.add_child(projectile)
-	projectile.global_position = global_position + Vector3.UP * 1.6
+	projectile.global_position = global_position + Vector3.UP * origin_height
 
 
 func _set_projectile_style(projectile: Node, style_name: StringName) -> void:
@@ -488,24 +519,24 @@ func _configure_kind() -> void:
 	match kind:
 		Kind.MELEE:
 			role_name = &"ARREARS CONDUCTOR"
-			health = 23500
+			health = 31500
 			reward = 7.0
-			move_speed = 5.0
+			move_speed = 6.3
 		Kind.RANGED:
 			role_name = &"SIGNAL WITNESS"
-			health = 20500
+			health = 26500
 			reward = 8.0
-			move_speed = 3.7
+			move_speed = 4.6
 		Kind.ELITE:
 			role_name = &"BURIED RETAINER"
-			health = 47000
+			health = 68000
 			reward = 13.0
-			move_speed = 5.4
+			move_speed = 6.0
 		Kind.BOSS:
 			role_name = &"UNFINISHED CHAMPION"
-			health = 148000
+			health = 220000
 			reward = 60.0
-			move_speed = 3.35
+			move_speed = 4.3
 	maximum_health = health
 
 

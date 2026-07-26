@@ -21,7 +21,7 @@ var kick_flash := 0.0
 
 const KICK_MIN_SPEED := 36.0
 const KICK_SPEED_MULTIPLIER := 2.65
-const KICK_DAMAGE := 26400
+const KICK_DAMAGE := 28500
 
 var visual_root: Node3D
 var silhouette: Node3D
@@ -83,7 +83,9 @@ func _physics_process(delta: float) -> void:
 
 	var from := global_position
 	var to := from + direction * speed * step_delta
-	var mask := 2 if deflected else 1
+	# Returned shots still collide with the world. Aim assist only promises a
+	# clear launch line; it must not turn walls and encounter gates intangible.
+	var mask := (1 | 2) if deflected else 1
 	var query := PhysicsRayQueryParameters3D.create(from, to, mask)
 	query.exclude = [get_rid()]
 	if is_instance_valid(player) and deflected:
@@ -336,7 +338,10 @@ func _animate_visual(delta: float, hostile_scale: float) -> void:
 func _orient_visual() -> void:
 	if not is_instance_valid(visual_root) or direction.length_squared() < 0.0001:
 		return
+	# Projectile geometry is authored in the local XY plane. Keep local -Z on
+	# the actual travel vector so spinning seals and blades neither billboard
+	# toward the camera nor appear to climb when travelling horizontally.
 	var up := Vector3.UP
 	if absf(direction.dot(up)) > 0.96:
 		up = Vector3.RIGHT
-	visual_root.look_at(global_position + direction, up)
+	visual_root.basis = Basis.looking_at(direction.normalized(), up)

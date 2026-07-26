@@ -29,6 +29,12 @@ func _run() -> void:
 		and game.world_environment_resource.sky != null,
 		"the exterior is backed by a real procedural night sky"
 	)
+	var sky_material = game.world_environment_resource.sky.sky_material
+	_check(
+		sky_material is ShaderMaterial
+		and "low_strata" in (sky_material as ShaderMaterial).shader.code,
+		"the night sky has authored cloud strata instead of a solid field and sun dot"
+	)
 	_check(
 		game.world_environment_resource.ambient_light_energy >= 0.8
 		and game.get_node_or_null("ColdMoonKey") != null,
@@ -75,6 +81,20 @@ func _run() -> void:
 		bent_second_motion > ordinary_second_motion * 3.5,
 		"Watchfire visibly accelerates the analog seconds hand"
 	)
+	hands.displayed_fire_ratio = 0.52
+	player.watch_active = false
+	player.overclock_timer = 0.0
+	var idle_fire_envelope: Vector2 = hands.get_watchfire_envelope()
+	player.watch_active = true
+	var active_fire_envelope: Vector2 = hands.get_watchfire_envelope()
+	player.overclock_timer = 1.0
+	var overclock_fire_envelope: Vector2 = hands.get_watchfire_envelope()
+	_check(
+		idle_fire_envelope.is_equal_approx(active_fire_envelope)
+		and idle_fire_envelope.is_equal_approx(overclock_fire_envelope),
+		"Watchfire amount has one meter-driven envelope in every ability state"
+	)
+	player.overclock_timer = 0.0
 	player.watch_active = false
 
 	player.time_left = 30.0
@@ -123,7 +143,18 @@ func _run() -> void:
 
 	game._spawn_damage_number(13200, Vector3(0.0, 2.0, 0.0), true)
 	await process_frame
-	_check(not game.find_children("*", "Label3D", true, false).is_empty(), "damage numbers are Label3D world objects")
+	var damage_labels := game.find_children("*", "Label3D", true, false)
+	_check(not damage_labels.is_empty(), "damage numbers are Label3D world objects")
+	if not damage_labels.is_empty():
+		var damage_label := damage_labels.back() as Label3D
+		_check(
+			not damage_label.fixed_size and not damage_label.no_depth_test,
+			"damage text obeys world perspective and scene depth"
+		)
+		_check(
+			damage_label.font_size <= 66 and damage_label.scale.x <= 1.07,
+			"damage text pop remains controlled instead of becoming screen-filling"
+		)
 	_check(game._format_damage(13200) == "13,200", "late-game damage values use readable thousands grouping")
 
 	var ProjectileScript = load("res://scripts/enemy_projectile.gd")
@@ -180,12 +211,45 @@ func _run() -> void:
 	_check(game.hud.prologue_title.visible, "the opening reveals EPILOGUE before returning control")
 	game._finish_prologue()
 	_check(player.active and not game.hud.prologue_layer.visible, "skipping or completing the opening returns identical control")
+	game.hud._update_status_bar()
+	_check(
+		game.hud.status_group.visible
+		and game.hud.status_capacity_bar.size.x >= 800.0
+		and game.hud.status_current_bar.size.y >= 28.0,
+		"the level-50 player status uses a long substantial time-health bar"
+	)
+	_check(
+		is_equal_approx(game.hud.status_current_bar.value, player.time_left)
+		and is_equal_approx(game.hud.status_capacity_bar.value, player.max_time),
+		"the status bar distinguishes current life from surviving maximum"
+	)
+	_check(
+		game.hud.boss_bar.size.x >= 860.0 and game.hud.boss_bar.size.y >= 26.0,
+		"the boss receives a related late-game-scale health bar"
+	)
+	game.hud.set_intro_effects(1.0, 0.0)
+	_check(
+		game.hud.intro_trauma_target <= 0.35
+		and game.hud.intro_wound_target >= 0.99,
+		"post-crash injury favors the localized watch wound over a red fullscreen wash"
+	)
+	game.hud.set_intro_effects(0.0, 0.0)
 
 	_check(InputMap.has_action("chronostep"), "the chronosword movement burst is mapped")
 	_check(InputMap.has_action("slide"), "ground slide is mapped")
 	_check(InputMap.has_action("kick"), "kick has an independent combat input")
 	_check(game.encounter_gates.size() == 2, "combat rooms have authored lock thresholds")
 	_check(game.encounter_definitions.size() == 3, "encounters are data-defined instead of empty-list auto-waves")
+	_check(
+		game.encounter_definitions[0]["spawns"].size() == 3
+		and game.encounter_definitions[1]["spawns"].size() == 4,
+		"ordinary rooms apply late-game multi-role pressure"
+	)
+	_check(
+		game.boss_reinforcement_definitions[2].size() == 2
+		and game.boss_reinforcement_definitions[3].size() == 1,
+		"boss phases add authored melee and elite pressure"
+	)
 	_check(game.ghost_materials.size() > 0, "historical geometry is available for deterioration")
 	_check(
 		game.get_node_or_null("ReturnRoadArtDirection") != null,

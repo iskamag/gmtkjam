@@ -43,7 +43,11 @@ func _process(delta: float) -> void:
 		var seconds_speed := deg_to_rad(seconds_degrees)
 		second_hand_angle = wrapf(second_hand_angle - seconds_speed * delta, -PI, PI)
 		var target_ratio: float = clampf(player.watchfire / player.MAX_WATCHFIRE, 0.0, 1.0)
-		displayed_fire_ratio = move_toward(displayed_fire_ratio, target_ratio, delta * 1.9)
+		displayed_fire_ratio = lerpf(
+			displayed_fire_ratio,
+			target_ratio,
+			1.0 - exp(-delta * 7.5)
+		)
 		var target_lift := 62.0 if player.watch_active else 0.0
 		if player.is_watch_overclocked():
 			target_lift = 82.0
@@ -95,33 +99,41 @@ func _draw_watchfire(center: Vector2) -> void:
 	var ratio := displayed_fire_ratio
 	if ratio <= 0.005:
 		return
-	var active_scale := 1.0
-	if player.watch_active:
-		active_scale = 1.32
-	if player.is_watch_overclocked():
-		active_scale = 1.58
-	var height := (48.0 + ratio * 182.0) * active_scale
-	var width := 72.0 + ratio * 42.0
+	# The envelope has one authority: the meter. Slow time and Overclock alter
+	# its motion and internal heat, never its apparent amount.
+	var envelope := get_watchfire_envelope()
+	var width := envelope.x
+	var height := envelope.y
 	var flame_rate := 24.0 if player.watch_active else 5.0
 	if player.is_watch_overclocked():
 		flame_rate = 43.0
 	var flutter := sin(visual_time * flame_rate)
 	var time_pull := (28.0 + displayed_overclock * 34.0) if player.watch_active else 0.0
+	var base_y := center.y - 48.0
+	var common_sway := sin(visual_time * (flame_rate * 0.43) + ratio * 2.7) * width * 0.055
 
+	# Nested contours share one base and one dominant tip. Offsetting the old
+	# layers into separate triangles left only three disconnected horns visible
+	# above the watch bezel.
 	for layer in 3:
-		var layer_scale := 1.0 - float(layer) * 0.2
-		var x_shift := (float(layer) - 1.0) * 25.0
-		x_shift -= time_pull * (1.0 - float(layer) * 0.24)
-		var tongue_height := height * layer_scale * (0.98 + sin(visual_time * 7.0 + float(layer) * 2.1) * 0.018)
-		var base_y := center.y - 4.0
+		var layer_scale := 1.0 - float(layer) * 0.18
+		var layer_width := width * (1.0 - float(layer) * 0.22)
+		var x_shift := common_sway * (1.0 - float(layer) * 0.18)
+		x_shift -= time_pull * (0.16 + float(layer) * 0.035)
+		var tongue_height := height * layer_scale * (
+			0.98 + sin(visual_time * 7.0 + float(layer) * 2.1) * 0.018
+		)
+		var layer_base := base_y + float(layer) * 7.0
 		var points := PackedVector2Array([
-			Vector2(center.x - width * 0.5 + x_shift, base_y),
-			Vector2(center.x - width * 0.42 + x_shift + flutter * 2.0, base_y - tongue_height * 0.30),
-			Vector2(center.x - width * 0.18 + x_shift, base_y - tongue_height * 0.54),
-			Vector2(center.x + x_shift + sin(visual_time * 13.0 + float(layer)) * 12.0, base_y - tongue_height),
-			Vector2(center.x + width * 0.18 + x_shift, base_y - tongue_height * 0.54),
-			Vector2(center.x + width * 0.45 + x_shift - flutter * 2.4, base_y - tongue_height * 0.27),
-			Vector2(center.x + width * 0.52 + x_shift, base_y),
+			Vector2(center.x - layer_width * 0.50 + x_shift, layer_base),
+			Vector2(center.x - layer_width * 0.46 + x_shift + flutter * 1.5, layer_base - tongue_height * 0.20),
+			Vector2(center.x - layer_width * 0.28 + x_shift, layer_base - tongue_height * 0.40),
+			Vector2(center.x - layer_width * 0.12 + x_shift - flutter * 2.0, layer_base - tongue_height * 0.63),
+			Vector2(center.x + x_shift + sin(visual_time * 13.0 + float(layer)) * width * 0.055, layer_base - tongue_height),
+			Vector2(center.x + layer_width * 0.16 + x_shift, layer_base - tongue_height * 0.58),
+			Vector2(center.x + layer_width * 0.34 + x_shift + flutter * 1.7, layer_base - tongue_height * 0.36),
+			Vector2(center.x + layer_width * 0.50 + x_shift, layer_base - tongue_height * 0.14),
+			Vector2(center.x + layer_width * 0.46 + x_shift, layer_base),
 		])
 		var color := PURPLE_DARK if layer == 0 else (PURPLE if layer == 1 else PURPLE_HOT)
 		draw_colored_polygon(points, color)
@@ -129,13 +141,13 @@ func _draw_watchfire(center: Vector2) -> void:
 	if player.watch_active:
 		# The hottest part is an ivory tear, not a larger purple glow. At
 		# Overclock it stretches backward like time is being pulled through the hand.
-		var core_height := height * (0.48 + displayed_overclock * 0.10)
+		var core_height := height * 0.48
 		draw_colored_polygon(PackedVector2Array([
-			center + Vector2(-19.0 - time_pull * 0.28, -2.0),
-			center + Vector2(-10.0 - time_pull * 0.46, -core_height * 0.48),
-			center + Vector2(-3.0 - time_pull * 0.62, -core_height),
-			center + Vector2(12.0, -core_height * 0.42),
-			center + Vector2(22.0, -2.0),
+			Vector2(center.x - 18.0 - time_pull * 0.12, base_y + 8.0),
+			Vector2(center.x - 10.0 - time_pull * 0.24, base_y - core_height * 0.48),
+			Vector2(center.x - 3.0 - time_pull * 0.34, base_y - core_height),
+			Vector2(center.x + 12.0, base_y - core_height * 0.42),
+			Vector2(center.x + 22.0, base_y + 8.0),
 		]), Color(0.86, 0.81, 0.67, 0.68 + displayed_overclock * 0.18))
 
 		for index in 5:
@@ -146,6 +158,14 @@ func _draw_watchfire(center: Vector2) -> void:
 			)
 			var mote_color := Color(0.49, 0.30, 0.54, 0.44 - trail * 0.25)
 			draw_line(mote, mote + Vector2(22.0 + trail * 18.0, -5.0), mote_color, 3.0, true)
+
+
+func get_watchfire_envelope() -> Vector2:
+	var ratio := clampf(displayed_fire_ratio, 0.0, 1.0)
+	return Vector2(
+		112.0 * pow(ratio, 0.46),
+		218.0 * pow(ratio, 0.72)
+	)
 
 
 func _draw_time_aperture(center: Vector2) -> void:

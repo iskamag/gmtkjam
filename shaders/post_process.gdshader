@@ -163,20 +163,43 @@ void fragment() {
 	col += vec3(0.038, 0.006, 0.052) * watchfire * shadow;
 	col += vec3(0.08, 0.035, 0.095) * dagger_rewind * hit_ring * 0.35;
 
-	// The post-crash low-health state is dried rust and lost exposure rather
-	// than a flat red damage wash. Highlights remain legible while shadows and
-	// midtones carry the injury, then recover as trauma falls away.
-	vec3 trauma_grade = vec3(
-		col.r * 0.84 + luma * 0.24,
-		col.g * 0.62 + luma * 0.055,
-		col.b * 0.56 + luma * 0.025
+	// Post-crash trauma is spatial rather than a red fullscreen multiply. The
+	// centre stays readable while peripheral double exposure, crushed colour,
+	// and dried-rust shadow contamination retreat toward the broken watch.
+	vec2 trauma_space = (SCREEN_UV - watch_anchor) * vec2(0.88, 1.12);
+	float trauma_radius = length(trauma_space);
+	float trauma_periphery = smoothstep(0.24, 0.88, trauma_radius);
+	vec2 trauma_drag = normalize(trauma_space + vec2(0.001)) * pixel * (
+		2.0 + trauma_periphery * 5.0
+	) * trauma;
+	vec3 trauma_history = texture(
+		screen_texture,
+		clamp(uv + trauma_drag, pixel, vec2(1.0) - pixel)
+	).rgb;
+	col = mix(col, trauma_history, trauma * trauma_periphery * 0.18);
+
+	float trauma_luma = dot(col, vec3(0.299, 0.587, 0.114));
+	vec3 trauma_grade = mix(
+		vec3(trauma_luma) * vec3(0.94, 0.89, 0.80),
+		col,
+		0.32
 	);
-	trauma_grade += vec3(0.075, 0.012, 0.004) * shadow;
-	trauma_grade *= 0.89;
-	col = mix(col, trauma_grade, trauma * 0.78);
+	trauma_grade *= mix(0.82, 0.91, 1.0 - trauma_periphery);
+	trauma_grade += vec3(0.105, 0.021, 0.007) * shadow * (
+		0.26 + trauma_periphery * 0.74
+	);
+	float trauma_mix = trauma * mix(0.38, 0.76, trauma_periphery);
+	col = mix(col, trauma_grade, trauma_mix);
+
+	// One quiet restoration seam marks the rewind finishing; it is tied to the
+	// watch and cannot become a generic pulsating damage vignette.
+	float recovery_radius = (1.0 - trauma) * 1.08;
+	float recovery_seam = exp(-abs(trauma_radius - recovery_radius) * 36.0);
+	recovery_seam *= trauma * (1.0 - trauma) * 4.0;
+	col += vec3(0.18, 0.14, 0.085) * recovery_seam * 0.10;
 
 	vec2 centered = SCREEN_UV * 2.0 - 1.0;
-	float vignette_weight = mix(0.075, 0.20, doom) + trauma * 0.13 + crash * 0.05;
+	float vignette_weight = mix(0.075, 0.20, doom) + trauma * 0.10 + crash * 0.05;
 	float vignette = 1.0 - dot(centered, centered) * vignette_weight;
 	col *= max(vignette, 0.56);
 	col += vec3(0.12, 0.085, 0.035) * hit_ring * 0.24;
