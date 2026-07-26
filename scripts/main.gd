@@ -80,19 +80,15 @@ func _ready() -> void:
 	emit_signal("score_event", &"boot", {"room": "return_road"})
 
 	# Background music — loops continuously; pitch warps under witch time (below).
-	var music_stream := load("res://music.ogg") as AudioStream
-	if music_stream != null:
-		var ogg := music_stream as AudioStreamOggVorbis
-		if ogg != null:
-			ogg.loop = true
+	var music_stream = load("res://music.ogg")
+	if music_stream is AudioStream:
+		if music_stream is AudioStreamOggVorbis:
+			(music_stream as AudioStreamOggVorbis).loop = true
 		_music = AudioStreamPlayer.new()
 		_music.stream = music_stream
 		_music.volume_db = -6.0
 		_music.name = "Music"
 		add_child(_music)
-		# Start immediately; will be silent until _start_run unmutes via volume.
-		_music.play()
-		_music.volume_db = -80.0
 
 
 # Load the authored world scene (geometry + encounter trigger zones) and bind
@@ -399,9 +395,7 @@ func _start_run() -> void:
 	player.set_active(true)
 	hud.begin_run()
 	if _music != null:
-		# Fade music in after the cutscene ends.
-		var tween := create_tween()
-		tween.tween_property(_music, "volume_db", -6.0, 1.5)
+		_music.play()
 	emit_signal("score_event", &"run_started", {"time": player.time_left})
 
 

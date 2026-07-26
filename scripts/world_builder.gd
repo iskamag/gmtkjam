@@ -328,24 +328,6 @@ static func build_level(main) -> void:
 	]:
 		_add_static_box(main, obstacle[0], obstacle[1], obstacle[2], cover_node)
 
-	# Building facades as arena backdrop (visual only, behind the walls).
-	var facade_colors: Array[Color] = [concrete, soot, concrete.darkened(0.08), soot.darkened(0.12), rust.darkened(0.45)]
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 91337
-	for side in [-1.0, 1.0]:
-		var z := 16.0
-		while z > -24.0:
-			var depth := rng.randf_range(5.0, 8.0)
-			var width := rng.randf_range(4.5, 7.0)
-			var height := rng.randf_range(6.0, 14.0)
-			var x: float = side * rng.randf_range(18.0, 24.0)
-			var col: Color = facade_colors[rng.randi() % facade_colors.size()]
-			_add_building(main, Vector3(x, 0.0, z), Vector2(width, depth), height, col)
-			if height > 9.0 and rng.randf() < 0.6:
-				var inward_x: float = x - side * (width * 0.5 + 0.06)
-				_add_child_emissive_box(main.world_root, Vector3(inward_x, height * 0.55, z), Vector3(0.08, height * 0.4, depth * 0.6), Color(0.62, 0.5, 0.28), 1.3)
-			z -= depth + rng.randf_range(1.5, 3.0)
-
 	# Props.
 	for prop in [
 		["res://assets/kenney/crate-color.glb", Vector3(-10.0, 0.0, 10.0), Vector3(2.0, 2.0, 2.0), Vector3(0.0, 0.4, 0.0), rust],
