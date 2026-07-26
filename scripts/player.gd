@@ -142,6 +142,7 @@ func _ready() -> void:
 	camera.position = Vector3(0.0, 1.55, 0.0)
 	camera.fov = 79.0
 	camera.near = 0.04
+	camera.current = true
 	add_child(camera)
 
 	if DisplayServer.get_name() != "headless":
