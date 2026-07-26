@@ -525,6 +525,19 @@ func _on_attack_landed(amount: int, critical: bool) -> void:
 	})
 
 
+# Ground-slam AoE: damage every active enemy within radius, falloff with
+# distance, plus a debris burst at the impact point.
+func apply_slam(at: Vector3, radius: float, damage: int, force: float, launch: float) -> void:
+	for enemy in active_enemies:
+		if not is_instance_valid(enemy):
+			continue
+		var d: float = enemy.global_position.distance_to(at)
+		if d <= radius:
+			var falloff := 1.0 - (d / radius) * 0.55
+			enemy.take_damage(int(float(damage) * falloff), enemy.global_position, true, force, launch)
+	spawn_burst(at + Vector3.UP * 0.3, Color(0.66, 0.58, 0.40), 18)
+
+
 func _forward_score_event(tag: StringName, payload: Dictionary) -> void:
 	emit_signal("score_event", tag, payload)
 

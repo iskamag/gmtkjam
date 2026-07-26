@@ -20,6 +20,8 @@ const GROUND_FRICTION := 31.0
 const AIR_ACCELERATION := 15.0
 const AIR_SPEED_LIMIT := 12.8
 const JUMP_VELOCITY := 9.0
+const SLAM_SPEED := 26.0
+const SLAM_RADIUS := 4.4
 const GRAVITY := 27.0
 const COYOTE_TIME := 0.12
 const JUMP_BUFFER_TIME := 0.13
@@ -102,6 +104,8 @@ var chronostep_cooldown := 0.0
 var chronostep_direction := Vector3.ZERO
 var air_step_available := true
 var _was_on_floor := true
+var slam_active := false
+var _master_lowpass: AudioEffectLowPassFilter
 
 
 func _ready() -> void:
@@ -122,6 +126,13 @@ func _ready() -> void:
 	camera.fov = 79.0
 	camera.near = 0.04
 	add_child(camera)
+
+	if DisplayServer.get_name() != "headless":
+		var bus := AudioServer.get_bus_index("Master")
+		if bus >= 0:
+			_master_lowpass = AudioEffectLowPassFilter.new()
+			_master_lowpass.cutoff_hz = 20500.0
+			AudioServer.add_bus_effect(bus, _master_lowpass)
 
 
 func set_active(value: bool) -> void:
@@ -223,7 +234,12 @@ func _update_watch(delta: float) -> void:
 			"hostile_scale": get_hostile_time_scale(),
 		})
 		was_watch_active = watch_active
-		_sync_watchfire_shader()
+	# Witch time closes a global low-pass filter on the master bus so the whole
+	# mix muffles; Overclock clamps it further for the "time being pulled" feel.
+	if _master_lowpass != null:
+		var target_cutoff := 20500.0 if not watch_active else (4800.0 if is_watch_overclocked() else 8400.0)
+		_master_lowpass.cutoff_hz = lerpf(_master_lowpass.cutoff_hz, target_cutoff, 1.0 - exp(-delta * 12.0))
+	_sync_watchfire_shader()
 
 
 func is_watch_overclocked() -> bool:
@@ -361,7 +377,12 @@ func _read_action_inputs() -> void:
 	if Input.is_action_just_pressed("attack"):
 		_queue_attack(&"blade" if dagger_state == DaggerState.HELD else &"fist")
 	if Input.is_action_just_pressed("kick"):
-		_queue_attack(&"kick")
+		if not is_on_floor() and not slam_active:
+			slam_active = true
+			velocity.y = -SLAM_SPEED
+			camera_kick.y -= 0.2
+		else:
+			_queue_attack(&"kick")
 	if Input.is_action_just_pressed("throw_dagger"):
 		_handle_dagger_input()
 	if Input.is_action_just_pressed("chronostep"):
@@ -463,7 +484,11 @@ func _move(delta: float) -> void:
 	if not _was_on_floor and is_on_floor():
 		landing_visual = clampf(fall_speed / 12.0, 0.25, 1.0)
 		camera_kick.y -= landing_visual * 0.55
-		play_sfx(&"land")
+		if slam_active:
+			_slam_impact(fall_speed)
+			slam_active = false
+		else:
+			play_sfx(&"land")
 
 	planar_speed = Vector2(velocity.x, velocity.z).length()
 	var local_side_speed := global_transform.basis.x.dot(velocity)
@@ -1124,6 +1149,21 @@ func _request_impact(strength: float, at: Vector3) -> void:
 		game.request_impact(strength, at)
 
 
+# Bayonetta-style ground slam impact. Triggered on landing after an airborne
+# kick. Deals AoE damage to nearby enemies (faloff with distance), kicks the
+# camera, and plays the annotated hit sound with random pitch.
+func _slam_impact(fall_speed: float) -> void:
+	var strength := clampf(fall_speed / 20.0, 0.7, 1.6)
+	play_sfx(&"slam")
+	camera_kick.y -= strength * 0.9
+	camera_kick.x += randf_range(-0.18, 0.18) * strength
+	_request_impact(strength, global_position)
+	var game := get_parent()
+	if game != null and game.has_method("apply_slam"):
+		game.apply_slam(global_position, SLAM_RADIUS, int(20.0 * strength), 2.8 * strength, 3.4 * strength)
+	emit_signal("score_event", &"slam", {"strength": strength})
+
+
 func play_sfx(cue: StringName) -> void:
 	if DisplayServer.get_name() == "headless":
 		return
@@ -1206,6 +1246,19 @@ func play_sfx(cue: StringName) -> void:
 			path = "res://assets/audio/impactMetal_heavy_001.ogg"
 			volume_db = -1.5
 			sound_pitch = 0.58
+		&"slam":
+			path = "res://sounds/hit.ogg"
+			volume_db = -2.0
+			sound_pitch = randf_range(0.72, 0.92)
+		&"hit":
+			path = "res://sounds/hit.ogg"
+			volume_db = -6.0
+			sound_pitch = randf_range(0.95, 1.18)
+	# Time slow warps every sound: pitch drops and the master bus low-pass
+	# closes (see _update_watch), so the whole mix muffles during witch time.
+	if watch_active:
+		sound_pitch *= 0.52 if is_watch_overclocked() else 0.68
+		volume_db -= 1.5
 	if path.is_empty():
 		return
 	var stream := load(path) as AudioStream
