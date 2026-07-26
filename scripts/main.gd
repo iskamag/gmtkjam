@@ -307,14 +307,14 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _start_crash_sequence() -> void:
 	in_train_menu = false
-	# Keep train ambient playing — it stops when the crash sound plays
-	# at prologue_time >= 9.5 in _update_prologue.
 	var crash_voice := AudioStreamPlayer.new()
 	crash_voice.stream = SFX_TRAIN_CRASH
 	crash_voice.volume_db = -2.0
 	crash_voice.name = "TrainCrash"
 	add_child(crash_voice)
 	_crash_voice = crash_voice
+	_crash_voice.play()
+	_crash_voice.finished.connect(_crash_voice.queue_free)
 	_begin_prologue()
 
 
@@ -390,9 +390,6 @@ func _update_prologue(delta: float) -> void:
 		prologue_flags["crash"] = true
 		if is_instance_valid(_train_ambient):
 			_train_ambient.stop()
-		if is_instance_valid(_crash_voice):
-			_crash_voice.play()
-			_crash_voice.finished.connect(_crash_voice.queue_free)
 		player.play_sfx(&"crash")
 		player.play_sfx(&"wound")
 		player.wound_visual = 1.0

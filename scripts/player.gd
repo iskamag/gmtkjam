@@ -1187,27 +1187,21 @@ func _slam_impact(fall_speed: float) -> void:
 
 
 # Rocket jump (dash): airborne slash explodes at the ground below and
-# launches the player up + away from the blast. Damages enemies in the radius,
-# plays the annotated hit sound with random pitch.
 # Rocket jump (baion): the blade strikes terrain and the impact launches the
-# player upward + away from the blast. Damages enemies in the radius, resets
-# dash cooldown so you can chain baion → dash → baion.
+# player upward + away from the blast. No splash damage — it's purely a
+# mobility tool. Resets dash cooldown so you can chain baion → dash → baion.
 func _rocket_jump(blast: Vector3) -> void:
 	var strength := 1.0
 	_play_stream(SFX_BAION, -2.0, randf_range(0.88, 1.12))
 	camera_kick.y += strength * 0.7
 	camera_kick.x += randf_range(-0.15, 0.15) * strength
 	_request_impact(strength, blast)
-	# Launch the player: strong up boost plus a nudge away from the blast.
 	velocity.y = maxf(velocity.y, 0.0) + 16.5
 	var away := (global_position - blast)
 	away.y = 0.0
 	if away.length_squared() > 0.01:
 		velocity.x += away.normalized().x * 4.0
 		velocity.z += away.normalized().z * 4.0
-	var game := get_parent()
-	if game != null and game.has_method("apply_slam"):
-		game.apply_slam(blast, SLAM_RADIUS, 8000, 60.0, 5.5)
 	chronostep_cooldown = 0.0
 	air_step_available = true
 	air_baion_used = true
