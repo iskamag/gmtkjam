@@ -422,10 +422,15 @@ func _update_prologue(delta: float) -> void:
 	elif prologue_time >= 11.0:
 		if not prologue_flags.has("aftermath"):
 			prologue_flags["aftermath"] = true
+			# Swap scenes immediately: hide train, load world arena.
+			if is_instance_valid(prologue_shell):
+				prologue_shell.visible = false
+			if is_instance_valid(world_root):
+				world_root.queue_free()
+			_world_loaded = false
+			_load_world()
 			player.global_position = Vector3(0.0, 0.05, 16.0)
-		if is_instance_valid(prologue_shell):
-			prologue_shell.visible = false
-		var recovery := clampf((prologue_time - 11.0) / 4.0, 0.0, 1.0)
+		var recovery := clampf((prologue_time - 11.0) / 2.0, 0.0, 1.0)
 		var recovery_ease := 1.0 - pow(1.0 - recovery, 3.0)
 		camera_position = Vector3(
 			lerpf(-0.19, 0.0, recovery_ease),
@@ -446,11 +451,11 @@ func _update_prologue(delta: float) -> void:
 		camera_roll
 	)
 
-	if prologue_time >= 13.0 and not prologue_flags.has("epilogue"):
+	if prologue_time >= 12.5 and not prologue_flags.has("epilogue"):
 		prologue_flags["epilogue"] = true
 		emit_signal("score_event", &"title_epilogue", {"chapter": "the_first_job"})
 
-	if prologue_time >= 15.0:
+	if prologue_time >= 13.0:
 		_finish_prologue()
 
 
@@ -458,11 +463,7 @@ func _finish_prologue() -> void:
 	if not prologue_active:
 		return
 	prologue_active = false
-	# Swap scenes: unload the train, load the world arena.
-	if is_instance_valid(world_root):
-		world_root.queue_free()
-	_world_loaded = false
-	_load_world()
+	# World was already loaded during the recovery phase at prologue_time >= 11.0.
 	player.global_position = Vector3(0.0, 0.05, 16.0)
 	player.rotation = Vector3.ZERO
 	player.pitch = 0.0
