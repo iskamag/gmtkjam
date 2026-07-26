@@ -394,16 +394,7 @@ func _read_action_inputs() -> void:
 	if Input.is_action_just_pressed("jump"):
 		jump_buffer = JUMP_BUFFER_TIME
 	if Input.is_action_just_pressed("attack"):
-		if is_on_floor():
-			_attack()
-		elif not air_baion_used:
-			air_baion_used = true
-			slam_active = true
-			combat_state = CombatState.IDLE
-			combat_state_time = 0.0
-			buffered_action = &""
-			attack_buffer = 0.0
-			_rocket_jump()
+		_attack()
 	if Input.is_action_just_pressed("kick"):
 		if not is_on_floor():
 			slam_active = true
@@ -800,6 +791,9 @@ func _resolve_attack() -> void:
 		_request_impact(1.25 if perfect_deflect else 0.9, hit.get("position", collider.global_position))
 		return
 	if not collider.has_method("take_damage"):
+		if combat_action == &"blade" and (is_on_floor() or not air_baion_used):
+			var contact: Vector3 = hit.get("position", collider.global_position)
+			_rocket_jump(contact)
 		return
 
 	var damage := int(attack_data["damage"])
@@ -1188,24 +1182,17 @@ func _slam_impact(fall_speed: float) -> void:
 	_request_impact(strength, global_position)
 	var game := get_parent()
 	if game != null and game.has_method("apply_slam"):
-		game.apply_slam(global_position, SLAM_RADIUS, int(52.0 * strength), 15.0 * strength, 8.0 * strength)
+		game.apply_slam(global_position, SLAM_RADIUS, int(12000.0 * strength), 80.0 * strength, 10.0 * strength)
 	emit_signal("score_event", &"stomp", {"strength": strength})
 
 
 # Rocket jump (dash): airborne slash explodes at the ground below and
 # launches the player up + away from the blast. Damages enemies in the radius,
 # plays the annotated hit sound with random pitch.
-func _rocket_jump() -> void:
-	# Find the ground point directly under the player for the blast origin.
-	var blast := global_position - Vector3.UP * 1.0
-	var space := get_world_3d().direct_space_state
-	var query := PhysicsRayQueryParameters3D.create(
-		global_position, global_position - Vector3.UP * 6.0, collision_mask
-	)
-	query.exclude = [get_rid()]
-	var hit := space.intersect_ray(query)
-	if not hit.is_empty():
-		blast = hit["position"]
+# Rocket jump (baion): the blade strikes terrain and the impact launches the
+# player upward + away from the blast. Damages enemies in the radius, resets
+# dash cooldown so you can chain baion → dash → baion.
+func _rocket_jump(blast: Vector3) -> void:
 	var strength := 1.0
 	_play_stream(SFX_BAION, -2.0, randf_range(0.88, 1.12))
 	camera_kick.y += strength * 0.7
@@ -1220,10 +1207,10 @@ func _rocket_jump() -> void:
 		velocity.z += away.normalized().z * 4.0
 	var game := get_parent()
 	if game != null and game.has_method("apply_slam"):
-		game.apply_slam(blast, SLAM_RADIUS, 22, 6.0, 5.5)
-	# Baion resets the dash so you can chain baion → dash → baion.
+		game.apply_slam(blast, SLAM_RADIUS, 8000, 60.0, 5.5)
 	chronostep_cooldown = 0.0
 	air_step_available = true
+	air_baion_used = true
 	emit_signal("score_event", &"rocket_jump", {"strength": strength})
 
 
