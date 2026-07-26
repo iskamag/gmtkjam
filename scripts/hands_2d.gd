@@ -97,7 +97,7 @@ func _draw() -> void:
 
 func _draw_watchfire(center: Vector2) -> void:
 	var ratio := displayed_fire_ratio
-	if ratio <= 0.005:
+	if ratio <= 0.02:
 		return
 	# The envelope has one authority: the meter. Slow time and Overclock alter
 	# its motion and internal heat, never its apparent amount.
@@ -135,6 +135,8 @@ func _draw_watchfire(center: Vector2) -> void:
 			Vector2(center.x + layer_width * 0.50 + x_shift, layer_base - tongue_height * 0.14),
 			Vector2(center.x + layer_width * 0.46 + x_shift, layer_base),
 		])
+		if width < 2.0 or tongue_height < 2.0:
+			continue
 		var color := PURPLE_DARK if layer == 0 else (PURPLE if layer == 1 else PURPLE_HOT)
 		draw_colored_polygon(points, color)
 

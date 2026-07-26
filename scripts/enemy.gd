@@ -189,7 +189,7 @@ func _update_manifest(delta: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if not alive:
+	if not alive or not is_inside_tree():
 		return
 
 	var hostile_scale := 1.0
@@ -245,7 +245,8 @@ func _physics_process(delta: float) -> void:
 		if attack_cooldown <= 0.0:
 			_consider_attack(distance)
 
-	move_and_slide()
+	if is_inside_tree() and get_world_3d() != null:
+		move_and_slide()
 	_update_visual(distance, local_delta)
 
 
@@ -498,6 +499,7 @@ func vanish() -> void:
 	if not alive:
 		return
 	alive = false
+	set_physics_process(false)
 	collision_layer = 0
 	if is_instance_valid(body_collision):
 		body_collision.set_deferred("disabled", true)
@@ -508,6 +510,7 @@ func _die() -> void:
 	if not alive:
 		return
 	alive = false
+	set_physics_process(false)
 	collision_layer = 0
 	if is_instance_valid(body_collision):
 		body_collision.set_deferred("disabled", true)
