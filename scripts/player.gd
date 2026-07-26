@@ -796,8 +796,16 @@ func _resolve_attack() -> void:
 		return
 	if not collider.has_method("take_damage"):
 		if combat_action == &"blade" and (is_on_floor() or not air_baion_used):
-			var contact: Vector3 = hit.get("position", collider.global_position)
-			_rocket_jump(contact)
+			# Don't rocket jump if an enemy is also in swing range — hit the enemy instead.
+			var enemy_check := PhysicsRayQueryParameters3D.create(
+				camera.global_position,
+				camera.global_position - camera.global_transform.basis.z * float(attack_data["reach"]),
+				2
+			)
+			enemy_check.exclude = [get_rid()]
+			if get_world_3d().direct_space_state.intersect_ray(enemy_check).is_empty():
+				var contact: Vector3 = hit.get("position", collider.global_position)
+				_rocket_jump(contact)
 		return
 
 	var damage := int(attack_data["damage"])
