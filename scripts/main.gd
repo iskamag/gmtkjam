@@ -87,6 +87,8 @@ func _ready() -> void:
 	add_child(hud)
 	hud.bind(player, self)
 	score_event.connect(hud.receive_score_event)
+	# Hide viewmodel during the train menu.
+	hud.hands.visible = false
 
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	player.set_active(false)
@@ -152,7 +154,7 @@ func _load_train() -> void:
 	world_root = packed.instantiate()
 	world_root.name = "Train"
 	add_child(world_root)
-	prologue_shell = world_root.find_child("LastServiceCarriage", true)
+	prologue_shell = world_root.find_child("Carriage", true)
 	# Bind environment for lighting.
 	var env_nodes := world_root.find_children("*", "WorldEnvironment", true)
 	if not env_nodes.is_empty():
@@ -187,8 +189,8 @@ func _bind_world_from_scene(root: Node3D) -> void:
 		if mat is ShaderMaterial and (mat as ShaderMaterial).shader == ghost_shader:
 			ghost_materials.append(mat)
 
-	prologue_shell = root.find_child("LastServiceCarriage", true)
-	prologue_window_motion = root.find_child("SealedPassingTunnel", true)
+	prologue_shell = root.find_child("Carriage", true)
+	prologue_window_motion = root.find_child("Tunnel", true)
 
 	encounter_gates.clear()
 	var gates := get_tree().get_nodes_in_group("encounter_gate")
@@ -322,7 +324,7 @@ func _begin_prologue() -> void:
 	prologue_time = 0.0
 	prologue_flags.clear()
 	next_train_tick = 0.0
-	prologue_look_yaw = 0.0
+	prologue_look_yaw = -PI * 0.5
 	prologue_look_pitch = -0.035
 	run_finished = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -482,9 +484,14 @@ func _finish_prologue() -> void:
 	player.camera.rotation = Vector3.ZERO
 	player.camera.fov = 79.0
 	player.camera.near = 0.04
-	player.set_active(true)
 	hud.set_intro_effects(0.0, 0.0)
 	hud.end_prologue()
+	# Wake-up: the watch viewmodel appears, then the sword is drawn.
+	hud.show_viewmodel()
+	player.play_sfx(&"sword_draw")
+	# Give control after a brief beat so the draw registers visually.
+	await get_tree().create_timer(0.6).timeout
+	player.set_active(true)
 	hud.announce("EPILOGUE", "THE FIRST JOB", 2.1)
 	if _music != null:
 		_music.play()
@@ -848,14 +855,19 @@ func _format_damage(amount: int) -> String:
 
 
 func _update_prologue_exterior() -> void:
-	if not is_instance_valid(prologue_window_motion):
+	# Animate tunnel lamps past the window. In the hand-authored train scene,
+	# lamps live under Carriage/Tunnel with travel_z metadata.
+	var tunnel: Node3D = null
+	if is_instance_valid(prologue_shell):
+		tunnel = prologue_shell.find_child("Tunnel", true)
+	if tunnel == null:
 		return
-	var travel := prologue_time * (14.0 if prologue_time < 4.65 else 18.5)
-	for feature in prologue_window_motion.get_children():
+	var travel := prologue_time * (14.0 if prologue_time < 8.0 else 18.5)
+	for feature in tunnel.get_children():
 		if not feature.has_meta("travel_z"):
 			continue
 		var base_z := float(feature.get_meta("travel_z"))
-		feature.position.z = wrapf(base_z + travel + 12.0, 0.0, 24.0) - 12.0
+		feature.position.z = wrapf(base_z + travel + 15.0, 0.0, 30.0) - 15.0
 
 
 func _open_gate(gate: StaticBody3D) -> void:

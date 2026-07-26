@@ -392,17 +392,14 @@ func _read_action_inputs() -> void:
 	if Input.is_action_just_pressed("jump"):
 		jump_buffer = JUMP_BUFFER_TIME
 	if Input.is_action_just_pressed("attack"):
-		if not is_on_floor() and not slam_active:
-			slam_active = true
-			# Clear any pending combat so the rocket jump doesn't also trigger
-			# a melee swing (the "attack plays twice" bug).
-			combat_state = CombatState.IDLE
-			combat_state_time = 0.0
-			buffered_action = &""
-			attack_buffer = 0.0
-			_rocket_jump()
-		else:
-			_queue_attack(&"blade" if dagger_state == DaggerState.HELD else &"fist")
+		# Baion (rocket jump) works on ground and in air — attack is always a
+		# baion, not a melee swing. Clear combat so no swing leaks through.
+		slam_active = true
+		combat_state = CombatState.IDLE
+		combat_state_time = 0.0
+		buffered_action = &""
+		attack_buffer = 0.0
+		_rocket_jump()
 	if Input.is_action_just_pressed("kick"):
 		if not is_on_floor():
 			slam_active = true
@@ -1219,6 +1216,9 @@ func _rocket_jump() -> void:
 	var game := get_parent()
 	if game != null and game.has_method("apply_slam"):
 		game.apply_slam(blast, SLAM_RADIUS, 14, 3.2, 4.5)
+	# Baion resets the dash so you can chain baion → dash → baion.
+	chronostep_cooldown = 0.0
+	air_step_available = true
 	emit_signal("score_event", &"rocket_jump", {"strength": strength})
 
 

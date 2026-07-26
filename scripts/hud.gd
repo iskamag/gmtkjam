@@ -184,6 +184,12 @@ func begin_prologue() -> void:
 	prologue_skip.visible = true
 	set_intro_effects(0.0, 0.0)
 	update_prologue(0.0)
+	# Hide viewmodel during the train cutscene.
+	hands.visible = false
+
+
+func show_viewmodel() -> void:
+	hands.visible = true
 
 
 func update_prologue(t: float) -> void:
