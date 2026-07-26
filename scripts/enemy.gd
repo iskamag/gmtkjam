@@ -915,21 +915,21 @@ func _build_manifestation_geometry() -> void:
 func _kind_color() -> Color:
 	match kind:
 		Kind.RANGED:
-			return Color(0.19, 0.13, 0.085)
+			return Color(0.55, 0.40, 0.28)
 		Kind.ELITE:
-			return Color(0.31, 0.29, 0.24)
+			return Color(0.65, 0.60, 0.50)
 		Kind.BOSS:
-			return Color(0.12, 0.105, 0.085)
+			return Color(0.40, 0.35, 0.28)
 		_:
-			return Color(0.10, 0.095, 0.085)
+			return Color(0.48, 0.44, 0.38)
 
 
 func _tint_visual(node: Node, color: Color) -> void:
 	if node is MeshInstance3D:
 		var material := StandardMaterial3D.new()
 		material.albedo_color = color
-		material.roughness = 0.78
-		material.metallic = 0.18
+		material.roughness = 0.92
+		material.metallic = 0.0
 		node.material_override = material
 		body_materials.append(material)
 		body_base_colors[material] = color
