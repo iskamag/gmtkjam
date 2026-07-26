@@ -133,14 +133,13 @@ func _process_flight_segment(delta: float, can_embed_in_enemy: bool) -> void:
 	var hit_collider = null
 	var hit_position: Vector3 = to
 	if not hits.is_empty():
-		# Closest hit.
 		var best_dist := INF
 		for entry in hits:
-			var d: float = global_position.distance_to(entry.position)
+			var d: float = global_position.distance_to(entry["position"])
 			if d < best_dist:
 				best_dist = d
-				hit_collider = entry.collider
-				hit_position = entry.position
+				hit_collider = entry["collider"]
+				hit_position = entry["position"]
 	# Also raycast for environment collisions (walls etc.) that shape might miss.
 	var ray_query := PhysicsRayQueryParameters3D.create(from, to, 1 | 2)
 	ray_query.exclude = [player.get_rid()]

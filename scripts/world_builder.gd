@@ -106,6 +106,28 @@ static func build_all(main) -> void:
 	build_encounter_zones(main)
 
 
+# Build only the train carriage interior into main.world_root. Used by
+# --export-train to author scenes/train.tscn, a standalone scene that loads
+# on boot as the main menu and unloads after the crash into world.tscn.
+static func build_train(main) -> void:
+	main.world_root = Node3D.new()
+	main.world_root.name = "Train"
+	main.add_child(main.world_root)
+	build_world(main)
+	build_prologue_shell(main)
+
+
+# Pack main.world_root into a .tscn at the given path.
+static func export_scene_at(main, path: String) -> Error:
+	_set_owners(main.world_root)
+	var packed := PackedScene.new()
+	var err := packed.pack(main.world_root)
+	if err != OK:
+		push_error("WorldBuilder.export_scene_at: pack failed with error %d" % err)
+		return err
+	return ResourceSaver.save(packed, path)
+
+
 # Pack main.world_root into a .tscn. Run once via `godot --headless -- --export-world`.
 static func export_scene(main, path: String) -> Error:
 	_set_owners(main.world_root)

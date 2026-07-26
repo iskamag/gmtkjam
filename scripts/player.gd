@@ -1179,7 +1179,7 @@ func _request_impact(strength: float, at: Vector3) -> void:
 # ground-hit plays baion.wav with random pitch.
 func _slam_impact(fall_speed: float) -> void:
 	var strength := clampf(fall_speed / 20.0, 0.7, 1.6)
-	_play_stream(SFX_BAION, 0.0, randf_range(0.82, 1.0))
+	_play_stream(SFX_HIT, 0.0, randf_range(0.5, 0.7))
 	camera_kick.y -= strength * 0.8
 	camera_kick.x += randf_range(-0.15, 0.15) * strength
 	_request_impact(strength, global_position)
@@ -1204,8 +1204,7 @@ func _rocket_jump() -> void:
 	if not hit.is_empty():
 		blast = hit["position"]
 	var strength := 1.0
-	# Dash reuses the blade-swing sound; baion is reserved for the stomp.
-	_play_stream(SFX_SWORD_DRAW, -3.0, randf_range(0.7, 0.9))
+	_play_stream(SFX_BAION, -2.0, randf_range(0.88, 1.12))
 	camera_kick.y += strength * 0.7
 	camera_kick.x += randf_range(-0.15, 0.15) * strength
 	_request_impact(strength, blast)

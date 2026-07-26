@@ -48,13 +48,22 @@ func _ready() -> void:
 	if "--export-world" in OS.get_cmdline_user_args():
 		if "--gen-textures" in OS.get_cmdline_user_args():
 			WorldBuilder.generate_textures()
-		WorldBuilder.build_all(self)
-		var err := WorldBuilder.export_scene(self, "res://scenes/world.tscn")
+		if "--export-train" in OS.get_cmdline_user_args():
+			WorldBuilder.build_train(self)
+			var train_err := WorldBuilder.export_scene_at(self, "res://scenes/train.tscn")
+			if train_err == OK:
+				print("WorldBuilder: wrote res://scenes/train.tscn")
+			# Remove train, build world.
+			world_root.queue_free()
+			WorldBuilder.build_all(self)
+		else:
+			WorldBuilder.build_all(self)
+		var err := WorldBuilder.export_scene_at(self, "res://scenes/world.tscn")
 		if err == OK:
 			print("WorldBuilder: wrote res://scenes/world.tscn")
 		get_tree().quit()
 		return
-	_load_world()
+	_load_train()
 
 	enemies_root = Node3D.new()
 	enemies_root.name = "Enemies"
@@ -96,10 +105,11 @@ func _ready() -> void:
 
 
 var in_train_menu := true
+var _world_loaded := false
 
 
 # Boot state: player seated inside the train carriage, can look around.
-# The arena is hidden. Clicking "play" starts the crash sequence.
+# Clicking starts the crash sequence that transitions into gameplay.
 func _enter_train_menu() -> void:
 	in_train_menu = true
 	started = false
@@ -115,18 +125,30 @@ func _enter_train_menu() -> void:
 		prologue_shell.visible = true
 		prologue_shell.position = Vector3(0.0, 0.0, 16.0)
 		prologue_shell.rotation = Vector3.ZERO
-	# Hide the arena geometry while in the menu, but keep lights + environment.
-	if is_instance_valid(world_root):
-		for child in world_root.get_children():
-			if child is Node3D and child != prologue_shell and not child is Light3D:
-				child.visible = false
 	hud.begin_prologue()
+
+
+# Load the train interior scene on boot. This is the main menu — the player
+# is seated inside the carriage, can look around, and clicks to start the
+# crash sequence. After the crash, _finish_prologue loads world.tscn.
+func _load_train() -> void:
+	var packed := load("res://scenes/train.tscn") as PackedScene
+	if packed == null:
+		push_error("main: res://scenes/train.tscn missing. Run: godot --headless -- --export-world --export-train")
+		return
+	world_root = packed.instantiate()
+	world_root.name = "Train"
+	add_child(world_root)
+	prologue_shell = world_root.find_child("LastServiceCarriage", true)
+	# Bind environment for lighting.
+	var env_nodes := world_root.find_children("*", "WorldEnvironment", true)
+	if not env_nodes.is_empty():
+		world_environment_resource = env_nodes[0].environment
+	WorldBuilder.apply_runtime_tints(self, world_root)
 
 
 # Load the authored world scene (geometry + encounter trigger zones) and bind
 # its nodes back into the runtime state WorldBuilder used to populate directly.
-# To regenerate the scene after changing procedural construction, run:
-#   godot --headless -- --export-world
 func _load_world() -> void:
 	var packed := load("res://scenes/world.tscn") as PackedScene
 	if packed == null:
@@ -137,6 +159,7 @@ func _load_world() -> void:
 	add_child(world_root)
 	_bind_world_from_scene(world_root)
 	WorldBuilder.apply_runtime_tints(self, world_root)
+	_world_loaded = true
 
 
 func _bind_world_from_scene(root: Node3D) -> void:
@@ -264,16 +287,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_tree().reload_current_scene()
 
 
-# Called when the player clicks "play" from the train menu. Reveals the arena
-# geometry (it was hidden during the menu) and starts the crash sequence that
-# transitions into gameplay.
 func _start_crash_sequence() -> void:
 	in_train_menu = false
-	# Reveal the arena.
-	if is_instance_valid(world_root):
-		for child in world_root.get_children():
-			if child is Node3D:
-				child.visible = true
 	_begin_prologue()
 
 
@@ -421,14 +436,18 @@ func _finish_prologue() -> void:
 	if not prologue_active:
 		return
 	prologue_active = false
-	if is_instance_valid(prologue_shell):
-		prologue_shell.visible = false
+	# Swap scenes: unload the train, load the world arena.
+	if is_instance_valid(world_root):
+		world_root.queue_free()
+	_world_loaded = false
+	_load_world()
 	player.global_position = Vector3(0.0, 0.05, 16.0)
 	player.rotation = Vector3.ZERO
 	player.pitch = 0.0
 	player.camera.position = Vector3(0.0, 1.55, 0.0)
 	player.camera.rotation = Vector3.ZERO
 	player.camera.fov = 79.0
+	player.camera.near = 0.04
 	player.set_active(true)
 	hud.set_intro_effects(0.0, 0.0)
 	hud.end_prologue()
