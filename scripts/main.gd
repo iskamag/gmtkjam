@@ -435,6 +435,8 @@ func _update_prologue(delta: float) -> void:
 			_world_loaded = false
 			_load_world()
 			player.global_position = Vector3(0.0, 0.05, 16.0)
+			player.rotation = Vector3.ZERO
+			player.pitch = 0.0
 		var recovery := clampf((prologue_time - 11.0) / 2.0, 0.0, 1.0)
 		var recovery_ease := 1.0 - pow(1.0 - recovery, 3.0)
 		camera_position = Vector3(
