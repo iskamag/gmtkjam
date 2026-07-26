@@ -120,6 +120,7 @@ var chronostep_timer := 0.0
 var chronostep_cooldown := 0.0
 var chronostep_direction := Vector3.ZERO
 var air_step_available := true
+var air_baion_used := false
 var _was_on_floor := true
 var slam_active := false
 var _master_lowpass: AudioEffectLowPassFilter
@@ -393,14 +394,16 @@ func _read_action_inputs() -> void:
 	if Input.is_action_just_pressed("jump"):
 		jump_buffer = JUMP_BUFFER_TIME
 	if Input.is_action_just_pressed("attack"):
-		# Baion (rocket jump) works on ground and in air — attack is always a
-		# baion, not a melee swing. Clear combat so no swing leaks through.
-		slam_active = true
-		combat_state = CombatState.IDLE
-		combat_state_time = 0.0
-		buffered_action = &""
-		attack_buffer = 0.0
-		_rocket_jump()
+		if is_on_floor():
+			_attack()
+		elif not air_baion_used:
+			air_baion_used = true
+			slam_active = true
+			combat_state = CombatState.IDLE
+			combat_state_time = 0.0
+			buffered_action = &""
+			attack_buffer = 0.0
+			_rocket_jump()
 	if Input.is_action_just_pressed("kick"):
 		if not is_on_floor():
 			slam_active = true
@@ -419,6 +422,7 @@ func _move(delta: float) -> void:
 	if grounded:
 		coyote_timer = COYOTE_TIME
 		air_step_available = true
+		air_baion_used = false
 	else:
 		coyote_timer = maxf(coyote_timer - delta, 0.0)
 
@@ -1184,7 +1188,7 @@ func _slam_impact(fall_speed: float) -> void:
 	_request_impact(strength, global_position)
 	var game := get_parent()
 	if game != null and game.has_method("apply_slam"):
-		game.apply_slam(global_position, SLAM_RADIUS, int(18.0 * strength), 3.0 * strength, 4.0 * strength)
+		game.apply_slam(global_position, SLAM_RADIUS, int(52.0 * strength), 15.0 * strength, 8.0 * strength)
 	emit_signal("score_event", &"stomp", {"strength": strength})
 
 
@@ -1216,7 +1220,7 @@ func _rocket_jump() -> void:
 		velocity.z += away.normalized().z * 4.0
 	var game := get_parent()
 	if game != null and game.has_method("apply_slam"):
-		game.apply_slam(blast, SLAM_RADIUS, 14, 3.2, 4.5)
+		game.apply_slam(blast, SLAM_RADIUS, 22, 6.0, 5.5)
 	# Baion resets the dash so you can chain baion → dash → baion.
 	chronostep_cooldown = 0.0
 	air_step_available = true

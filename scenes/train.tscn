@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene format=3 uid="uid://d8638o7godn3"]
 
 [sub_resource type="Shader" id="Shader_sky"]
 code = "shader_type sky;
@@ -29,8 +29,8 @@ radiance_size = 2
 
 [sub_resource type="Environment" id="Env"]
 background_mode = 3
-sky = SubResource("Sky1")
 background_energy_multiplier = 0.9
+sky = SubResource("Sky1")
 ambient_light_source = 2
 ambient_light_color = Color(0.39, 0.43, 0.45, 1)
 ambient_light_energy = 0.84
@@ -40,180 +40,394 @@ glow_enabled = true
 glow_intensity = 0.36
 glow_bloom = 0.045
 glow_hdr_threshold = 1.18
-adjustment_enabled = true
-adjustment_contrast = 1.065
-adjustment_saturation = 0.82
 fog_enabled = true
 fog_light_color = Color(0.098, 0.105, 0.104, 1)
 fog_light_energy = 0.66
 fog_density = 0.0105
 fog_sky_affect = 0.48
-
-[sub_resource type="StandardMaterial3D" id="WallMat"]
-albedo_color = Color(0.19, 0.18, 0.155, 1)
-roughness = 0.86
-metallic = 0.08
-
-[sub_resource type="StandardMaterial3D" id="FrameMat"]
-albedo_color = Color(0.44, 0.33, 0.15, 1)
-roughness = 0.48
-metallic = 0.62
+adjustment_enabled = true
+adjustment_contrast = 1.065
+adjustment_saturation = 0.82
 
 [sub_resource type="StandardMaterial3D" id="FloorMat"]
 albedo_color = Color(0.13, 0.12, 0.105, 1)
+roughness = 0.97
+
+[sub_resource type="BoxMesh" id="FloorMesh"]
+size = Vector3(5.5, 0.16, 10.6)
+
+[sub_resource type="StandardMaterial3D" id="WallMat"]
+albedo_color = Color(0.19, 0.18, 0.155, 1)
+metallic = 0.08
+roughness = 0.86
+
+[sub_resource type="BoxMesh" id="CeilMesh"]
+size = Vector3(4.8, 0.16, 10.6)
+
+[sub_resource type="StandardMaterial3D" id="MetalMat"]
+albedo_color = Color(0.37, 0.355, 0.305, 1)
+metallic = 0.42
+roughness = 0.58
+
+[sub_resource type="BoxMesh" id="EndWallMesh"]
+size = Vector3(5.5, 3.25, 0.18)
+
+[sub_resource type="BoxMesh" id="RightWallMesh"]
+size = Vector3(0.17, 3.06, 10.6)
+
+[sub_resource type="BoxMesh" id="WindowWallLowerMesh"]
+size = Vector3(0.17, 0.94, 10.6)
+
+[sub_resource type="BoxMesh" id="WindowWallUpperMesh"]
+size = Vector3(0.17, 0.84, 10.6)
+
+[sub_resource type="BoxMesh" id="PillarMesh"]
+size = Vector3(0.19, 1.52, 0.22)
+
+[sub_resource type="StandardMaterial3D" id="GlassMat"]
+transparency = 1
+albedo_color = Color(0.065, 0.075, 0.072, 0.18)
+metallic = 0.16
+roughness = 0.26
+
+[sub_resource type="BoxMesh" id="GlassMesh"]
+size = Vector3(0.025, 1.31, 2.17)
+
+[sub_resource type="StandardMaterial3D" id="StripLightMat"]
+albedo_color = Color(0.82, 0.77, 0.62, 1)
+emission_enabled = true
+emission = Color(0.82, 0.77, 0.62, 1)
+emission_energy_multiplier = 2.5
+
+[sub_resource type="BoxMesh" id="StripLightMesh"]
+size = Vector3(2.3, 0.045, 0.22)
+
+[sub_resource type="StandardMaterial3D" id="SeatMat"]
+albedo_color = Color(0.255, 0.125, 0.07, 1)
+roughness = 0.97
+
+[sub_resource type="BoxMesh" id="SeatBaseMesh"]
+size = Vector3(0.94, 0.36, 1.45)
+
+[sub_resource type="BoxMesh" id="SeatBackMesh"]
+size = Vector3(0.24, 1.35, 1.43)
 
 [sub_resource type="StandardMaterial3D" id="TunnelMat"]
 albedo_color = Color(0.012, 0.016, 0.017, 1)
+
+[sub_resource type="BoxMesh" id="TunnelWallMesh"]
+size = Vector3(0.34, 3.65, 24)
+
+[sub_resource type="StandardMaterial3D" id="ButtressMat"]
+albedo_color = Color(0.115, 0.105, 0.085, 1)
+
+[sub_resource type="BoxMesh" id="ButtressMesh"]
+size = Vector3(0.55, 3.42, 0.32)
 
 [sub_resource type="StandardMaterial3D" id="LampMat"]
 albedo_color = Color(0.74, 0.39, 0.13, 1)
 emission_enabled = true
 emission = Color(0.74, 0.39, 0.13, 1)
-emission_energy_multiplier = 2.5
+emission_energy_multiplier = 3.0
 
-[sub_resource type="StandardMaterial3D" id="SeatMat"]
-albedo_color = Color(0.255, 0.125, 0.07, 1)
+[sub_resource type="BoxMesh" id="TunnelLampMesh"]
+size = Vector3(0.035, 0.17, 0.54)
 
-[sub_resource type="BoxMesh" id="FloorMesh"]
-size = Vector3(6, 0.2, 12)
+[node name="Train" type="Node3D" unique_id=1239507687]
 
-[sub_resource type="BoxMesh" id="CeilMesh"]
-size = Vector3(6, 0.2, 12)
-
-[sub_resource type="BoxMesh" id="WallLongMesh"]
-size = Vector3(0.2, 4, 12)
-
-[sub_resource type="BoxMesh" id="EndWallMesh"]
-size = Vector3(6, 4, 0.2)
-
-[sub_resource type="BoxMesh" id="WindowFrameMesh"]
-size = Vector3(0.15, 2, 4)
-
-[sub_resource type="BoxMesh" id="PillarMesh"]
-size = Vector3(0.2, 4, 0.2)
-
-[sub_resource type="BoxMesh" id="LampMesh"]
-size = Vector3(0.2, 0.4, 0.6)
-
-[sub_resource type="BoxMesh" id="SeatMesh"]
-size = Vector3(1.5, 0.8, 2)
-
-[sub_resource type="BoxMesh" id="TunnelMesh"]
-size = Vector3(8, 6, 30)
-
-[node name="Train" type="Node3D"]
-
-[node name="Environment" type="WorldEnvironment" parent="."]
+[node name="Environment" type="WorldEnvironment" parent="." unique_id=1558270391]
 environment = SubResource("Env")
 
-[node name="MoonLight" type="DirectionalLight3D" parent="."]
-rotation_degrees = Vector3(-43, -31, 0)
+[node name="MoonLight" type="DirectionalLight3D" parent="." unique_id=915009119]
+transform = Transform3D(0.8571673, 0.35125512, -0.376675, 0, 0.7313537, 0.6819984, 0.5150381, -0.5845867, 0.6268925, 0, 0, 0)
 light_color = Color(0.66, 0.72, 0.75, 1)
-light_energy = 1.08
+light_energy = 3.773
+light_indirect_energy = 0.6
 
-[node name="InteriorLight" type="OmniLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.8, 16)
-light_color = Color(0.83, 0.79, 0.67, 1)
-light_energy = 5.0
-omni_range = 12.0
-omni_attenuation = 1.4
-
-[node name="FillLight" type="OmniLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 1.8, 18)
-light_color = Color(0.68, 0.64, 0.53, 1)
-light_energy = 3.0
-omni_range = 6.0
-
-[node name="Carriage" type="Node3D" parent="."]
+[node name="Carriage" type="Node3D" parent="." unique_id=1894196854]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 16)
+metadata/node_name = "LastServiceCarriage"
 
-[node name="Floor" type="MeshInstance3D" parent="Carriage"]
-mesh = SubResource("FloorMesh")
+[node name="Floor" type="MeshInstance3D" parent="Carriage" unique_id=1288874892]
+transform = Transform3D(1.7162693, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
 material_override = SubResource("FloorMat")
+mesh = SubResource("FloorMesh")
 
-[node name="Ceiling" type="MeshInstance3D" parent="Carriage"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+[node name="Ceiling" type="MeshInstance3D" parent="Carriage" unique_id=857773813]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.18, 0)
+visible = false
+material_override = SubResource("WallMat")
 mesh = SubResource("CeilMesh")
-material_override = SubResource("WallMat")
 
-[node name="BackWall" type="MeshInstance3D" parent="Carriage"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 6)
+[node name="BackWall" type="MeshInstance3D" parent="Carriage" unique_id=1574798956]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, -5.18)
+material_override = SubResource("MetalMat")
 mesh = SubResource("EndWallMesh")
-material_override = SubResource("WallMat")
 
-[node name="FrontWall" type="MeshInstance3D" parent="Carriage"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -6)
+[node name="FrontWall" type="MeshInstance3D" parent="Carriage" unique_id=1492332208]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 5.18)
+material_override = SubResource("MetalMat")
 mesh = SubResource("EndWallMesh")
-material_override = SubResource("WallMat")
 
-[node name="RightWall" type="MeshInstance3D" parent="Carriage"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 2, 0)
-mesh = SubResource("WallLongMesh")
-material_override = SubResource("WallMat")
+[node name="RightWall" type="MeshInstance3D" parent="Carriage" unique_id=301537403]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.3392787, 1.62, 0)
+material_override = SubResource("MetalMat")
+mesh = SubResource("RightWallMesh")
 
-[node name="LeftWallTop" type="MeshInstance3D" parent="Carriage"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 3.5, 0)
-mesh = SubResource("WindowFrameMesh")
-material_override = SubResource("WallMat")
+[node name="LeftWallLower" type="MeshInstance3D" parent="Carriage" unique_id=964194049]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.69, 0.42, 0)
+material_override = SubResource("MetalMat")
+mesh = SubResource("WindowWallLowerMesh")
 
-[node name="LeftWallBottom" type="MeshInstance3D" parent="Carriage"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0.5, 0)
-mesh = SubResource("WindowFrameMesh")
-material_override = SubResource("WallMat")
+[node name="LeftWallUpper" type="MeshInstance3D" parent="Carriage" unique_id=154879626]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.69, 2.76, 0)
+material_override = SubResource("MetalMat")
+mesh = SubResource("WindowWallUpperMesh")
 
-[node name="LeftPillarFront" type="MeshInstance3D" parent="Carriage"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 2, 3)
+[node name="PillarN5" type="MeshInstance3D" parent="Carriage" unique_id=520371503]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.69, 1.62, -5)
+material_override = SubResource("WallMat")
 mesh = SubResource("PillarMesh")
-material_override = SubResource("FrameMat")
 
-[node name="LeftPillarBack" type="MeshInstance3D" parent="Carriage"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 2, -3)
+[node name="PillarN2.5" type="MeshInstance3D" parent="Carriage" unique_id=2147220872]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.69, 1.62, -2.55)
+material_override = SubResource("WallMat")
 mesh = SubResource("PillarMesh")
-material_override = SubResource("FrameMat")
 
-[node name="WindowFrame" type="MeshInstance3D" parent="Carriage"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.92, 2, 0)
-mesh = SubResource("WindowFrameMesh")
-material_override = SubResource("FrameMat")
+[node name="Pillar0" type="MeshInstance3D" parent="Carriage" unique_id=378931216]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.69, 1.62, 0)
+material_override = SubResource("WallMat")
+mesh = SubResource("PillarMesh")
 
-[node name="Seat" type="MeshInstance3D" parent="Carriage"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5, 0.4, 0)
-mesh = SubResource("SeatMesh")
+[node name="PillarP2.5" type="MeshInstance3D" parent="Carriage" unique_id=1418392468]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.69, 1.62, 2.55)
+material_override = SubResource("WallMat")
+mesh = SubResource("PillarMesh")
+
+[node name="PillarP5" type="MeshInstance3D" parent="Carriage" unique_id=1745163825]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.69, 1.62, 5)
+material_override = SubResource("WallMat")
+mesh = SubResource("PillarMesh")
+
+[node name="Glass1" type="MeshInstance3D" parent="Carriage" unique_id=585312207]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.71, 1.63, -3.78)
+material_override = SubResource("GlassMat")
+mesh = SubResource("GlassMesh")
+
+[node name="Glass2" type="MeshInstance3D" parent="Carriage" unique_id=1146998114]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.71, 1.63, -1.28)
+material_override = SubResource("GlassMat")
+mesh = SubResource("GlassMesh")
+
+[node name="Glass3" type="MeshInstance3D" parent="Carriage" unique_id=410259970]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.71, 1.63, 1.28)
+material_override = SubResource("GlassMat")
+mesh = SubResource("GlassMesh")
+
+[node name="Glass4" type="MeshInstance3D" parent="Carriage" unique_id=1792309922]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.71, 1.63, 3.78)
+material_override = SubResource("GlassMat")
+mesh = SubResource("GlassMesh")
+
+[node name="CeilingLight1" type="MeshInstance3D" parent="Carriage" unique_id=1883824071]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.055, -3.65)
+material_override = SubResource("StripLightMat")
+mesh = SubResource("StripLightMesh")
+
+[node name="CeilingLight2" type="MeshInstance3D" parent="Carriage" unique_id=2008424478]
+transform = Transform3D(1.8849822, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.055, -1.2200003)
+material_override = SubResource("StripLightMat")
+mesh = SubResource("StripLightMesh")
+
+[node name="CeilingLight3" type="MeshInstance3D" parent="Carriage" unique_id=1104669141]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.055, 1.22)
+material_override = SubResource("StripLightMat")
+mesh = SubResource("StripLightMesh")
+
+[node name="CeilingLight4" type="MeshInstance3D" parent="Carriage" unique_id=142382389]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.055, 3.65)
+material_override = SubResource("StripLightMat")
+mesh = SubResource("StripLightMesh")
+
+[node name="PracticalLight1" type="OmniLight3D" parent="Carriage" unique_id=556224938]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.72, -3.65)
+light_color = Color(0.83, 0.79, 0.67, 1)
+light_energy = 3.55
+omni_range = 5.2
+
+[node name="PracticalLight2" type="OmniLight3D" parent="Carriage" unique_id=281545002]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.72, -1.22)
+light_color = Color(0.83, 0.79, 0.67, 1)
+light_energy = 3.55
+omni_range = 5.2
+
+[node name="PracticalLight3" type="OmniLight3D" parent="Carriage" unique_id=1138323696]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.72, 1.22)
+light_color = Color(0.83, 0.79, 0.67, 1)
+light_energy = 3.55
+omni_range = 5.2
+
+[node name="PracticalLight4" type="OmniLight3D" parent="Carriage" unique_id=194330766]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.72, 3.65)
+light_color = Color(0.83, 0.79, 0.67, 1)
+light_energy = 3.55
+omni_range = 5.2
+
+[node name="FillLight" type="OmniLight3D" parent="Carriage" unique_id=849648470]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.38, 2.45)
+light_color = Color(0.68, 0.64, 0.53, 1)
+light_energy = 1.65
+omni_range = 5.8
+
+[node name="Node3D" type="Node3D" parent="Carriage" unique_id=1027069989]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -2.086278)
+
+[node name="seat" type="Node" parent="Carriage" unique_id=1843029605]
+
+[node name="SeatR4" type="MeshInstance3D" parent="Carriage/seat" unique_id=109561554]
+transform = Transform3D(0.027731044, 0, -1.4253961, 0, 1, 0, 0.9876509, 0, 0.040021956, 3.0885758, 0.49, 12.620326)
 material_override = SubResource("SeatMat")
+mesh = SubResource("SeatBaseMesh")
 
-[node name="Tunnel" type="Node3D" parent="Carriage"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 2, 0)
+[node name="SeatR4Back" type="MeshInstance3D" parent="Carriage/seat" unique_id=369435164]
+transform = Transform3D(0.027731044, 0, -1.4253961, 0, 1, 0, 0.9876509, 0, 0.040021956, 3.1441503, 1.0800005, 16.199932)
+material_override = SubResource("SeatMat")
+mesh = SubResource("SeatBackMesh")
 
-[node name="TunnelWall" type="MeshInstance3D" parent="Carriage/Tunnel"]
-mesh = SubResource("TunnelMesh")
+[node name="Tunnel" type="Node3D" parent="Carriage" unique_id=1036693718]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.05, 1.58, 0)
+metadata/node_name = "SealedPassingTunnel"
+
+[node name="TunnelWall" type="MeshInstance3D" parent="Carriage/Tunnel" unique_id=2034966647]
 material_override = SubResource("TunnelMat")
+mesh = SubResource("TunnelWallMesh")
 
-[node name="Lamp0" type="MeshInstance3D" parent="Carriage/Tunnel"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, -12)
-mesh = SubResource("LampMesh")
-material_override = SubResource("LampMat")
+[node name="Buttress0" type="MeshInstance3D" parent="Carriage/Tunnel" unique_id=1292431491]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0, -12)
+material_override = SubResource("ButtressMat")
+mesh = SubResource("ButtressMesh")
 metadata/travel_z = -12.0
 
-[node name="Lamp1" type="MeshInstance3D" parent="Carriage/Tunnel"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, -6)
-mesh = SubResource("LampMesh")
+[node name="Lamp0" type="MeshInstance3D" parent="Carriage/Tunnel" unique_id=1082164545]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.62, 0.52, -11.38)
 material_override = SubResource("LampMat")
+mesh = SubResource("TunnelLampMesh")
+metadata/travel_z = -11.38
+
+[node name="Buttress1" type="MeshInstance3D" parent="Carriage/Tunnel" unique_id=1440822392]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0, -9)
+material_override = SubResource("ButtressMat")
+mesh = SubResource("ButtressMesh")
+metadata/travel_z = -9.0
+
+[node name="Buttress2" type="MeshInstance3D" parent="Carriage/Tunnel" unique_id=427506779]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0, -6)
+material_override = SubResource("ButtressMat")
+mesh = SubResource("ButtressMesh")
 metadata/travel_z = -6.0
 
-[node name="Lamp2" type="MeshInstance3D" parent="Carriage/Tunnel"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 0)
-mesh = SubResource("LampMesh")
+[node name="Lamp2" type="MeshInstance3D" parent="Carriage/Tunnel" unique_id=507330814]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.62, 0.52, -5.38)
 material_override = SubResource("LampMat")
+mesh = SubResource("TunnelLampMesh")
+metadata/travel_z = -5.38
+
+[node name="Buttress3" type="MeshInstance3D" parent="Carriage/Tunnel" unique_id=1104960496]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0, -3)
+material_override = SubResource("ButtressMat")
+mesh = SubResource("ButtressMesh")
+metadata/travel_z = -3.0
+
+[node name="Buttress4" type="MeshInstance3D" parent="Carriage/Tunnel" unique_id=1215349611]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0, 0)
+material_override = SubResource("ButtressMat")
+mesh = SubResource("ButtressMesh")
 metadata/travel_z = 0.0
 
-[node name="Lamp3" type="MeshInstance3D" parent="Carriage/Tunnel"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 6)
-mesh = SubResource("LampMesh")
+[node name="Lamp4" type="MeshInstance3D" parent="Carriage/Tunnel" unique_id=1094139047]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.62, 0.52, 0.62)
 material_override = SubResource("LampMat")
+mesh = SubResource("TunnelLampMesh")
+metadata/travel_z = 0.62
+
+[node name="Buttress5" type="MeshInstance3D" parent="Carriage/Tunnel" unique_id=869035780]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0, 3)
+material_override = SubResource("ButtressMat")
+mesh = SubResource("ButtressMesh")
+metadata/travel_z = 3.0
+
+[node name="Buttress6" type="MeshInstance3D" parent="Carriage/Tunnel" unique_id=1478107148]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0, 6)
+material_override = SubResource("ButtressMat")
+mesh = SubResource("ButtressMesh")
 metadata/travel_z = 6.0
 
-[node name="Lamp4" type="MeshInstance3D" parent="Carriage/Tunnel"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 12)
-mesh = SubResource("LampMesh")
+[node name="Lamp6" type="MeshInstance3D" parent="Carriage/Tunnel" unique_id=1650106980]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.62, 0.52, 6.62)
 material_override = SubResource("LampMat")
+mesh = SubResource("TunnelLampMesh")
+metadata/travel_z = 6.62
+
+[node name="Buttress7" type="MeshInstance3D" parent="Carriage/Tunnel" unique_id=1380580564]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0, 9)
+material_override = SubResource("ButtressMat")
+mesh = SubResource("ButtressMesh")
+metadata/travel_z = 9.0
+
+[node name="Buttress8" type="MeshInstance3D" parent="Carriage/Tunnel" unique_id=1272271042]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0, 12)
+material_override = SubResource("ButtressMat")
+mesh = SubResource("ButtressMesh")
 metadata/travel_z = 12.0
+
+[node name="Lamp8" type="MeshInstance3D" parent="Carriage/Tunnel" unique_id=1355645346]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.62, 0.52, 12.62)
+material_override = SubResource("LampMat")
+mesh = SubResource("TunnelLampMesh")
+metadata/travel_z = 12.62
+
+[node name="seat2" type="Node" parent="Carriage" unique_id=368052010]
+
+[node name="SeatR4" type="MeshInstance3D" parent="Carriage/seat2" unique_id=1407349818]
+transform = Transform3D(0.027731044, 0, -1.4253961, 0, 1, 0, 0.9876509, 0, 0.040021956, 3.1577587, 0.4900005, 16.539799)
+material_override = SubResource("SeatMat")
+mesh = SubResource("SeatBaseMesh")
+
+[node name="SeatR4Back" type="MeshInstance3D" parent="Carriage/seat2" unique_id=382068984]
+transform = Transform3D(0.027731044, 0, -1.4253961, 0, 1, 0, 0.9876509, 0, 0.040021956, -1.3793015, 1.08, 16.07616)
+material_override = SubResource("SeatMat")
+mesh = SubResource("SeatBackMesh")
+
+[node name="SeatR4Back2" type="MeshInstance3D" parent="Carriage/seat2" unique_id=670323106]
+transform = Transform3D(0.027731044, 0, -1.4253961, 0, 1, 0, 0.9876509, 0, 0.040021956, -1.3793015, 1.08, 18.487064)
+material_override = SubResource("SeatMat")
+mesh = SubResource("SeatBackMesh")
+
+[node name="seat3" type="Node" parent="Carriage" unique_id=1943598885]
+
+[node name="SeatR4" type="MeshInstance3D" parent="Carriage/seat3" unique_id=1166768693]
+transform = Transform3D(0.027731044, 0, -1.4253961, 0, 1, 0, 0.9876509, 0, 0.040021956, -1.3656931, 0.49, 16.416027)
+material_override = SubResource("SeatMat")
+mesh = SubResource("SeatBaseMesh")
+
+[node name="SeatR5" type="MeshInstance3D" parent="Carriage/seat3" unique_id=966052357]
+transform = Transform3D(0.027731044, 0, -1.4253961, 0, 1, 0, 0.9876509, 0, 0.040021956, -1.3656931, 0.49, 18.826931)
+material_override = SubResource("SeatMat")
+mesh = SubResource("SeatBaseMesh")
+
+[node name="SeatR4Back" type="MeshInstance3D" parent="Carriage/seat3" unique_id=504690272]
+transform = Transform3D(0.027731044, 0, -1.4253961, 0, 1, 0, 0.9876509, 0, 0.040021956, 3.0749674, 1.08, 12.280459)
+material_override = SubResource("SeatMat")
+mesh = SubResource("SeatBackMesh")
+
+[node name="seat4" type="Node" parent="Carriage" unique_id=1763451611]
+
+[node name="SeatR4" type="MeshInstance3D" parent="Carriage/seat4" unique_id=1475248501]
+transform = Transform3D(0.027731044, 0, -1.4253961, 0, 1, 0, 0.9876509, 0, 0.040021956, -1.3727212, 0.49, 12.620326)
+material_override = SubResource("SeatMat")
+mesh = SubResource("SeatBaseMesh")
+
+[node name="SeatR4Back" type="MeshInstance3D" parent="Carriage/seat4" unique_id=1705385589]
+transform = Transform3D(0.027731044, 0, -1.4253961, 0, 1, 0, 0.9876509, 0, 0.040021956, -1.3863297, 1.08, 12.280459)
+material_override = SubResource("SeatMat")
+mesh = SubResource("SeatBackMesh")
