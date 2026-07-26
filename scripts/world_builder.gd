@@ -11,6 +11,88 @@ const EnemyScript = preload("res://scripts/enemy.gd")
 const WorldAestheticScript = preload("res://scripts/world_aesthetic.gd")
 const PackNightShader = preload("res://shaders/pack_night_material.gdshader")
 
+const ALBEDO_PATH := "res://assets/generated/building_albedo.png"
+const NORMAL_PATH := "res://assets/generated/building_normal.png"
+
+# Cache of shared textured materials keyed by tint color, so every building
+# reuses the same generated albedo+normal textures instead of a flat color.
+static var _building_materials: Dictionary = {}
+
+
+# Bake procedural noise textures (albedo + normal) to res://assets/generated/.
+# Run once via `godot --headless -- --gen-textures` whenever you want to
+# re-roll the surface. Buildings pick them up automatically on next export.
+static func generate_textures() -> void:
+	var size := 512
+	var base := FastNoiseLite.new()
+	base.noise_type = FastNoiseLite.TYPE_SIMPLEX
+	base.frequency = 0.018
+	base.fractal_octaves = 5
+	base.fractal_lacunarity = 2.2
+	base.fractal_gain = 0.5
+	base.seed = 2718
+
+	var fine := FastNoiseLite.new()
+	fine.noise_type = FastNoiseLite.TYPE_PERLIN
+	fine.frequency = 0.11
+	fine.fractal_octaves = 3
+	fine.seed = 1618
+
+	var albedo := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var height := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	for y in size:
+		for x in size:
+			var h: float = base.get_noise_2d(float(x), float(y)) * 0.5 + 0.5
+			var grit: float = fine.get_noise_2d(float(x) * 1.3, float(y) * 1.3) * 0.5 + 0.5
+			var stain := clampf(h * 0.7 + grit * 0.3, 0.0, 1.0)
+			# Warm grungy concrete: darker in pits, dusty on ridges.
+			var v := 0.18 + stain * 0.30
+			var r := v + grit * 0.03
+			var g := v
+			var b := v - grit * 0.02
+			albedo.set_pixel(x, y, Color(r, g, b, 1.0))
+			height.set_pixel(x, y, Color(h, h, h, 1.0))
+
+	# Derive a tangent-space normal map from the height field.
+	var normal := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var strength := 2.4
+	for y in size:
+		for x in size:
+			var xl := height.get_pixel((x - 1 + size) % size, y).r
+			var xr := height.get_pixel((x + 1) % size, y).r
+			var yu := height.get_pixel(x, (y - 1 + size) % size).r
+			var yd := height.get_pixel(x, (y + 1) % size).r
+			var nx := (xl - xr) * strength
+			var ny := (yu - yd) * strength
+			var nz := 1.0
+			var l := sqrt(nx * nx + ny * ny + nz * nz)
+			normal.set_pixel(x, y, Color(nx / l * 0.5 + 0.5, ny / l * 0.5 + 0.5, nz / l * 0.5 + 0.5, 1.0))
+
+	DirAccess.make_dir_recursive_absolute("res://assets/generated")
+	albedo.save_png(ALBEDO_PATH)
+	normal.save_png(NORMAL_PATH)
+	# Invalidate the material cache so a re-roll actually takes effect.
+	_building_materials.clear()
+	print("WorldBuilder: wrote %s and %s" % [ALBEDO_PATH, NORMAL_PATH])
+
+
+static func _building_material(tint: Color) -> Material:
+	if _building_materials.has(tint):
+		return _building_materials[tint]
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = tint
+	if ResourceLoader.exists(ALBEDO_PATH):
+		mat.albedo_texture = load(ALBEDO_PATH)
+	if ResourceLoader.exists(NORMAL_PATH):
+		mat.normal_enabled = true
+		mat.normal_texture = load(NORMAL_PATH)
+		mat.normal_scale = 0.85
+	mat.roughness = 0.82
+	mat.metallic = 0.06
+	mat.uv1_scale = Vector3(2.0, 3.0, 2.0)
+	_building_materials[tint] = mat
+	return mat
+
 
 # Build the entire world under main.world_root. Used by the --export-world
 # path to author scenes/world.tscn, which main.gd then loads at runtime so
@@ -1034,9 +1116,27 @@ static func apply_runtime_tints(main, root: Node) -> void:
 
 
 # A modular building block: a collidable mass (so the player can wallkick and
-# collide with it) topped by a parapet and grounded by a skirt. Same collision
-# layer as the cover obstacles, so wall-runs/kicks behave identically.
+# collide with it) topped by a parapet and grounded by a skirt. Uses a shared
+# procedurally-generated noise material (albedo + normal) tinted per facade.
 static func _add_building(main, base: Vector3, footprint: Vector2, height: float, color: Color) -> void:
-	_add_static_box(main, Vector3(base.x, height * 0.5, base.z), Vector3(footprint.x, height, footprint.y), color)
+	var mat := _building_material(color)
+	# Collidable mass.
+	var body := StaticBody3D.new()
+	body.position = Vector3(base.x, height * 0.5, base.z)
+	body.collision_layer = 1
+	body.collision_mask = 0
+	main.world_root.add_child(body)
+	var col := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(footprint.x, height, footprint.y)
+	col.shape = shape
+	body.add_child(col)
+	var mass := MeshInstance3D.new()
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(footprint.x, height, footprint.y)
+	mass.mesh = mesh
+	mass.material_override = mat
+	body.add_child(mass)
+	# Parapet + skirt (visual only).
 	_add_visual_box(main, Vector3(base.x, height + 0.3, base.z), Vector3(footprint.x + 0.4, 0.6, footprint.y + 0.4), color.darkened(0.2))
 	_add_visual_box(main, Vector3(base.x, 0.25, base.z), Vector3(footprint.x + 0.6, 0.5, footprint.y + 0.6), color.darkened(0.4))

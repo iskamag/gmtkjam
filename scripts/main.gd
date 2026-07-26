@@ -45,6 +45,8 @@ var prologue_look_pitch := 0.0
 func _ready() -> void:
 	_ensure_input_actions()
 	if "--export-world" in OS.get_cmdline_user_args():
+		if "--gen-textures" in OS.get_cmdline_user_args():
+			WorldBuilder.generate_textures()
 		WorldBuilder.build_all(self)
 		var err := WorldBuilder.export_scene(self, "res://scenes/world.tscn")
 		if err == OK:
