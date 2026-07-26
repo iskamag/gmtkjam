@@ -6,3 +6,5 @@ build/
 # procedural fallbacks and exports may embed them, but raw pack files must not
 # be redistributed from this repository.
 assets/user_pack/
+
+.commandcode
