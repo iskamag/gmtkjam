@@ -486,6 +486,7 @@ func _move(delta: float) -> void:
 			velocity.y = JUMP_VELOCITY
 			jump_buffer = 0.0
 			coyote_timer = 0.0
+			air_baion_used = false
 			play_sfx(&"jump")
 		else:
 			var wall_normal := _find_wall_normal()
@@ -494,6 +495,7 @@ func _move(delta: float) -> void:
 				horizontal = wall_normal * 9.2 + tangent
 				velocity.y = 8.7
 				jump_buffer = 0.0
+				air_baion_used = false
 				camera_kick += Vector2(wall_normal.dot(global_transform.basis.x), -0.2) * 0.45
 				play_sfx(&"jump")
 
