@@ -137,6 +137,7 @@ func _enter_train_menu() -> void:
 		player.camera.rotation = Vector3(-0.035, 0.0, 0.0)
 	player.camera.fov = 73.0
 	player.camera.near = 0.1
+	hud.title_layer.visible = true
 	if is_instance_valid(prologue_shell):
 		prologue_shell.visible = true
 		prologue_shell.position = Vector3(0.0, 0.0, 16.0)
