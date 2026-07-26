@@ -17,6 +17,7 @@ var world_root: Node3D
 var active_enemies: Array[Node] = []
 var _music: AudioStreamPlayer
 var _train_ambient: AudioStreamPlayer
+var _crash_voice: AudioStreamPlayer
 
 var started := false
 var run_finished := false
@@ -311,6 +312,7 @@ func _start_crash_sequence() -> void:
 	add_child(crash_voice)
 	crash_voice.play()
 	crash_voice.finished.connect(crash_voice.queue_free)
+	_crash_voice = crash_voice
 	_begin_prologue()
 
 
@@ -463,6 +465,11 @@ func _finish_prologue() -> void:
 	if not prologue_active:
 		return
 	prologue_active = false
+	# Stop cutscene audio on skip.
+	if is_instance_valid(_crash_voice):
+		_crash_voice.stop()
+	if is_instance_valid(_train_ambient):
+		_train_ambient.stop()
 	# If the world wasn't loaded during the recovery phase (e.g. skip), load it now.
 	if not _world_loaded:
 		if is_instance_valid(world_root):
