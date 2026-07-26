@@ -375,14 +375,13 @@ func _read_action_inputs() -> void:
 	if Input.is_action_just_pressed("jump"):
 		jump_buffer = JUMP_BUFFER_TIME
 	if Input.is_action_just_pressed("attack"):
-		_queue_attack(&"blade" if dagger_state == DaggerState.HELD else &"fist")
-	if Input.is_action_just_pressed("kick"):
 		if not is_on_floor() and not slam_active:
 			slam_active = true
-			velocity.y = -SLAM_SPEED
-			camera_kick.y -= 0.2
+			_rocket_jump()
 		else:
-			_queue_attack(&"kick")
+			_queue_attack(&"blade" if dagger_state == DaggerState.HELD else &"fist")
+	if Input.is_action_just_pressed("kick"):
+		_queue_attack(&"kick")
 	if Input.is_action_just_pressed("throw_dagger"):
 		_handle_dagger_input()
 	if Input.is_action_just_pressed("chronostep"):
@@ -484,11 +483,8 @@ func _move(delta: float) -> void:
 	if not _was_on_floor and is_on_floor():
 		landing_visual = clampf(fall_speed / 12.0, 0.25, 1.0)
 		camera_kick.y -= landing_visual * 0.55
-		if slam_active:
-			_slam_impact(fall_speed)
-			slam_active = false
-		else:
-			play_sfx(&"land")
+		slam_active = false
+		play_sfx(&"land")
 
 	planar_speed = Vector2(velocity.x, velocity.z).length()
 	var local_side_speed := global_transform.basis.x.dot(velocity)
@@ -1149,19 +1145,36 @@ func _request_impact(strength: float, at: Vector3) -> void:
 		game.request_impact(strength, at)
 
 
-# Bayonetta-style ground slam impact. Triggered on landing after an airborne
-# kick. Deals AoE damage to nearby enemies (faloff with distance), kicks the
-# camera, and plays the annotated hit sound with random pitch.
-func _slam_impact(fall_speed: float) -> void:
-	var strength := clampf(fall_speed / 20.0, 0.7, 1.6)
+# Rocket jump (baion-style): airborne kick explodes at the ground below and
+# launches the player up + away from the blast. Damages enemies in the radius,
+# plays the annotated hit sound with random pitch.
+func _rocket_jump() -> void:
+	# Find the ground point directly under the player for the blast origin.
+	var blast := global_position - Vector3.UP * 1.0
+	var space := get_world_3d().direct_space_state
+	var query := PhysicsRayQueryParameters3D.create(
+		global_position, global_position - Vector3.UP * 6.0, collision_mask
+	)
+	query.exclude = [get_rid()]
+	var hit := space.intersect_ray(query)
+	if not hit.is_empty():
+		blast = hit["position"]
+	var strength := 1.0
 	play_sfx(&"slam")
-	camera_kick.y -= strength * 0.9
-	camera_kick.x += randf_range(-0.18, 0.18) * strength
-	_request_impact(strength, global_position)
+	camera_kick.y += strength * 0.7
+	camera_kick.x += randf_range(-0.15, 0.15) * strength
+	_request_impact(strength, blast)
+	# Launch the player: strong up boost plus a nudge away from the blast.
+	velocity.y = maxf(velocity.y, 0.0) + 16.5
+	var away := (global_position - blast)
+	away.y = 0.0
+	if away.length_squared() > 0.01:
+		velocity.x += away.normalized().x * 4.0
+		velocity.z += away.normalized().z * 4.0
 	var game := get_parent()
 	if game != null and game.has_method("apply_slam"):
-		game.apply_slam(global_position, SLAM_RADIUS, int(20.0 * strength), 2.8 * strength, 3.4 * strength)
-	emit_signal("score_event", &"slam", {"strength": strength})
+		game.apply_slam(blast, SLAM_RADIUS, 14, 3.2, 4.5)
+	emit_signal("score_event", &"rocket_jump", {"strength": strength})
 
 
 func play_sfx(cue: StringName) -> void:
