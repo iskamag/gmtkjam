@@ -165,7 +165,7 @@ material_override = SubResource("MetalMat")
 mesh = SubResource("EndWallMesh")
 
 [node name="FrontWall" type="MeshInstance3D" parent="Carriage" unique_id=1492332208]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 5.18)
+transform = Transform3D(1.3244913, 0, 0, 0, 1, 0, 0, 0, 1, 1.0084279, 1.55, 5.1800003)
 material_override = SubResource("MetalMat")
 mesh = SubResource("EndWallMesh")
 
@@ -431,3 +431,6 @@ mesh = SubResource("SeatBaseMesh")
 transform = Transform3D(0.027731044, 0, -1.4253961, 0, 1, 0, 0.9876509, 0, 0.040021956, -1.3863297, 1.08, 12.280459)
 material_override = SubResource("SeatMat")
 mesh = SubResource("SeatBackMesh")
+
+[node name="maybeplayer" type="Node3D" parent="Carriage" unique_id=1261766817]
+transform = Transform3D(0.8986004, 0, -0.438768, 0, 1, 0, 0.438768, 0, 0.8986004, -2.0761664, 0.42690563, -2.3856497)
