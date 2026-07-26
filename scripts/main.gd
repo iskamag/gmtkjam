@@ -135,7 +135,9 @@ func _enter_train_menu() -> void:
 		prologue_shell.visible = true
 		prologue_shell.position = Vector3(0.0, 0.0, 16.0)
 		prologue_shell.rotation = Vector3.ZERO
-	hud.begin_prologue()
+	# Don't call hud.begin_prologue() here — it starts a black-screen shade
+	# at alpha 1.0 that only fades once the crash animation runs. The HUD
+	# prologue is triggered by _begin_prologue() when the player clicks.
 
 
 # Load the train interior scene on boot. This is the main menu — the player
