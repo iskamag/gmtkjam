@@ -1033,10 +1033,10 @@ static func apply_runtime_tints(main, root: Node) -> void:
 			_apply_ghost_material(main, holder, holder.get_meta("ghost_color"))
 
 
-# A modular building block: a mass with a parapet and a ground skirt, built
-# from three visual boxes. No collision (buildings sit beyond the curb walls
-# that already bound the play space) so they read as a framing skyline.
+# A modular building block: a collidable mass (so the player can wallkick and
+# collide with it) topped by a parapet and grounded by a skirt. Same collision
+# layer as the cover obstacles, so wall-runs/kicks behave identically.
 static func _add_building(main, base: Vector3, footprint: Vector2, height: float, color: Color) -> void:
-	_add_visual_box(main, Vector3(base.x, height * 0.5, base.z), Vector3(footprint.x, height, footprint.y), color)
+	_add_static_box(main, Vector3(base.x, height * 0.5, base.z), Vector3(footprint.x, height, footprint.y), color)
 	_add_visual_box(main, Vector3(base.x, height + 0.3, base.z), Vector3(footprint.x + 0.4, 0.6, footprint.y + 0.4), color.darkened(0.2))
 	_add_visual_box(main, Vector3(base.x, 0.25, base.z), Vector3(footprint.x + 0.6, 0.5, footprint.y + 0.6), color.darkened(0.4))
