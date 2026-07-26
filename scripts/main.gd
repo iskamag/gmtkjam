@@ -428,7 +428,7 @@ func _update_prologue(delta: float) -> void:
 			# Move the player to the world spawn while the train is still in place
 			# so there's no frame where the player is clipped inside the carriage.
 			player.global_position = Vector3(0.0, 0.05, 16.0)
-			player.rotation = Vector3.ZERO
+			player.rotation = Vector3(0.0, prologue_look_yaw, 0.0)
 			player.pitch = 0.0
 			# Swap scenes: hide train, load world arena.
 			if is_instance_valid(prologue_shell):
@@ -481,7 +481,7 @@ func _finish_prologue() -> void:
 			world_root.queue_free()
 		_load_world()
 	player.global_position = Vector3(0.0, 0.05, 16.0)
-	player.rotation = Vector3.ZERO
+	player.rotation = Vector3(0.0, prologue_look_yaw, 0.0)
 	player.pitch = 0.0
 	player.camera.position = Vector3(0.0, 1.55, 0.0)
 	player.camera.rotation = Vector3.ZERO
