@@ -118,7 +118,7 @@ func _process(delta: float) -> void:
 		post_material.set_shader_parameter("impact", impact_pulse)
 		post_material.set_shader_parameter("impact_origin", impact_origin)
 		var localized_intro_wound := intro_wound_visual
-		if prologue_active and prologue_time >= 6.25:
+		if prologue_active and prologue_time >= 10.25:
 			# The crash aftermath breathes around the broken watch instead of
 			# holding a flat red grade over the entire exterior reveal.
 			localized_intro_wound *= 0.90 + sin(prologue_time * 4.1) * 0.10
@@ -197,51 +197,60 @@ func update_prologue(t: float) -> void:
 		return
 	prologue_time = maxf(t, 0.0)
 
-	# Shade removed — no black screen at any point during the cutscene.
+	# Crash blackout: a brief full-black at impact (main.gd fires the crash
+	# at 9.5s) restores the punch the cutscene had. Outside this window the
+	# shade stays clear so the carriage reads during the calm and the menu.
 	var shade_alpha := 0.0
+	if prologue_time >= 9.4 and prologue_time < 9.7:
+		shade_alpha = lerpf(0.0, 1.0, _smooth_range(prologue_time, 9.4, 9.7))
+	elif prologue_time >= 9.7 and prologue_time < 10.1:
+		shade_alpha = 1.0
+	elif prologue_time >= 10.1 and prologue_time < 10.9:
+		shade_alpha = lerpf(1.0, 0.0, _smooth_range(prologue_time, 10.1, 10.9))
 	prologue_shade.color = Color(0.018, 0.014, 0.011, shade_alpha)
 
 	var stats_alpha := (
 		_smooth_range(prologue_time, 0.55, 1.02)
-		* (1.0 - _smooth_range(prologue_time, 3.18, 3.72))
+		* (1.0 - _smooth_range(prologue_time, 5.18, 5.72))
 	)
 	prologue_stats.visible = stats_alpha > 0.001
 	prologue_stats.modulate.a = stats_alpha
 
 	var fragment_alpha := 0.0
-	if prologue_time >= 2.55 and prologue_time < 3.45:
+	if prologue_time >= 4.85 and prologue_time < 5.75:
 		prologue_fragment.text = "VICTORY RECORDED  //  48"
-		fragment_alpha = _pulse_range(prologue_time, 2.55, 3.45, 0.16)
-	elif prologue_time >= 3.45 and prologue_time < 4.42:
+		fragment_alpha = _pulse_range(prologue_time, 4.85, 5.75, 0.16)
+	elif prologue_time >= 5.75 and prologue_time < 6.72:
 		prologue_fragment.text = "FIRST CONTRACT  //  DEFERRED"
-		fragment_alpha = _pulse_range(prologue_time, 3.45, 4.42, 0.18)
-	elif prologue_time >= 4.42 and prologue_time < 5.42:
+		fragment_alpha = _pulse_range(prologue_time, 5.75, 6.72, 0.18)
+	elif prologue_time >= 6.72 and prologue_time < 7.72:
 		prologue_fragment.text = "RETURN OVERDUE"
-		fragment_alpha = _pulse_range(prologue_time, 4.42, 5.42, 0.18)
+		fragment_alpha = _pulse_range(prologue_time, 6.72, 7.72, 0.18)
 	prologue_fragment.visible = fragment_alpha > 0.001
 	prologue_fragment.modulate.a = fragment_alpha
 
 	var crash_amount := 0.0
-	if prologue_time >= 5.18 and prologue_time < 5.72:
-		crash_amount = _smooth_range(prologue_time, 5.18, 5.72)
-	elif prologue_time < 6.72 and prologue_time >= 5.72:
-		crash_amount = 1.0 - _smooth_range(prologue_time, 5.72, 6.72)
+	if prologue_time >= 8.7 and prologue_time < 9.5:
+		crash_amount = _smooth_range(prologue_time, 8.7, 9.5)
+	elif prologue_time < 11.0 and prologue_time >= 9.5:
+		crash_amount = 1.0 - _smooth_range(prologue_time, 9.5, 11.0)
 	var trauma_amount := 0.0
-	if prologue_time >= 5.58:
+	if prologue_time >= 9.5:
 		trauma_amount = lerpf(
 			0.86,
-			0.10,
-			_smooth_range(prologue_time, 5.88, 9.35)
+			1.0,
+			_smooth_range(prologue_time, 9.5, 11.0)
 		)
-	set_intro_effects(trauma_amount, crash_amount)
+	if prologue_time < 11.0:
+		set_intro_effects(trauma_amount, crash_amount)
 
-	var epilogue_alpha := _smooth_range(prologue_time, 7.45, 8.02)
+	var epilogue_alpha := _smooth_range(prologue_time, 11.5, 12.1)
 	prologue_title.visible = epilogue_alpha > 0.001
 	prologue_title.modulate.a = epilogue_alpha
-	var first_job_alpha := _smooth_range(prologue_time, 7.92, 8.48)
+	var first_job_alpha := _smooth_range(prologue_time, 12.0, 12.6)
 	prologue_subtitle.visible = first_job_alpha > 0.001
 	prologue_subtitle.modulate.a = first_job_alpha
-	prologue_skip.modulate.a = 0.48 * (1.0 - _smooth_range(prologue_time, 7.1, 8.1))
+	prologue_skip.modulate.a = 0.48 * (1.0 - _smooth_range(prologue_time, 11.2, 12.2))
 
 
 func end_prologue() -> void:

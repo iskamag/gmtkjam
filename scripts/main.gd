@@ -325,8 +325,6 @@ func _begin_prologue() -> void:
 	prologue_time = 0.0
 	prologue_flags.clear()
 	next_train_tick = 0.0
-	prologue_look_yaw = -PI * 0.5
-	prologue_look_pitch = -0.035
 	run_finished = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	player.set_active(false)

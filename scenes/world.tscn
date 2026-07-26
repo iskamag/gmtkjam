@@ -1,19 +1,18 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://dy6lpd362shpa"]
 
-[ext_resource type="PackedScene" path="res://assets/kenney/crate-color.glb" id="1_o8fc1"]
-[ext_resource type="PackedScene" path="res://assets/kenney/pipe.glb" id="2_xo05s"]
-[ext_resource type="PackedScene" path="res://assets/kenney/weapon-sword.glb" id="3_dss4m"]
-[ext_resource type="PackedScene" path="res://assets/user_pack/SM_Train_Speed_Derailment_Apocalypse.fbx" id="4_7t5mc"]
-[ext_resource type="PackedScene" path="res://assets/user_pack/SM_Building_House_Modern_Apocalypse_A.fbx" id="5_lakw3"]
-[ext_resource type="PackedScene" path="res://assets/user_pack/SM_Building_Cafe_Apocalypse.fbx" id="6_pm21f"]
-[ext_resource type="PackedScene" path="res://assets/user_pack/SM_Rubble_Concrete_Apocalypse_A.fbx" id="7_2lf6f"]
-[ext_resource type="PackedScene" path="res://assets/user_pack/SM_Lamp_Road_Apocalypse_A.fbx" id="8_7iits"]
-[ext_resource type="Texture2D" path="res://assets/generated/building_albedo.png" id="9_oo54l"]
-[ext_resource type="Texture2D" path="res://assets/generated/building_normal.png" id="10_kpybi"]
-[ext_resource type="Script" path="res://scripts/world_aesthetic.gd" id="11_ctatt"]
-[ext_resource type="Texture2D" path="res://assets/textures/polyhaven/worn_asphalt_diff_1k.jpg" id="12_xgqkh"]
-[ext_resource type="Texture2D" path="res://assets/textures/polyhaven/worn_asphalt_arm_1k.jpg" id="13_munwf"]
-[ext_resource type="Texture2D" path="res://assets/textures/polyhaven/worn_asphalt_nor_gl_1k.jpg" id="14_ts3gi"]
+[ext_resource type="PackedScene" uid="uid://cgf3qtq7mba2f" path="res://assets/kenney/crate-color.glb" id="1_o8fc1"]
+[ext_resource type="PackedScene" uid="uid://tw2kjehbrue4" path="res://assets/kenney/pipe.glb" id="2_xo05s"]
+[ext_resource type="PackedScene" uid="uid://y2qk3cufs0sh" path="res://assets/kenney/weapon-sword.glb" id="3_dss4m"]
+[ext_resource type="PackedScene" uid="uid://bljqvqfttd6bx" path="res://assets/user_pack/SM_Train_Speed_Derailment_Apocalypse.fbx" id="4_7t5mc"]
+[ext_resource type="PackedScene" uid="uid://blvdnxoxqe0pl" path="res://assets/user_pack/SM_Building_House_Modern_Apocalypse_A.fbx" id="5_lakw3"]
+[ext_resource type="PackedScene" uid="uid://cc3we4xrqop8e" path="res://assets/user_pack/SM_Rubble_Concrete_Apocalypse_A.fbx" id="7_2lf6f"]
+[ext_resource type="PackedScene" uid="uid://c2tqttnkbsbio" path="res://assets/user_pack/SM_Lamp_Road_Apocalypse_A.fbx" id="8_7iits"]
+[ext_resource type="Texture2D" uid="uid://b8h80a8rgfq7g" path="res://assets/generated/building_albedo.png" id="9_oo54l"]
+[ext_resource type="Texture2D" uid="uid://0y2g6mj5fd3j" path="res://assets/generated/building_normal.png" id="10_kpybi"]
+[ext_resource type="Script" uid="uid://nc8nmgsmsa47" path="res://scripts/world_aesthetic.gd" id="11_ctatt"]
+[ext_resource type="Texture2D" uid="uid://boqilepohk47p" path="res://assets/textures/polyhaven/worn_asphalt_diff_1k.jpg" id="12_xgqkh"]
+[ext_resource type="Texture2D" uid="uid://da2qh8paycmeh" path="res://assets/textures/polyhaven/worn_asphalt_arm_1k.jpg" id="13_munwf"]
+[ext_resource type="Texture2D" uid="uid://dxs2feyqlx8h2" path="res://assets/textures/polyhaven/worn_asphalt_nor_gl_1k.jpg" id="14_ts3gi"]
 
 [sub_resource type="Shader" id="Shader_0nbtd"]
 code = "
@@ -1367,91 +1366,89 @@ transform = Transform3D(1.842122, 0, 0.77883667, 0, 2, 0, -0.77883667, 0, 1.8421
 metadata/asset_tint = Color(0.25, 0.145, 0.075, 1)
 metadata/asset_textures = ["", "", ""]
 
-[node name="crate-color2" type="Node3D" parent="@Node3D@45" unique_id=204674889 instance=ExtResource("1_o8fc1")]
+[node name="crate-color2" parent="@Node3D@45" unique_id=204674889 instance=ExtResource("1_o8fc1")]
 
 [node name="@Node3D@46" type="Node3D" parent="." unique_id=2096577557]
 transform = Transform3D(2.197274, 0, -0.6796965, 0, 2.3, 0, 0.6796965, 0, 2.197274, 10, 0, -8)
 metadata/asset_tint = Color(0.25, 0.145, 0.075, 1)
 metadata/asset_textures = ["", "", ""]
 
-[node name="crate-color2" type="Node3D" parent="@Node3D@46" unique_id=647283342 instance=ExtResource("1_o8fc1")]
+[node name="crate-color2" parent="@Node3D@46" unique_id=647283342 instance=ExtResource("1_o8fc1")]
 
 [node name="@Node3D@47" type="Node3D" parent="." unique_id=839003292]
 transform = Transform3D(-8.742278e-08, -5, 0, 2, -2.1855695e-07, 0, 0, 0, 2, -13, 2.2, -2)
 metadata/asset_tint = Color(0.105, 0.105, 0.1, 1)
 metadata/asset_textures = ["", "", ""]
 
-[node name="pipe2" type="Node3D" parent="@Node3D@47" unique_id=2127468964 instance=ExtResource("2_xo05s")]
+[node name="pipe2" parent="@Node3D@47" unique_id=2127468964 instance=ExtResource("2_xo05s")]
 
 [node name="@Node3D@48" type="Node3D" parent="." unique_id=1843883219]
 transform = Transform3D(-4.2, 3.6717566e-07, 0, -3.6717566e-07, -4.2, 0, 0, 0, 4.2, 0, 0.1, -18)
 metadata/asset_tint = Color(0.16, 0.16, 0.145, 1)
 metadata/asset_textures = ["", "", ""]
 
-[node name="weapon-sword2" type="Node3D" parent="@Node3D@48" unique_id=1453984208 instance=ExtResource("3_dss4m")]
+[node name="weapon-sword2" parent="@Node3D@48" unique_id=1453984208 instance=ExtResource("3_dss4m")]
 
 [node name="@Node3D@49" type="Node3D" parent="." unique_id=13361314]
 transform = Transform3D(0.29583544, -0.09625372, 0.95037705, 0.12940086, 0.9897776, 0.059964005, -0.94643366, 0.105240144, 0.30526662, -9, 0.02, 14)
 metadata/asset_tint = Color(0.74, 0.7, 0.61, 1)
 metadata/asset_textures = ["res://assets/user_pack/Atlas_Albedo_LPUP.png", "res://assets/user_pack/color-atlas-emission-night.png", "res://assets/user_pack/color-atlas-specular.png"]
 
-[node name="SM_Train_Speed_Derailment_Apocalypse" type="Node3D" parent="@Node3D@49" unique_id=1734739155 instance=ExtResource("4_7t5mc")]
+[node name="SM_Train_Speed_Derailment_Apocalypse" parent="@Node3D@49" unique_id=1734739155 instance=ExtResource("4_7t5mc")]
 
 [node name="@Node3D@50" type="Node3D" parent="." unique_id=1019907250]
 transform = Transform3D(0.9368382, 0, 0.6137868, 0, 1.12, 0, -0.6137868, 0, 0.9368382, -13, 0, -4)
 metadata/asset_tint = Color(0.6, 0.59, 0.53, 1)
 metadata/asset_textures = ["res://assets/user_pack/Atlas_Albedo_LPUP.png", "res://assets/user_pack/color-atlas-emission-night.png", "res://assets/user_pack/color-atlas-specular.png"]
 
-[node name="SM_Building_House_Modern_Apocalypse_A" type="Node3D" parent="@Node3D@50" unique_id=274167701 instance=ExtResource("5_lakw3")]
+[node name="SM_Building_House_Modern_Apocalypse_A" parent="@Node3D@50" unique_id=274167701 instance=ExtResource("5_lakw3")]
 
 [node name="@Node3D@51" type="Node3D" parent="." unique_id=2015413570]
 transform = Transform3D(0.8422005, 0, -0.62705517, 0, 1.05, 0, 0.62705517, 0, 0.8422005, 13, 0, -12)
 metadata/asset_tint = Color(0.6, 0.57, 0.49, 1)
 metadata/asset_textures = ["res://assets/user_pack/Atlas_Albedo_LPUP.png", "res://assets/user_pack/color-atlas-emission-night.png", "res://assets/user_pack/color-atlas-specular.png"]
 
-[node name="SM_Building_Cafe_Apocalypse" type="Node3D" parent="@Node3D@51" unique_id=1798155901 instance=ExtResource("6_pm21f")]
-
 [node name="@Node3D@52" type="Node3D" parent="." unique_id=1176619057]
 transform = Transform3D(0.8289549, 0, 0.3504765, 0, 0.9, 0, -0.3504765, 0, 0.8289549, -6, 0, 6)
 metadata/asset_tint = Color(0.58, 0.56, 0.5, 1)
 metadata/asset_textures = ["res://assets/user_pack/Atlas_Albedo_LPUP.png", "res://assets/user_pack/color-atlas-emission-night.png", "res://assets/user_pack/color-atlas-specular.png"]
 
-[node name="SM_Rubble_Concrete_Apocalypse_A" type="Node3D" parent="@Node3D@52" unique_id=1382278181 instance=ExtResource("7_2lf6f")]
+[node name="SM_Rubble_Concrete_Apocalypse_A" parent="@Node3D@52" unique_id=1382278181 instance=ExtResource("7_2lf6f")]
 
 [node name="@Node3D@53" type="Node3D" parent="." unique_id=425748790]
 transform = Transform3D(0.83604807, 0, -0.8608273, 0, 1.2, 0, 0.8608273, 0, 0.83604807, 8, 0, -2)
 metadata/asset_tint = Color(0.58, 0.56, 0.5, 1)
 metadata/asset_textures = ["res://assets/user_pack/Atlas_Albedo_LPUP.png", "res://assets/user_pack/color-atlas-emission-night.png", "res://assets/user_pack/color-atlas-specular.png"]
 
-[node name="SM_Rubble_Concrete_Apocalypse_A" type="Node3D" parent="@Node3D@53" unique_id=1907903109 instance=ExtResource("7_2lf6f")]
+[node name="SM_Rubble_Concrete_Apocalypse_A" parent="@Node3D@53" unique_id=1907903109 instance=ExtResource("7_2lf6f")]
 
 [node name="@Node3D@54" type="Node3D" parent="." unique_id=233011648]
 transform = Transform3D(0.6350345, 0, 1.2476903, 0, 1.4, 0, -1.2476903, 0, 0.6350345, -9, 0, -18)
 metadata/asset_tint = Color(0.58, 0.56, 0.5, 1)
 metadata/asset_textures = ["res://assets/user_pack/Atlas_Albedo_LPUP.png", "res://assets/user_pack/color-atlas-emission-night.png", "res://assets/user_pack/color-atlas-specular.png"]
 
-[node name="SM_Rubble_Concrete_Apocalypse_A" type="Node3D" parent="@Node3D@54" unique_id=769967919 instance=ExtResource("7_2lf6f")]
+[node name="SM_Rubble_Concrete_Apocalypse_A" parent="@Node3D@54" unique_id=769967919 instance=ExtResource("7_2lf6f")]
 
 [node name="@Node3D@55" type="Node3D" parent="." unique_id=1853495487]
 transform = Transform3D(0.9887711, 0, 0.14943814, 0, 1, 0, -0.14943814, 0, 0.9887711, -7, 0, 4)
 metadata/asset_tint = Color(0.52, 0.5, 0.43, 1)
 metadata/asset_textures = ["res://assets/user_pack/Atlas_Albedo_LPUP.png", "res://assets/user_pack/color-atlas-emission-night.png", "res://assets/user_pack/color-atlas-specular.png"]
 
-[node name="SM_Lamp_Road_Apocalypse_A" type="Node3D" parent="@Node3D@55" unique_id=2117390081 instance=ExtResource("8_7iits")]
+[node name="SM_Lamp_Road_Apocalypse_A" parent="@Node3D@55" unique_id=2117390081 instance=ExtResource("8_7iits")]
 
 [node name="@Node3D@56" type="Node3D" parent="." unique_id=1926905354]
 transform = Transform3D(-0.9950042, 0, -0.09983341, 0, 1, 0, 0.09983341, 0, -0.9950042, 7, 0, -6)
 metadata/asset_tint = Color(0.52, 0.5, 0.43, 1)
 metadata/asset_textures = ["res://assets/user_pack/Atlas_Albedo_LPUP.png", "res://assets/user_pack/color-atlas-emission-night.png", "res://assets/user_pack/color-atlas-specular.png"]
 
-[node name="SM_Lamp_Road_Apocalypse_A" type="Node3D" parent="@Node3D@56" unique_id=1221103730 instance=ExtResource("8_7iits")]
+[node name="SM_Lamp_Road_Apocalypse_A" parent="@Node3D@56" unique_id=1221103730 instance=ExtResource("8_7iits")]
 
 [node name="@Node3D@57" type="Node3D" parent="." unique_id=1568071216]
 transform = Transform3D(0.99680173, 0, -0.07991469, 0, 1, 0, 0.07991469, 0, 0.99680173, -7, 0, -16)
 metadata/asset_tint = Color(0.52, 0.5, 0.43, 1)
 metadata/asset_textures = ["res://assets/user_pack/Atlas_Albedo_LPUP.png", "res://assets/user_pack/color-atlas-emission-night.png", "res://assets/user_pack/color-atlas-specular.png"]
 
-[node name="SM_Lamp_Road_Apocalypse_A" type="Node3D" parent="@Node3D@57" unique_id=1034143160 instance=ExtResource("8_7iits")]
+[node name="SM_Lamp_Road_Apocalypse_A" parent="@Node3D@57" unique_id=1034143160 instance=ExtResource("8_7iits")]
 
 [node name="@StaticBody3D@58" type="StaticBody3D" parent="." unique_id=1791908263]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19.570066, 3.5756795, 14)
