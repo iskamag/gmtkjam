@@ -46,7 +46,11 @@ static func _set_owners(scene_root: Node) -> void:
 static func _recurse_owner(node: Node, scene_root: Node) -> void:
 	for child in node.get_children():
 		child.set_owner(scene_root)
-		_recurse_owner(child, scene_root)
+		# Do not recurse into instanced sub-scenes (loaded .glb/.fbx props).
+		# Stealing ownership of their children forces pack() to inline them,
+		# which the editor warns about and renders as fallback-white.
+		if child.scene_file_path.is_empty():
+			_recurse_owner(child, scene_root)
 
 
 static func build_world(main) -> void:
@@ -789,7 +793,11 @@ static func _add_ghost_asset(main, path: String, at: Vector3, asset_scale: Vecto
 	main.world_root.add_child(holder)
 	var instance := packed.instantiate()
 	holder.add_child(instance)
-	_apply_ghost_material(main, instance, Color(0.27, 0.21, 0.30))
+	# Tint is applied at runtime (see apply_runtime_tints) so the scene stores a
+	# clean .glb instance without per-child material overrides, which the editor
+	# would otherwise warn about and render as fallback-white.
+	holder.set_meta("ghost_asset", true)
+	holder.set_meta("ghost_color", Color(0.27, 0.21, 0.30))
 
 
 static func _make_ghost_material(main, color: Color) -> ShaderMaterial:
@@ -934,16 +942,11 @@ static func _add_asset(
 	main.world_root.add_child(holder)
 	var instance := packed.instantiate()
 	holder.add_child(instance)
-	var texture: Texture2D = null
-	var emission_texture: Texture2D = null
-	var specular_texture: Texture2D = null
-	if not texture_path.is_empty() and ResourceLoader.exists(texture_path):
-		texture = load(texture_path) as Texture2D
-	if not emission_path.is_empty() and ResourceLoader.exists(emission_path):
-		emission_texture = load(emission_path) as Texture2D
-	if not specular_path.is_empty() and ResourceLoader.exists(specular_path):
-		specular_texture = load(specular_path) as Texture2D
-	_tint_meshes(instance, tint, texture, emission_texture, specular_texture)
+	# Tint is applied at runtime (see apply_runtime_tints) so the scene stores a
+	# clean .glb/.fbx instance without per-child material overrides, which the
+	# editor would otherwise warn about and render as fallback-white.
+	holder.set_meta("asset_tint", tint)
+	holder.set_meta("asset_textures", [texture_path, emission_path, specular_path])
 	return holder
 
 
@@ -974,3 +977,28 @@ static func _tint_meshes(
 		node.material_override = material
 	for child in node.get_children():
 		_tint_meshes(child, tint, texture, emission_texture, specular_texture)
+
+
+# Called by main.gd after the world scene is loaded. Re-applies the night-mode
+# tint / ghost shaders to instanced prop holders (SM_ apocalypse assets, kenney
+# props, figurines) using metadata authored at build time. Keeping this runtime
+# means the .tscn stores clean scene instances (no per-child overrides) which
+# the editor opens without warnings or fallback-white materials.
+static func apply_runtime_tints(main, root: Node) -> void:
+	for holder in root.find_children("*", "Node3D", true):
+		if holder.has_meta("asset_tint"):
+			var tint: Color = holder.get_meta("asset_tint")
+			var tex: Texture2D = null
+			var emis: Texture2D = null
+			var spec: Texture2D = null
+			if holder.has_meta("asset_textures"):
+				var paths: Array = holder.get_meta("asset_textures")
+				if paths.size() > 0 and not String(paths[0]).is_empty() and ResourceLoader.exists(paths[0]):
+					tex = load(paths[0]) as Texture2D
+				if paths.size() > 1 and not String(paths[1]).is_empty() and ResourceLoader.exists(paths[1]):
+					emis = load(paths[1]) as Texture2D
+				if paths.size() > 2 and not String(paths[2]).is_empty() and ResourceLoader.exists(paths[2]):
+					spec = load(paths[2]) as Texture2D
+			_tint_meshes(holder, tint, tex, emis, spec)
+		elif holder.has_meta("ghost_asset"):
+			_apply_ghost_material(main, holder, holder.get_meta("ghost_color"))

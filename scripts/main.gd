@@ -90,6 +90,7 @@ func _load_world() -> void:
 	world_root.name = "World"
 	add_child(world_root)
 	_bind_world_from_scene(world_root)
+	WorldBuilder.apply_runtime_tints(self, world_root)
 
 
 func _bind_world_from_scene(root: Node3D) -> void:
