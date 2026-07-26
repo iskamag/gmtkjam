@@ -132,9 +132,9 @@ func _build_sodium_lamp(at: Vector3, arm_direction: float) -> void:
 	var light := OmniLight3D.new()
 	light.position = Vector3(arm_direction * 1.12, 5.7, 0.0)
 	light.light_color = Color(1.0, 0.49, 0.19)
-	light.light_energy = 2.65
-	light.omni_range = 8.8
-	light.omni_attenuation = 1.55
+	light.light_energy = 4.4
+	light.omni_range = 11.5
+	light.omni_attenuation = 1.38
 	light.shadow_enabled = false
 	lamp.add_child(light)
 
@@ -187,8 +187,9 @@ func _build_signal_grammar() -> void:
 		var signal_light := OmniLight3D.new()
 		signal_light.position = lens.position
 		signal_light.light_color = data[1]
-		signal_light.light_energy = 1.1
-		signal_light.omni_range = 3.8
+		signal_light.light_energy = 1.65
+		signal_light.omni_range = 4.8
+		signal_light.omni_attenuation = 1.45
 		signal_light.shadow_enabled = false
 		holder.add_child(signal_light)
 

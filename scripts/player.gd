@@ -681,13 +681,39 @@ func _attack_visual_progress(phase: float) -> float:
 
 
 func _resolve_attack() -> void:
-	var hit := _find_melee_target(float(attack_data["reach"]), float(attack_data["radius"]))
+	var hit: Dictionary = {}
+	if combat_action == &"kick":
+		# The foot owns its projectile interaction. A body in the center ray
+		# must not steal a kick from a hostile shot crossing the wider sweep.
+		hit = _find_kickable_projectile(
+			float(attack_data["reach"]),
+			float(attack_data["radius"])
+		)
+	if hit.is_empty():
+		hit = _find_melee_target(float(attack_data["reach"]), float(attack_data["radius"]))
 	if hit.is_empty():
 		return
 	var collider = hit.get("collider")
 	if collider == null:
 		return
 	if collider.has_method("deflect"):
+		if combat_action == &"kick" and collider.has_method("kick"):
+			var aim := -camera.global_transform.basis.z
+			if not bool(collider.kick(aim)):
+				return
+			var reward := 22.0
+			gain_watchfire(reward)
+			play_sfx(&"projectile_kick")
+			var contact: Vector3 = hit.get("position", collider.global_position)
+			_request_impact(1.42, contact)
+			emit_signal("score_event", &"projectile_kicked", {
+				"speed": float(collider.get("speed")),
+				"damage": int(collider.get("deflected_damage")),
+				"watchfire_reward": reward,
+				"meter": watchfire,
+				"time": time_left,
+			})
+			return
 		var perfect_deflect := watch_active
 		collider.deflect(-camera.global_transform.basis.z)
 		if perfect_deflect:
@@ -742,6 +768,8 @@ func _find_melee_target(reach: float, sweep_radius: float) -> Dictionary:
 	var to := from + forward * reach
 	var ray_query := PhysicsRayQueryParameters3D.create(from, to, 2 | 4)
 	ray_query.exclude = [get_rid()]
+	ray_query.collide_with_areas = true
+	ray_query.collide_with_bodies = true
 	var ray_hit := get_world_3d().direct_space_state.intersect_ray(ray_query)
 	if not ray_hit.is_empty():
 		return ray_hit
@@ -752,6 +780,8 @@ func _find_melee_target(reach: float, sweep_radius: float) -> Dictionary:
 	shape_query.shape = sphere
 	shape_query.transform = Transform3D(Basis.IDENTITY, from + forward * (reach * 0.54))
 	shape_query.collision_mask = 2 | 4
+	shape_query.collide_with_areas = true
+	shape_query.collide_with_bodies = true
 	shape_query.exclude = [get_rid()]
 	var candidates := get_world_3d().direct_space_state.intersect_shape(shape_query, 16)
 	var best: Dictionary = {}
@@ -770,6 +800,51 @@ func _find_melee_target(reach: float, sweep_radius: float) -> Dictionary:
 			best = {
 				"collider": candidate_collider,
 				"position": candidate_collider.global_position + Vector3.UP * 0.8,
+			}
+	return best
+
+
+func _find_kickable_projectile(reach: float, sweep_radius: float) -> Dictionary:
+	if not is_inside_tree():
+		return {}
+	var from := camera.global_position
+	var forward := -camera.global_transform.basis.z
+	var sphere := SphereShape3D.new()
+	sphere.radius = sweep_radius
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = sphere
+	query.transform = Transform3D(Basis.IDENTITY, from + forward * (reach * 0.54))
+	query.collision_mask = 4
+	query.collide_with_areas = true
+	query.collide_with_bodies = false
+	query.exclude = [get_rid()]
+
+	var best: Dictionary = {}
+	var best_score := -INF
+	for candidate in get_world_3d().direct_space_state.intersect_shape(query, 24):
+		var projectile = candidate.get("collider")
+		if (
+			not projectile is Node3D
+			or not projectile.has_method("kick")
+			or not projectile.has_method("is_kickable_projectile")
+			or not bool(projectile.is_kickable_projectile())
+		):
+			continue
+		var offset: Vector3 = projectile.global_position - from
+		var distance := offset.length()
+		if distance <= 0.001 or distance > reach + 0.8:
+			continue
+		var alignment := forward.dot(offset / distance)
+		if alignment < 0.12:
+			continue
+		# Favor the shot nearest the crosshair, with a small bias toward the
+		# imminent close contact when several projectiles overlap the sweep.
+		var score := alignment * 2.0 - distance / maxf(reach, 0.001) * 0.22
+		if score > best_score:
+			best_score = score
+			best = {
+				"collider": projectile,
+				"position": projectile.global_position,
 			}
 	return best
 
@@ -937,6 +1012,10 @@ func play_sfx(cue: StringName) -> void:
 			path = "res://assets/audio/impactPunch_heavy_000.ogg"
 			volume_db = -4.0
 			sound_pitch = 0.86
+		&"projectile_kick":
+			path = "res://assets/audio/impactMetal_heavy_001.ogg"
+			volume_db = -2.0
+			sound_pitch = 0.68
 		&"blade_swing":
 			path = "res://assets/audio/impactMetal_light_002.ogg"
 			volume_db = -12.0

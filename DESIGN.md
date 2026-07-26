@@ -195,6 +195,13 @@ Unarmed:
 - it remains useful, particularly for stagger, knockback, or building flame;
 - the player is never left with a dead attack button.
 
+The independent kick is also a projectile verb. It prioritizes a hostile shot
+inside its broad foot sweep even when an enemy body crosses the center ray, then
+punts the shot exactly down the player's aim with much greater speed and damage
+than an ordinary dagger deflection. It costs no Watchfire and a successful
+return builds flame, so entering projectile range creates an aggressive answer
+rather than another tax on the time-slow economy.
+
 This creates the central combat decision: keep the reliable melee tool, or place
 the dagger in the world and fight barehanded while constructing a lethal rewind
 path.
@@ -336,6 +343,10 @@ spawning as interchangeable waves in a featureless room.
 - Palette: asphalt, dirty plaster, tarnished steel, old paper, faded blue,
   bruised brown, dead green-grey, dried rust, and controlled deep purple.
 - No "neon slop."
+- Exterior exposure has a readable value floor: a blue-black procedural sky,
+  slate horizon and cold moon fill reveal silhouettes and navigation, while
+  sparse sodium lamps make warm authored islands. Occlusion may reach black;
+  the playable road and enemies may not disappear into crushed shadow.
 - The watch uses noise, wear, missing casing, scratches, and broken mechanics
   rather than blood.
 - Shader effects must communicate a gameplay or story state.

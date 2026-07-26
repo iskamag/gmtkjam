@@ -352,6 +352,12 @@ Practical distribution:
 
 There is no teal-orange grade. There is no global purple fog.
 
+The playable exterior must retain a grayscale midtone floor. The sky grades from
+blue-black overhead to slate at the horizon, cold moon fill separates characters
+from soot, and sodium light is reserved for deliberate route islands. If the
+road, rails, or enemy silhouette vanish on an ordinary SDR browser display, the
+scene is underexposed rather than atmospheric.
+
 ## Material translation
 
 ### Train interior

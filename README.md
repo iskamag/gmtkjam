@@ -25,7 +25,7 @@ returns.
 | `Shift` | Chronostep (one air use before landing) |
 | `Ctrl` | Ground slide; jump out to preserve speed |
 | Left mouse | Buffered dagger combo / deflect; punch while unarmed |
-| `E` | Kick / guard break / launch |
+| `E` | Kick / guard break / launch; punt hostile projectiles down the crosshair |
 | Right mouse | Free throw (hold briefly to guide); press again to pay Watchfire for rewind |
 | `Q` | Arrest hostile time; a last-instant activation earns a Dead Second |
 | `Space` | Jump / slide-jump / wall-kick |
@@ -100,8 +100,8 @@ short sequence of encounters and a boss-shaped finale to test:
 1. kill-based time recovery;
 2. wound rewind plus permanent maximum-time erosion;
 3. momentum movement, slide-jumps, wall-kicks, and a time-art chronostep;
-4. buffered melee, unarmed stagger, launch, deflection, hit-stop, and enemy
-   reactions;
+4. buffered melee, unarmed stagger, launch, blade deflection, high-force
+   projectile kicks, hit-stop, and enemy reactions;
 5. free steerable dagger placement, expensive manual recall, and free physical
    retrieval;
 6. gated authored encounters and PS2-style historical deterioration rather
@@ -121,7 +121,7 @@ cells, stems, fills, and stingers.
 Current neutral score hooks include `intro_black`, `train_rhythm`,
 `status_reveal`, `memory_intrusion`, `crash_premonition`, `crash_hit`,
 `title_epilogue`, `control_return`, `encounter_started`, `encounter_cleared`,
-`boss_started`, `boss_phase`, `player_hit_confirmed`, `watch_state`,
-`watch_overclock`, `overclock_hit`, `dagger_state`, and `time_expired`. They are
-presentation events, not an assumption about how the user's track must be
-arranged.
+`boss_started`, `boss_phase`, `player_hit_confirmed`, `projectile_kicked`,
+`watch_state`, `watch_overclock`, `overclock_hit`, `dagger_state`, and
+`time_expired`. They are presentation events, not an assumption about how the
+user's track must be arranged.

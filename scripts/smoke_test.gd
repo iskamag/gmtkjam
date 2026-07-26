@@ -24,6 +24,16 @@ func _run() -> void:
 	_check(player != null, "player is constructed")
 	_check(is_equal_approx(player.time_left, 54.0), "watch starts at 54 seconds")
 	_check(is_equal_approx(player.max_time, 60.0), "watch maximum starts at 60 seconds")
+	_check(
+		game.world_environment_resource.background_mode == Environment.BG_SKY
+		and game.world_environment_resource.sky != null,
+		"the exterior is backed by a real procedural night sky"
+	)
+	_check(
+		game.world_environment_resource.ambient_light_energy >= 0.8
+		and game.get_node_or_null("ColdMoonKey") != null,
+		"the rail town has readable ambient fill and a named moon key"
+	)
 
 	player.set_active(true)
 	for frame in 12:

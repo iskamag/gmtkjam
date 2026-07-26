@@ -16,6 +16,12 @@ var lifetime := 6.0
 var style := Style.NEEDLE
 var deflected := false
 var deflected_damage := 15600
+var kicked := false
+var kick_flash := 0.0
+
+const KICK_MIN_SPEED := 36.0
+const KICK_SPEED_MULTIPLIER := 2.65
+const KICK_DAMAGE := 26400
 
 var visual_root: Node3D
 var silhouette: Node3D
@@ -102,6 +108,7 @@ func deflect(new_direction: Vector3) -> void:
 	if deflected:
 		return
 	deflected = true
+	collision_layer = 0
 	direction = new_direction.normalized()
 	speed *= 1.75
 	lifetime = 2.5
@@ -112,6 +119,37 @@ func deflect(new_direction: Vector3) -> void:
 	rust_material.emission = Color(0.44, 0.30, 0.11)
 	rust_material.emission_energy_multiplier = 1.45
 	_orient_visual()
+
+
+func is_kickable_projectile() -> bool:
+	return not deflected and not is_queued_for_deletion()
+
+
+func kick(new_direction: Vector3) -> bool:
+	if not is_kickable_projectile() or new_direction.length_squared() < 0.001:
+		return false
+	deflected = true
+	kicked = true
+	collision_layer = 0
+	kick_flash = 1.0
+	direction = new_direction.normalized()
+	speed = maxf(speed * KICK_SPEED_MULTIPLIER, KICK_MIN_SPEED)
+	deflected_damage = maxi(deflected_damage, KICK_DAMAGE)
+	lifetime = 3.0
+
+	# A kicked shot reads as blunt, violent momentum rather than the cleaner
+	# brass glint of an ordinary blade deflection.
+	edge_material.albedo_color = Color(0.95, 0.88, 0.70)
+	edge_material.emission = Color(0.88, 0.52, 0.16)
+	edge_material.emission_energy_multiplier = 3.4
+	rust_material.albedo_color = Color(0.72, 0.28, 0.10)
+	rust_material.emission = Color(0.82, 0.24, 0.055)
+	rust_material.emission_energy_multiplier = 3.0
+	ghost_material.albedo_color = Color(0.95, 0.58, 0.18, 0.20)
+	ghost_material.emission = Color(0.92, 0.36, 0.08)
+	ghost_material.emission_energy_multiplier = 1.8
+	_orient_visual()
+	return true
 
 
 func empower_deflection(multiplier := 1.55) -> void:
@@ -278,6 +316,8 @@ func _set_ghost_material(node: Node) -> void:
 
 func _animate_visual(delta: float, hostile_scale: float) -> void:
 	visual_phase += delta
+	kick_flash = maxf(kick_flash - delta * 5.2, 0.0)
+	silhouette.scale = Vector3.ONE * (1.0 + kick_flash * 0.34)
 	match style:
 		Style.SEAL:
 			silhouette.rotation.z = visual_phase * 5.5
@@ -286,7 +326,7 @@ func _animate_visual(delta: float, hostile_scale: float) -> void:
 		_:
 			silhouette.rotation.z = visual_phase * 2.8
 
-	var show_history := not deflected and hostile_scale < 0.72
+	var show_history := kicked or (not deflected and hostile_scale < 0.72)
 	for index in ghosts.size():
 		var ghost := ghosts[index]
 		ghost.visible = show_history

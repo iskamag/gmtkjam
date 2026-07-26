@@ -657,49 +657,70 @@ func _format_damage(amount: int) -> String:
 func _build_world() -> void:
 	var world_environment := WorldEnvironment.new()
 	var environment := Environment.new()
-	environment.background_mode = Environment.BG_COLOR
-	environment.background_color = Color(0.012, 0.016, 0.017)
+	# A real sky gives the exterior a readable value ceiling.  ProceduralSkyMaterial
+	# is deliberately used instead of a panorama so this remains lightweight and
+	# reliable in the GL Compatibility browser export.
+	var night_sky := Sky.new()
+	var night_sky_material := ProceduralSkyMaterial.new()
+	night_sky_material.sky_top_color = Color(0.018, 0.028, 0.050)
+	night_sky_material.sky_horizon_color = Color(0.145, 0.168, 0.178)
+	night_sky_material.sky_curve = 0.12
+	night_sky_material.ground_bottom_color = Color(0.017, 0.019, 0.022)
+	night_sky_material.ground_horizon_color = Color(0.082, 0.096, 0.097)
+	night_sky_material.ground_curve = 0.24
+	night_sky_material.sun_angle_max = 2.2
+	night_sky_material.sun_curve = 0.085
+	night_sky.sky_material = night_sky_material
+	environment.background_mode = Environment.BG_SKY
+	environment.sky = night_sky
+	environment.background_energy_multiplier = 0.78
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	environment.ambient_light_color = Color(0.25, 0.285, 0.27)
-	environment.ambient_light_energy = 0.62
-	environment.reflected_light_source = Environment.REFLECTION_SOURCE_DISABLED
+	# Moonlit ambient fill establishes shape on soot, concrete and characters.
+	# It is intentionally neutral-cool: amber is reserved for physical lamps.
+	environment.ambient_light_color = Color(0.50, 0.555, 0.59)
+	environment.ambient_light_energy = 0.92
+	environment.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	environment.tonemap_exposure = 1.12
 	environment.glow_enabled = true
-	environment.glow_intensity = 0.62
-	environment.glow_bloom = 0.08
-	environment.glow_hdr_threshold = 0.94
-	environment.glow_hdr_scale = 1.38
+	environment.glow_intensity = 0.46
+	environment.glow_bloom = 0.06
+	environment.glow_hdr_threshold = 1.08
+	environment.glow_hdr_scale = 1.20
 	environment.adjustment_enabled = true
-	environment.adjustment_brightness = 0.92
-	environment.adjustment_contrast = 1.16
-	environment.adjustment_saturation = 0.78
+	environment.adjustment_brightness = 1.08
+	environment.adjustment_contrast = 1.035
+	environment.adjustment_saturation = 0.88
 	environment.fog_enabled = true
-	environment.fog_light_color = Color(0.065, 0.078, 0.072)
-	environment.fog_light_energy = 0.52
-	environment.fog_density = 0.016
-	environment.fog_sky_affect = 0.9
+	environment.fog_light_color = Color(0.145, 0.166, 0.17)
+	environment.fog_light_energy = 0.72
+	environment.fog_density = 0.011
+	environment.fog_sky_affect = 0.62
 	world_environment_resource = environment
 	world_environment.environment = environment
+	world_environment.name = "MoonlitRailEnvironment"
 	add_child(world_environment)
 
 	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-47.0, -33.0, 0.0)
-	sun.light_color = Color(0.51, 0.56, 0.52)
-	sun.light_energy = 0.74
+	sun.name = "ColdMoonKey"
+	sun.rotation_degrees = Vector3(-38.0, -27.0, 0.0)
+	sun.light_color = Color(0.77, 0.84, 0.91)
+	sun.light_energy = 1.32
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 60.0
 	add_child(sun)
 
 	for data in [
-		[Vector3(-11.0, 3.5, 4.0), Color(0.38, 0.32, 0.23), 3.2],
-		[Vector3(10.0, 2.5, -17.0), Color(0.28, 0.30, 0.27), 2.8],
-		[Vector3(0.0, 5.5, -31.0), Color(0.42, 0.29, 0.18), 4.4],
+		[Vector3(-11.0, 3.5, 4.0), Color(1.0, 0.73, 0.43), 3.4, 13.5],
+		[Vector3(10.0, 2.5, -17.0), Color(0.68, 0.75, 0.76), 2.25, 14.0],
+		[Vector3(0.0, 5.5, -31.0), Color(1.0, 0.61, 0.34), 4.6, 15.5],
 	]:
 		var light := OmniLight3D.new()
 		light.position = data[0]
 		light.light_color = data[1]
 		light.light_energy = data[2]
-		light.omni_range = 13.0
+		light.omni_range = data[3]
+		light.omni_attenuation = 1.45
 		light.shadow_enabled = false
 		add_child(light)
 
@@ -1157,9 +1178,9 @@ func _update_deterioration(delta: float) -> void:
 		material.set_shader_parameter("visibility", deterioration)
 
 	if world_environment_resource != null:
-		world_environment_resource.fog_density = 0.016 + deterioration * 0.014
-		world_environment_resource.fog_light_color = Color(0.065, 0.078, 0.072).lerp(
-			Color(0.095, 0.071, 0.102),
+		world_environment_resource.fog_density = 0.011 + deterioration * 0.012
+		world_environment_resource.fog_light_color = Color(0.145, 0.166, 0.17).lerp(
+			Color(0.155, 0.112, 0.142),
 			deterioration
 		)
 

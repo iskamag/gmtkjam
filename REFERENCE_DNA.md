@@ -181,6 +181,11 @@ Browser builds use Godot's Compatibility renderer. “HDR” therefore means an
 HDR internal lighting pipeline, Filmic tonemapping, overbright emissive accents,
 and restrained glow; web output itself is SDR.
 
+Night is not underexposure. A blue-black procedural sky and slate horizon set a
+legible exterior ceiling; neutral-cool moon fill keeps bodies and routes above
+black; sparse sodium practicals own the warm pools. True black belongs to
+occlusion, windows, and negative space—not the ground the player must read.
+
 Good public material references:
 
 - Poly Haven worn asphalt:
@@ -211,8 +216,9 @@ Smoothness does not mean slowly lerping everything.
 - **Hands:** locomotion offsets follow the stable movement intent. Repeated
   footfall motion is primarily vertical and primarily caused by forward travel;
   pure strafing must not swing both hands left-right.
-- **Actions:** jump, strike contact, kick, throw, deflect, and Watchfire
-  activation happen immediately when their committed input window begins.
+- **Actions:** jump, strike contact, projectile kick, throw, deflect, and
+  Watchfire activation happen immediately when their committed input window
+  begins. A valid kick sends the projectile exactly along current camera aim.
 - **Follow-through:** recovery, recoil, flame lag, damage-number drift, and
   environmental response can ease after the action. They may never delay the
   action itself.
