@@ -19,7 +19,7 @@ var game: Node3D
 
 var health := 26000
 var maximum_health := 26000
-var reward := 7.0
+var reward := 14.0
 var move_speed := 4.4
 var attack_cooldown := 0.8
 var windup := 0.0
