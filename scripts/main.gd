@@ -384,6 +384,8 @@ func _finish_prologue() -> void:
 	hud.set_intro_effects(0.0, 0.0)
 	hud.end_prologue()
 	hud.announce("EPILOGUE", "THE FIRST JOB", 2.1)
+	if _music != null:
+		_music.play()
 	emit_signal("score_event", &"control_return", {"time": player.time_left})
 	emit_signal("score_event", &"run_started", {"time": player.time_left})
 
