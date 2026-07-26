@@ -427,16 +427,18 @@ func _update_prologue(delta: float) -> void:
 	elif prologue_time >= 11.0:
 		if not prologue_flags.has("aftermath"):
 			prologue_flags["aftermath"] = true
-			# Swap scenes immediately: hide train, load world arena.
+			# Move the player to the world spawn while the train is still in place
+			# so there's no frame where the player is clipped inside the carriage.
+			player.global_position = Vector3(0.0, 0.05, 16.0)
+			player.rotation = Vector3.ZERO
+			player.pitch = 0.0
+			# Swap scenes: hide train, load world arena.
 			if is_instance_valid(prologue_shell):
 				prologue_shell.visible = false
 			if is_instance_valid(world_root):
 				world_root.queue_free()
 			_world_loaded = false
 			_load_world()
-			player.global_position = Vector3(0.0, 0.05, 16.0)
-			player.rotation = Vector3.ZERO
-			player.pitch = 0.0
 		var recovery := clampf((prologue_time - 11.0) / 2.0, 0.0, 1.0)
 		var recovery_ease := 1.0 - pow(1.0 - recovery, 3.0)
 		camera_position = Vector3(
