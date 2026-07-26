@@ -673,11 +673,12 @@ func _build_title() -> void:
 	title_layer = Control.new()
 	title_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	title_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	title_layer.visible = false
 	root.add_child(title_layer)
 
 	var shade := ColorRect.new()
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	shade.color = Color(0.018, 0.017, 0.014, 0.74)
+	shade.color = Color(0.018, 0.017, 0.014, 0.0)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	title_layer.add_child(shade)
 
