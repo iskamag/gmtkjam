@@ -234,6 +234,35 @@ static func build_level(main) -> void:
 	]:
 		_add_static_box(main, obstacle[0], obstacle[1], obstacle[2])
 
+	# Building blocks frame the road into a street instead of a void. Modular
+	# masses line both sides; a distant skyline behind the gate gives depth.
+	var facade_colors: Array[Color] = [concrete, soot, concrete.darkened(0.08), soot.darkened(0.12), rust.darkened(0.45)]
+	# Side ground strips so the buildings stand on something, not over the void.
+	_add_visual_box(main, Vector3(-22.0, -0.45, -7.0), Vector3(12.0, 0.5, 58.0), concrete.darkened(0.3))
+	_add_visual_box(main, Vector3(22.0, -0.45, -7.0), Vector3(12.0, 0.5, 58.0), concrete.darkened(0.3))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 91337
+	for side in [-1.0, 1.0]:
+		var z := 21.0
+		while z > -40.0:
+			var depth := rng.randf_range(6.0, 10.0)
+			var width := rng.randf_range(5.5, 9.0)
+			var height := rng.randf_range(6.0, 15.0)
+			var x: float = side * rng.randf_range(20.0, 25.0)
+			var col: Color = facade_colors[rng.randi() % facade_colors.size()]
+			_add_building(main, Vector3(x, 0.0, z), Vector2(width, depth), height, col)
+			# Lit window strip on the road-facing face of taller buildings.
+			if height > 9.0 and rng.randf() < 0.6:
+				var inward_x: float = x - side * (width * 0.5 + 0.06)
+				_add_child_emissive_box(main.world_root, Vector3(inward_x, height * 0.55, z), Vector3(0.08, height * 0.4, depth * 0.6), Color(0.62, 0.5, 0.28), 1.3)
+			z -= depth + rng.randf_range(1.5, 3.0)
+	# Distant skyline behind the gate — dark silhouettes for depth.
+	for _i in 14:
+		var sx := rng.randf_range(-30.0, 30.0)
+		var sz := rng.randf_range(-46.0, -40.0)
+		var sh := rng.randf_range(10.0, 22.0)
+		_add_visual_box(main, Vector3(sx, sh * 0.5, sz), Vector3(rng.randf_range(4.0, 8.0), sh, rng.randf_range(4.0, 8.0)), soot.darkened(0.35))
+
 	# The gate is visibly fantasy-shaped, but braced with utility metal.
 	_add_static_box(main, Vector3(-7.0, 4.0, -32.0), Vector3(3.0, 8.0, 2.2), concrete)
 	_add_static_box(main, Vector3(7.0, 4.0, -32.0), Vector3(3.0, 8.0, 2.2), concrete)
@@ -1002,3 +1031,12 @@ static func apply_runtime_tints(main, root: Node) -> void:
 			_tint_meshes(holder, tint, tex, emis, spec)
 		elif holder.has_meta("ghost_asset"):
 			_apply_ghost_material(main, holder, holder.get_meta("ghost_color"))
+
+
+# A modular building block: a mass with a parapet and a ground skirt, built
+# from three visual boxes. No collision (buildings sit beyond the curb walls
+# that already bound the play space) so they read as a framing skyline.
+static func _add_building(main, base: Vector3, footprint: Vector2, height: float, color: Color) -> void:
+	_add_visual_box(main, Vector3(base.x, height * 0.5, base.z), Vector3(footprint.x, height, footprint.y), color)
+	_add_visual_box(main, Vector3(base.x, height + 0.3, base.z), Vector3(footprint.x + 0.4, 0.6, footprint.y + 0.4), color.darkened(0.2))
+	_add_visual_box(main, Vector3(base.x, 0.25, base.z), Vector3(footprint.x + 0.6, 0.5, footprint.y + 0.6), color.darkened(0.4))
