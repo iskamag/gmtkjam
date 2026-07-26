@@ -346,9 +346,9 @@ func _update_prologue(delta: float) -> void:
 	prologue_time += delta
 	hud.update_prologue(prologue_time)
 
-	if prologue_time >= next_train_tick and prologue_time < 9.0:
+	if prologue_time >= next_train_tick and prologue_time < 10.0:
 		player.play_sfx(&"train")
-		next_train_tick += 0.64 if prologue_time < 7.5 else 0.46
+		next_train_tick += 0.64 if prologue_time < 8.0 else 0.46
 
 	_update_prologue_exterior()
 
@@ -463,7 +463,11 @@ func _finish_prologue() -> void:
 	if not prologue_active:
 		return
 	prologue_active = false
-	# World was already loaded during the recovery phase at prologue_time >= 11.0.
+	# If the world wasn't loaded during the recovery phase (e.g. skip), load it now.
+	if not _world_loaded:
+		if is_instance_valid(world_root):
+			world_root.queue_free()
+		_load_world()
 	player.global_position = Vector3(0.0, 0.05, 16.0)
 	player.rotation = Vector3.ZERO
 	player.pitch = 0.0
