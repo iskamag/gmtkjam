@@ -42,9 +42,18 @@ them. On the final day, postponed events return.
 
 ## Story
 
-The game begins after the protagonist's unseen grand adventure. They are already
-level 50, already famous or feared, and already at the end of their life. The
-player enters the final chapter of an RPG that never existed.
+The game begins aboard a late train after the protagonist's unseen grand
+adventure. They are already level 50, already famous or feared, and already at
+the end of their life. A sparse clear-data/stat readout makes the player enter
+the epilogue of an RPG that never existed.
+
+The train begins almost peacefully. Its rhythm and the indistinct sounds of old
+encounters accumulate. Something postponed catches up with the carriage. The
+chronosword's power lets them survive the crash by reflexively rewinding the
+wound, but the low-health red clears to reveal that the analog watch is broken
+and already ticking backward. Control returns as they climb from the wreck into
+a familiar town. **EPILOGUE** appears. The countdown begins here, after the
+short authored opening, so the cinematic does not steal playable time.
 
 The chronosword's first assignment was a creature they were too inexperienced
 to kill. They cut the encounter out of the present and postponed it until they
@@ -61,6 +70,10 @@ rebellion. Completing the job cannot prevent death.
 Defeating the boss restores the watch as much as it can still be restored. With
 no enemies left to kill, the hand continues ticking backward through the final
 walk. Midnight/zero is the ending, not a villain to defeat.
+
+The opening must remain action-native: roughly ten seconds, skippable after its
+first second to the identical post-crash state, no dialogue tree, no lore
+panel, and no long loss of control.
 
 ## Reference DNA
 
@@ -84,6 +97,7 @@ VVVVVV; Undertale; RuneScape; Cat Quest; Dicey Dungeons; The Escapists; Plants
 vs. Zombies; Spelunky; Viocide; Kitten Burst; Rayman Legends; Super Cat Tales;
 Wizard Drop Tower; Shovel Knight; Sonic; Prince of Persia: The Sands of Time;
 The Stick of Truth; Osmos; Knightmare Tower; EXIT PATH; and Bayonetta.
+Ninja Gaiden on PS3 is an explicit combat and presentation reference.
 
 Other relevant personal concepts:
 
@@ -94,6 +108,9 @@ Other relevant personal concepts:
 
 Chronosword must not simply become either of those games. First person, the
 diegetic watch, stolen time, and a manually rewound dagger distinguish it.
+
+The complete taste map, translation rules, palette, texture references, and
+smoothness contract live in [`REFERENCE_DNA.md`](REFERENCE_DNA.md).
 
 ## Format
 
@@ -207,6 +224,10 @@ affordable, close combat and physical retrieval remain available.
   recovery cancel, afterimage, camera shear, and no unrelated resource tax.
 - The movement kit must support dagger retrieval, attack cancels, spacing, and
   authored traversal. It is not a checklist of references.
+- Pure strafing must not produce an alternating camera or hand wobble. Camera
+  lean follows intent quickly, settles without overshoot, and recentres quickly
+  on reversal. Footfall bob is small, mostly vertical, and weighted toward
+  forward travel.
 
 ### 6. Deterioration is historical, not graphical decay
 
@@ -249,12 +270,16 @@ not flicker backward every time an ordinary kill restores current time.
 Enemies cannot merely run directly at the player while a ranged unit shoots.
 Each role must create a different spatial question:
 
-- melee pursuer: readable committed strike, susceptible to spacing/stagger;
-- ranged attacker: slow visible patterns worth deflecting or routing the dagger
-  through;
-- elite: pressure or guard behaviour that rewards kick/recall combinations;
-- boss: authored phases, killable secondary threats for time recovery, and
-  openings created by mastery rather than a pure health sponge.
+- **Arrears / rail collector:** a melee pursuer whose long committed cut returns
+  along an old track; susceptible to spacing and stagger.
+- **Signal witness:** a ranged attacker framed by a broken clock/signal halo. It
+  fires stamped seal, vane, and fan patterns worth deflecting or routing the
+  dagger through.
+- **Buried retainer:** a post-game elite whose segmented guard rewards
+  kick/recall combinations.
+- **The Unfinished:** the first postponed job. It rises bodily through the
+  asphalt and ballast; phases create openings through authored patterns and
+  secondary threats rather than only inflating health.
 
 The dagger's path, projectile patterns, Watchfire, and enemy positioning should
 interact. Encounters should be arranged along the connected location instead of

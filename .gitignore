@@ -1,3 +1,8 @@
 .godot/
 build/
 *.tmp
+
+# Optional locally supplied Unity Asset Store source files. The game has
+# procedural fallbacks and exports may embed them, but raw pack files must not
+# be redistributed from this repository.
+assets/user_pack/

@@ -41,7 +41,31 @@ func _run() -> void:
 	player.planar_speed = player.RUN_SPEED
 	player._update_camera(0.05)
 	_check(absf(player.camera.rotation.z) > 0.025, "view lean reaches a readable angle within 50 milliseconds")
+	var strafe_lean: float = player.camera.rotation.z
+	player._update_camera(0.05)
+	_check(
+		signf(player.camera.rotation.z) == signf(strafe_lean),
+		"held strafe intent cannot create an alternating horizon wobble"
+	)
 	player.velocity = Vector3.ZERO
+	player.planar_speed = 0.0
+	player._update_camera(0.16)
+	_check(absf(player.camera.rotation.z) < 0.001, "view lean settles promptly after strafe release")
+
+	var hands = game.hud.hands
+	player.watch_active = false
+	var second_before: float = hands.second_hand_angle
+	hands._process(0.25)
+	var ordinary_second_motion := absf(angle_difference(hands.second_hand_angle, second_before))
+	player.watch_active = true
+	var bend_second_before: float = hands.second_hand_angle
+	hands._process(0.25)
+	var bent_second_motion := absf(angle_difference(hands.second_hand_angle, bend_second_before))
+	_check(
+		bent_second_motion > ordinary_second_motion * 3.5,
+		"Watchfire visibly accelerates the analog seconds hand"
+	)
+	player.watch_active = false
 
 	player.time_left = 30.0
 	player.max_time = 60.0
@@ -90,6 +114,50 @@ func _run() -> void:
 	game._spawn_damage_number(13200, Vector3(0.0, 2.0, 0.0), true)
 	await process_frame
 	_check(not game.find_children("*", "Label3D", true, false).is_empty(), "damage numbers are Label3D world objects")
+	_check(game._format_damage(13200) == "13,200", "late-game damage values use readable thousands grouping")
+
+	var ProjectileScript = load("res://scripts/enemy_projectile.gd")
+	var inspected_projectiles: Array[Node] = []
+	for projectile_style in [
+		ProjectileScript.Style.NEEDLE,
+		ProjectileScript.Style.SEAL,
+		ProjectileScript.Style.BLADE,
+	]:
+		var projectile = ProjectileScript.new()
+		projectile.player = player
+		projectile.game = game
+		projectile.style = projectile_style
+		projectile.process_mode = Node.PROCESS_MODE_DISABLED
+		game.add_child(projectile)
+		var uses_visible_blob := false
+		for mesh_node in projectile.find_children("*", "MeshInstance3D", true, false):
+			if mesh_node.mesh is SphereMesh:
+				uses_visible_blob = true
+		_check(not uses_visible_blob, "enemy projectile style %d has no visible sphere blob" % projectile_style)
+		inspected_projectiles.append(projectile)
+	for projectile in inspected_projectiles:
+		projectile.queue_free()
+	await process_frame
+
+	game._spawn_enemy(Vector3(0.0, 0.05, 9.0), game.EnemyScript.Kind.ELITE, 0.0)
+	var manifested_enemy = game.active_enemies.back()
+	_check(manifested_enemy.manifesting, "an authored enemy begins in manifestation state")
+	_check(manifested_enemy.collision_layer == 0, "manifesting enemies cannot collide or attack")
+	manifested_enemy._update_manifest(manifested_enemy.manifest_duration + 0.05)
+	await process_frame
+	_check(not manifested_enemy.manifesting, "enemy manifestation has a finite authored completion")
+	manifested_enemy.vanish()
+	game.active_enemies.erase(manifested_enemy)
+
+	game._begin_prologue()
+	_check(game.prologue_active and not player.active, "the train opening holds gameplay until the crash survives")
+	_check(game.hud.prologue_layer.visible, "the train opening presents clear-data and epilogue layers")
+	game.prologue_time = 8.15
+	game._update_prologue(0.10)
+	_check(game.hud.prologue_title.visible, "the opening reveals EPILOGUE before returning control")
+	game._finish_prologue()
+	_check(player.active and not game.hud.prologue_layer.visible, "skipping or completing the opening returns identical control")
+
 	_check(InputMap.has_action("chronostep"), "the chronosword movement burst is mapped")
 	_check(InputMap.has_action("slide"), "ground slide is mapped")
 	_check(InputMap.has_action("kick"), "kick has an independent combat input")

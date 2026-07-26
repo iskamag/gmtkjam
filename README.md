@@ -10,6 +10,10 @@ The broken watch is the player's health:
   breaks away part of the maximum.
 - When the watch reaches zero, the chronosword's time has come.
 
+The current opening is a short in-engine train ride, crash, trauma recovery, and
+`EPILOGUE / THE FIRST JOB` handoff. Playable time does not begin until control
+returns.
+
 ## Controls
 
 | Input | Action |
@@ -23,6 +27,7 @@ The broken watch is the player's health:
 | Right mouse | Free throw (hold briefly to guide); press again to pay Watchfire for rewind |
 | `Q` | Burn Watchfire to slow hostile time |
 | `Space` | Jump / slide-jump / wall-kick |
+| `Space` during opening | Skip to the identical post-crash gameplay state |
 | `F3` | Prototype telemetry |
 | `R` | Restart after death |
 | `Esc` | Release/capture mouse |
@@ -58,7 +63,29 @@ Then open `http://localhost:8000`. The game uses Godot's Compatibility renderer
 and the non-threaded web template.
 
 The full design record and explicit rejected directions are in
-[`DESIGN.md`](DESIGN.md).
+[`DESIGN.md`](DESIGN.md). The complete influence map, art laws, texture
+references, and measurable smoothness contract are in
+[`REFERENCE_DNA.md`](REFERENCE_DNA.md).
+
+## Optional supplied art
+
+The game automatically uses a small locally supplied Polyperfect apocalypse set
+when it exists at `assets/user_pack/`: a derailed train, rail, rubble, ruined
+town landmarks, lamps, barriers, and `Atlas_Albedo_LPUP.png`. These raw
+commercial source files are intentionally ignored by Git. The route, collision,
+and procedural dressing remain playable without them.
+
+This makes the art boundary explicit: replace world presentation without
+touching encounter or movement logic. Enemy gameplay is likewise separated from
+its `DeferredBody` visual child, and the first-person hands are isolated in
+`scripts/hands_2d.gd`.
+
+## Rendering boundary
+
+The browser build uses Godot's Compatibility/WebGL 2 renderer. It uses Filmic
+tonemapping, restrained glow, emissive highlights, fog, temporal history
+samples, and event-linked distortion. Browser output is SDR; it does not claim
+true HDR display output.
 
 ## Scope
 
@@ -75,8 +102,17 @@ short sequence of encounters and a boss-shaped finale to test:
 6. gated authored encounters and PS2-style historical deterioration rather
    than posterization;
 7. the level-50 damage-number presentation without a conventional HUD health bar.
+8. authored enemy manifestation, geometric projectile families, and an
+   action-native train-crash epilogue opening.
 
 The project emits neutral gameplay signals for future score choreography. It
 deliberately does **not** contain a shallow adaptive-music mixer. A genuinely
 dynamic score must be composed around its transition graph, sync points, musical
 cells, stems, fills, and stingers.
+
+Current neutral score hooks include `intro_black`, `train_rhythm`,
+`status_reveal`, `memory_intrusion`, `crash_premonition`, `crash_hit`,
+`title_epilogue`, `control_return`, `encounter_started`, `encounter_cleared`,
+`boss_started`, `boss_phase`, `player_hit_confirmed`, `watch_state`,
+`dagger_state`, and `time_expired`. They are presentation events, not an
+assumption about how the user's track must be arranged.

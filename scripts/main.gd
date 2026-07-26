@@ -26,6 +26,14 @@ var ghost_materials: Array[ShaderMaterial] = []
 var impact_level := 0.0
 var wound_level := 0.0
 var hitstop_until_msec := 0
+var damage_number_serial := 0
+
+var prologue_active := false
+var prologue_time := 0.0
+var prologue_flags: Dictionary = {}
+var prologue_shell: Node3D
+var prologue_window_motion: Node3D
+var next_train_tick := 0.0
 
 
 func _ready() -> void:
@@ -73,20 +81,27 @@ func _process(delta: float) -> void:
 	_update_hitstop()
 	impact_level = maxf(impact_level - delta * 5.8, 0.0)
 	wound_level = maxf(wound_level - delta * 3.7, 0.0)
-	if started and not run_finished and not boss_defeated:
+	if prologue_active:
+		_update_prologue(delta)
+	elif started and not run_finished and not boss_defeated:
 		_update_encounter_triggers()
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		if not started and not run_finished:
-			_start_run()
+			_begin_prologue()
 			get_viewport().set_input_as_handled()
 			return
 		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 			get_viewport().set_input_as_handled()
 			return
+
+	if prologue_active and event.is_action_pressed("jump") and prologue_time > 1.0:
+		_finish_prologue()
+		get_viewport().set_input_as_handled()
+		return
 
 	if event.is_action_pressed("ui_cancel"):
 		Input.mouse_mode = (
@@ -97,6 +112,138 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event.is_action_pressed("restart") and run_finished:
 		get_tree().reload_current_scene()
+
+
+func _begin_prologue() -> void:
+	started = true
+	prologue_active = true
+	prologue_time = 0.0
+	prologue_flags.clear()
+	next_train_tick = 0.0
+	run_finished = false
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	player.set_active(false)
+	player.global_position = Vector3(0.0, 0.05, 16.0)
+	player.rotation = Vector3.ZERO
+	player.pitch = 0.0
+	player.camera.position = Vector3(0.0, 1.34, 0.0)
+	player.camera.rotation = Vector3(0.06, 0.0, 0.0)
+	if is_instance_valid(prologue_shell):
+		prologue_shell.visible = true
+		prologue_shell.position = Vector3(0.0, 0.0, 16.0)
+		prologue_shell.rotation = Vector3.ZERO
+	hud.begin_prologue()
+	emit_signal("score_event", &"intro_black", {})
+	emit_signal("score_event", &"train_rhythm", {"state": "enter"})
+
+
+func _update_prologue(delta: float) -> void:
+	prologue_time += delta
+	hud.update_prologue(prologue_time)
+
+	if prologue_time >= next_train_tick and prologue_time < 5.8:
+		player.play_sfx(&"train")
+		next_train_tick += 0.66 if prologue_time < 4.0 else 0.49
+
+	if is_instance_valid(prologue_window_motion):
+		prologue_window_motion.position.z = fmod(prologue_time * 11.0, 8.0) - 4.0
+
+	# The train ride is deliberately restrained. The camera follows the rail
+	# rhythm without an alternating lateral wobble.
+	if prologue_time < 5.55:
+		player.camera.position = Vector3(
+			sin(prologue_time * 1.8) * 0.006,
+			1.34 + sin(prologue_time * 9.52) * 0.007,
+			0.0
+		)
+		player.camera.rotation = Vector3(
+			0.06 + sin(prologue_time * 0.72) * 0.004,
+			sin(prologue_time * 0.41) * 0.006,
+			sin(prologue_time * 0.93) * 0.003
+		)
+
+	if prologue_time >= 2.1 and not prologue_flags.has("stats"):
+		prologue_flags["stats"] = true
+		emit_signal("score_event", &"status_reveal", {
+			"level": 50,
+			"attack": 13870,
+			"art": 99,
+		})
+	if prologue_time >= 3.7 and not prologue_flags.has("memory"):
+		prologue_flags["memory"] = true
+		player.play_sfx(&"memory")
+		emit_signal("score_event", &"memory_intrusion", {"layer": 1})
+	if prologue_time >= 4.75 and not prologue_flags.has("premonition"):
+		prologue_flags["premonition"] = true
+		player.play_sfx(&"watch")
+		emit_signal("score_event", &"crash_premonition", {})
+	if prologue_time >= 5.72 and not prologue_flags.has("crash"):
+		prologue_flags["crash"] = true
+		player.play_sfx(&"crash")
+		player.play_sfx(&"wound")
+		player.wound_visual = 1.0
+		player.watch_previous_time = player.STARTING_MAX_TIME
+		hud.set_intro_effects(1.0, 1.0)
+		emit_signal("score_event", &"crash_hit", {})
+
+	if prologue_time >= 5.72 and prologue_time < 6.32:
+		var crash_phase := clampf((prologue_time - 5.72) / 0.60, 0.0, 1.0)
+		if is_instance_valid(prologue_shell):
+			prologue_shell.rotation = Vector3(
+				-crash_phase * 0.17,
+				crash_phase * 0.11,
+				crash_phase * 0.28
+			)
+			prologue_shell.position.y = -crash_phase * 0.42
+		player.camera.position = Vector3(
+			-crash_phase * 0.22,
+			1.34 - crash_phase * 0.34,
+			-crash_phase * 0.18
+		)
+		player.camera.rotation = Vector3(
+			0.06 + crash_phase * 0.16,
+			-crash_phase * 0.12,
+			-crash_phase * 0.42
+		)
+	elif prologue_time >= 6.32:
+		if is_instance_valid(prologue_shell):
+			prologue_shell.visible = false
+		var recovery := clampf((prologue_time - 6.32) / 3.5, 0.0, 1.0)
+		player.camera.position = player.camera.position.lerp(
+			Vector3(0.0, 1.55, 0.0),
+			1.0 - exp(-delta * 5.8)
+		)
+		player.camera.rotation = player.camera.rotation.lerp(
+			Vector3.ZERO,
+			1.0 - exp(-delta * 6.5)
+		)
+		hud.set_intro_effects(1.0 - recovery, maxf(0.0, 1.0 - (prologue_time - 5.72) * 3.3))
+
+	if prologue_time >= 8.15 and not prologue_flags.has("epilogue"):
+		prologue_flags["epilogue"] = true
+		emit_signal("score_event", &"title_epilogue", {"chapter": "the_first_job"})
+
+	if prologue_time >= 10.25:
+		_finish_prologue()
+
+
+func _finish_prologue() -> void:
+	if not prologue_active:
+		return
+	prologue_active = false
+	if is_instance_valid(prologue_shell):
+		prologue_shell.visible = false
+	player.global_position = Vector3(0.0, 0.05, 16.0)
+	player.rotation = Vector3.ZERO
+	player.pitch = 0.0
+	player.camera.position = Vector3(0.0, 1.55, 0.0)
+	player.camera.rotation = Vector3.ZERO
+	player.set_active(true)
+	hud.set_intro_effects(0.0, 0.0)
+	hud.end_prologue()
+	hud.announce("EPILOGUE", "THE FIRST JOB", 2.1)
+	emit_signal("score_event", &"control_return", {"time": player.time_left})
+	emit_signal("score_event", &"run_started", {"time": player.time_left})
 
 
 func _start_run() -> void:
@@ -127,8 +274,10 @@ func _start_encounter(index: int) -> void:
 	encounter_active = true
 	var definition := encounter_definitions[index]
 	hud.announce(String(definition["title"]), String(definition["subtitle"]), 1.55)
-	for spawn_data in definition["spawns"]:
-		_spawn_enemy(spawn_data[0], spawn_data[1])
+	var spawn_sequence: Array = definition["spawns"]
+	for spawn_index in spawn_sequence.size():
+		var spawn_data: Array = spawn_sequence[spawn_index]
+		_spawn_enemy(spawn_data[0], spawn_data[1], float(spawn_index) * 0.22)
 	var tag: StringName = &"boss_started" if index == encounter_definitions.size() - 1 else &"encounter_started"
 	emit_signal("score_event", tag, {
 		"room": index + 1,
@@ -157,20 +306,20 @@ func _complete_encounter(index: int) -> void:
 
 func _build_encounter_definitions() -> void:
 	encounter_definitions = [
-		{
-			"trigger_z": 13.0,
-			"title": "PLACE THE BLADE",
-			"subtitle": "A thrown weapon is a position you must account for.",
+			{
+				"trigger_z": 13.0,
+				"title": "THE ARREARS",
+				"subtitle": "The train brought an old collector with it.",
 			"threat": 0.35,
 			"spawns": [
 				[Vector3(-3.7, 0.05, 5.5), EnemyScript.Kind.MELEE],
 				[Vector3(5.0, 0.05, 0.0), EnemyScript.Kind.RANGED],
 			],
 		},
-		{
-			"trigger_z": -7.0,
-			"title": "THE ROAD REMEMBERS",
-			"subtitle": "Break the guard. Decide whether recall is worth the flame.",
+			{
+				"trigger_z": -7.0,
+				"title": "THE SIGNAL WITNESS",
+				"subtitle": "Read the timetable. Break the buried guard.",
 			"threat": 0.70,
 			"spawns": [
 				[Vector3(-6.3, 0.05, -10.0), EnemyScript.Kind.RANGED],
@@ -178,10 +327,10 @@ func _build_encounter_definitions() -> void:
 				[Vector3(-1.7, 0.05, -17.8), EnemyScript.Kind.ELITE],
 			],
 		},
-		{
-			"trigger_z": -22.0,
-			"title": "THE UNFINISHED",
-			"subtitle": "Your first job. Your last job.",
+			{
+				"trigger_z": -22.0,
+				"title": "THE UNFINISHED",
+				"subtitle": "The first thing you postponed rises to meet the last.",
 			"threat": 1.0,
 			"spawns": [
 				[Vector3(0.0, 0.05, -28.0), EnemyScript.Kind.BOSS],
@@ -190,7 +339,7 @@ func _build_encounter_definitions() -> void:
 	]
 
 
-func _spawn_enemy(at: Vector3, kind: int) -> void:
+func _spawn_enemy(at: Vector3, kind: int, manifest_delay: float = 0.0) -> void:
 	var enemy := EnemyScript.new()
 	enemy.kind = kind
 	enemy.player = player
@@ -201,6 +350,11 @@ func _spawn_enemy(at: Vector3, kind: int) -> void:
 	enemy.damaged.connect(_on_enemy_damaged.bind(enemy))
 	enemy.phase_changed.connect(_on_boss_phase)
 	active_enemies.append(enemy)
+	if enemy.has_method("begin_manifest"):
+		enemy.begin_manifest(
+			manifest_delay,
+			4.2 if kind == EnemyScript.Kind.BOSS else (1.8 if kind == EnemyScript.Kind.ELITE else 0.75)
+		)
 	if kind == EnemyScript.Kind.BOSS:
 		hud.show_boss(enemy.maximum_health)
 
@@ -246,9 +400,9 @@ func _on_boss_phase(phase: int) -> void:
 	hud.announce("THE UNFINISHED — PHASE %d" % phase, "Keep the hand moving")
 	emit_signal("score_event", &"boss_phase", {"phase": phase, "player_time": player.time_left})
 	if phase == 2:
-		_spawn_enemy(Vector3(-7.0, 0.05, -20.0), EnemyScript.Kind.MELEE)
+		_spawn_enemy(Vector3(-7.0, 0.05, -20.0), EnemyScript.Kind.MELEE, 0.2)
 	elif phase == 3:
-		_spawn_enemy(Vector3(7.0, 0.05, -20.0), EnemyScript.Kind.RANGED)
+		_spawn_enemy(Vector3(7.0, 0.05, -20.0), EnemyScript.Kind.RANGED, 0.2)
 
 
 func _on_player_expired() -> void:
@@ -337,8 +491,6 @@ func spawn_time_echo(at_transform: Transform3D) -> void:
 	var mesh := BoxMesh.new()
 	mesh.size = Vector3(0.9, 1.8, 0.06)
 	echo.mesh = mesh
-	echo.global_transform = at_transform
-	echo.position.y += 0.9
 	var material := StandardMaterial3D.new()
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -348,6 +500,8 @@ func spawn_time_echo(at_transform: Transform3D) -> void:
 	material.emission_energy_multiplier = 0.32
 	echo.material_override = material
 	add_child(echo)
+	echo.global_transform = at_transform
+	echo.position.y += 0.9
 	var tween := create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(echo, "scale", Vector3(1.7, 0.82, 1.0), 0.26)
@@ -362,9 +516,6 @@ func _spawn_time_cut(at: Vector3, strength: float) -> void:
 	var mesh := QuadMesh.new()
 	mesh.size = Vector2(1.3 + strength * 1.5, 0.045 + strength * 0.035)
 	cut.mesh = mesh
-	cut.global_position = at
-	if is_instance_valid(player):
-		cut.look_at(player.camera.global_position, Vector3.UP)
 	var material := StandardMaterial3D.new()
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -374,6 +525,9 @@ func _spawn_time_cut(at: Vector3, strength: float) -> void:
 	material.emission_energy_multiplier = 1.1
 	cut.material_override = material
 	add_child(cut)
+	cut.global_position = at
+	if is_instance_valid(player):
+		cut.look_at(player.camera.global_position, Vector3.UP)
 	var tween := create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(cut, "scale", Vector3(2.6, 0.2, 1.0), 0.16)
@@ -384,8 +538,8 @@ func _spawn_time_cut(at: Vector3, strength: float) -> void:
 
 func spawn_burst(at: Vector3, color: Color, count: int = 8) -> void:
 	var root := Node3D.new()
-	root.global_position = at
 	add_child(root)
+	root.global_position = at
 	for index in count:
 		var shard := MeshInstance3D.new()
 		var mesh := BoxMesh.new()
@@ -409,28 +563,45 @@ func spawn_burst(at: Vector3, color: Color, count: int = 8) -> void:
 
 
 func _spawn_damage_number(amount: int, at: Vector3, critical: bool) -> void:
+	damage_number_serial += 1
 	var label := Label3D.new()
-	label.text = "%s%d" % ["✦" if critical else "", amount]
+	label.text = _format_damage(amount) + ("!" if critical else "")
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	label.fixed_size = true
-	label.font_size = 92 if not critical else 116
-	label.pixel_size = 0.0028
-	label.outline_size = 14
-	label.modulate = Color(0.88, 0.84, 0.66) if not critical else Color(0.92, 0.57, 0.20)
+	label.font_size = 88 if not critical else 108
+	label.pixel_size = 0.00265
+	label.outline_size = 12
+	label.modulate = Color(0.89, 0.85, 0.72) if not critical else Color(0.62, 0.29, 0.22)
 	label.outline_modulate = Color(0.025, 0.021, 0.016, 0.95)
 	label.no_depth_test = false
 	add_child(label)
-	label.global_position = at
+	var lane := -1.0 if damage_number_serial % 2 == 0 else 1.0
+	var camera_right := Vector3.RIGHT
+	if is_instance_valid(player) and is_instance_valid(player.camera):
+		camera_right = player.camera.global_transform.basis.x
+	label.global_position = at + camera_right * lane * 0.15
+	label.scale = Vector3.ONE * 0.68
 
-	var side := -0.55 if amount % 2 == 0 else 0.55
-	var target := at + Vector3(side, 2.7 if not critical else 3.4, 0.0)
-	var tween := create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(label, "global_position", target, 0.72).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(label, "modulate:a", 0.0, 0.72).set_delay(0.28)
-	tween.tween_property(label, "scale", Vector3.ONE * (1.22 if critical else 1.08), 0.18).set_trans(Tween.TRANS_BACK)
-	tween.set_parallel(false)
-	tween.tween_callback(label.queue_free)
+	var target := label.global_position + Vector3.UP * (1.05 if not critical else 1.22) + camera_right * lane * 0.24
+	var drift := create_tween()
+	drift.set_parallel(true)
+	drift.tween_property(label, "global_position", target, 0.66).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	drift.tween_property(label, "modulate:a", 0.0, 0.30).set_delay(0.36)
+	drift.set_parallel(false)
+	drift.tween_callback(label.queue_free)
+
+	var pop := create_tween()
+	pop.tween_property(label, "scale", Vector3.ONE * (1.23 if critical else 1.14), 0.055).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	pop.tween_property(label, "scale", Vector3.ONE, 0.09).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+
+func _format_damage(amount: int) -> String:
+	var digits := str(maxi(amount, 0))
+	var formatted := ""
+	while digits.length() > 3:
+		formatted = "," + digits.right(3) + formatted
+		digits = digits.left(digits.length() - 3)
+	return digits + formatted
 
 
 func _build_world() -> void:
@@ -443,6 +614,15 @@ func _build_world() -> void:
 	environment.ambient_light_energy = 0.72
 	environment.reflected_light_source = Environment.REFLECTION_SOURCE_DISABLED
 	environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	environment.glow_enabled = true
+	environment.glow_intensity = 0.72
+	environment.glow_bloom = 0.10
+	environment.glow_hdr_threshold = 1.12
+	environment.glow_hdr_scale = 1.55
+	environment.adjustment_enabled = true
+	environment.adjustment_brightness = 0.96
+	environment.adjustment_contrast = 1.07
+	environment.adjustment_saturation = 0.88
 	environment.fog_enabled = true
 	environment.fog_light_color = Color(0.13, 0.14, 0.135)
 	environment.fog_light_energy = 0.62
@@ -520,6 +700,69 @@ func _build_level() -> void:
 	]:
 		_add_asset(prop[0], prop[1], prop[2], prop[3], prop[4])
 
+	# The locally supplied apocalypse kit turns the abstract road into one
+	# specific familiar town. Every call is optional; the authored collision
+	# and procedural dressing above remain a playable fallback.
+	_add_optional_pack_asset(
+		"res://assets/user_pack/SM_Train_Speed_Derailment_Apocalypse.fbx",
+		Vector3(-9.2, 0.02, 18.2),
+		Vector3.ONE,
+		Vector3(-0.06, 1.26, 0.13),
+		Color(0.74, 0.70, 0.61)
+	)
+	_add_optional_pack_asset(
+		"res://assets/user_pack/SM_Building_House_Modern_Apocalypse_A.fbx",
+		Vector3(-14.8, 0.0, -7.0),
+		Vector3.ONE * 1.12,
+		Vector3(0.0, 0.58, 0.0),
+		Color(0.60, 0.59, 0.53)
+	)
+	_add_optional_pack_asset(
+		"res://assets/user_pack/SM_Building_Cafe_Apocalypse.fbx",
+		Vector3(14.2, 0.0, -20.0),
+		Vector3.ONE * 1.05,
+		Vector3(0.0, -0.64, 0.0),
+		Color(0.60, 0.57, 0.49)
+	)
+	# The pack's "rail tile" includes a 30-metre terrain slab, so the route uses
+	# authored rails instead of allowing that atlas-green slab to cover the road.
+	for rail_x in [-11.55, -10.15]:
+		_add_visual_box(
+			Vector3(rail_x, 0.09, -3.0),
+			Vector3(0.13, 0.14, 41.0),
+			Color(0.25, 0.22, 0.18)
+		)
+	for sleeper_z in range(16, -24, -2):
+		_add_visual_box(
+			Vector3(-10.85, 0.045, float(sleeper_z)),
+			Vector3(2.4, 0.09, 0.22),
+			Color(0.19, 0.13, 0.09)
+		)
+	for rubble_data in [
+		[Vector3(-7.7, 0.0, 11.3), Vector3(0.9, 0.9, 0.9), 0.4],
+		[Vector3(10.7, 0.0, -3.6), Vector3(1.2, 1.2, 1.2), -0.8],
+		[Vector3(-10.2, 0.0, -23.6), Vector3(1.4, 1.4, 1.4), 1.1],
+	]:
+		_add_optional_pack_asset(
+			"res://assets/user_pack/SM_Rubble_Concrete_Apocalypse_A.fbx",
+			rubble_data[0],
+			rubble_data[1],
+			Vector3(0.0, rubble_data[2], 0.0),
+			Color(0.58, 0.56, 0.50)
+		)
+	for lamp_data in [
+		[Vector3(-9.0, 0.0, 4.0), 0.15],
+		[Vector3(9.2, 0.0, -10.0), PI + 0.1],
+		[Vector3(-9.2, 0.0, -23.0), -0.08],
+	]:
+		_add_optional_pack_asset(
+			"res://assets/user_pack/SM_Lamp_Road_Apocalypse_A.fbx",
+			lamp_data[0],
+			Vector3.ONE,
+			Vector3(0.0, lamp_data[1], 0.0),
+			Color(0.52, 0.50, 0.43)
+		)
+
 	# These fragments are the place at a different age. Permanent wounds and
 	# completed encounters make them increasingly legible.
 	_add_ghost_box(Vector3(0.0, 0.14, 5.0), Vector3(15.0, 0.28, 3.5), Color(0.24, 0.20, 0.27))
@@ -531,6 +774,77 @@ func _build_level() -> void:
 
 	encounter_gates.append(_create_encounter_gate(-5.0))
 	encounter_gates.append(_create_encounter_gate(-21.0))
+	_build_prologue_shell()
+
+
+func _build_prologue_shell() -> void:
+	prologue_shell = Node3D.new()
+	prologue_shell.name = "LastServiceCarriage"
+	prologue_shell.position = Vector3(0.0, 0.0, 16.0)
+	add_child(prologue_shell)
+
+	var upholstery := Color(0.115, 0.105, 0.087)
+	var train_metal := Color(0.22, 0.23, 0.215)
+	var window_night := Color(0.028, 0.034, 0.036)
+	_add_child_visual_box(prologue_shell, Vector3(0.0, -0.06, 0.0), Vector3(6.2, 0.12, 9.4), train_metal)
+	_add_child_visual_box(prologue_shell, Vector3(0.0, 3.2, 0.0), Vector3(6.2, 0.18, 9.4), Color(0.13, 0.135, 0.125))
+	_add_child_visual_box(prologue_shell, Vector3(-3.02, 1.55, 0.0), Vector3(0.14, 3.1, 9.4), train_metal)
+	_add_child_visual_box(prologue_shell, Vector3(3.02, 1.55, 0.0), Vector3(0.14, 3.1, 9.4), train_metal)
+	_add_child_visual_box(prologue_shell, Vector3(-2.34, 1.6, -4.55), Vector3(1.34, 3.1, 0.16), train_metal)
+	_add_child_visual_box(prologue_shell, Vector3(2.34, 1.6, -4.55), Vector3(1.34, 3.1, 0.16), train_metal)
+	_add_child_visual_box(prologue_shell, Vector3(0.0, 2.85, -4.55), Vector3(3.34, 0.55, 0.16), train_metal)
+
+	for light_z in [-2.8, 0.0, 2.8]:
+		_add_child_emissive_box(
+			prologue_shell,
+			Vector3(0.0, 3.02, light_z),
+			Vector3(2.8, 0.05, 0.32),
+			Color(0.74, 0.53, 0.29),
+			1.6
+		)
+		var practical := OmniLight3D.new()
+		practical.position = Vector3(0.0, 2.65, light_z)
+		practical.light_color = Color(0.78, 0.57, 0.34)
+		practical.light_energy = 2.4
+		practical.omni_range = 5.6
+		practical.shadow_enabled = false
+		prologue_shell.add_child(practical)
+
+	for side in [-1.0, 1.0]:
+		for seat_z in [-2.5, -0.4, 1.7, 3.8]:
+			_add_child_visual_box(
+				prologue_shell,
+				Vector3(side * 2.28, 0.55, seat_z),
+				Vector3(1.0, 1.1, 1.45),
+				upholstery
+			)
+			_add_child_visual_box(
+				prologue_shell,
+				Vector3(side * 2.62, 1.25, seat_z + 0.46),
+				Vector3(0.28, 1.55, 1.42),
+				upholstery.darkened(0.22)
+			)
+
+	# Window darkness is interrupted by passing vertical bars. Moving only this
+	# child creates train motion without simulating a vehicle or stealing input.
+	for side in [-1.0, 1.0]:
+		_add_child_visual_box(
+			prologue_shell,
+			Vector3(side * 2.94, 2.05, 0.0),
+			Vector3(0.025, 1.05, 8.1),
+			window_night
+		)
+	prologue_window_motion = Node3D.new()
+	prologue_window_motion.name = "PassingInfrastructure"
+	prologue_shell.add_child(prologue_window_motion)
+	for bar_z in [-4.0, -2.0, 0.0, 2.0, 4.0]:
+		for side in [-1.0, 1.0]:
+			_add_child_visual_box(
+				prologue_window_motion,
+				Vector3(side * 2.90, 2.05, bar_z),
+				Vector3(0.035, 1.05, 0.11),
+				Color(0.58, 0.43, 0.25)
+			)
 
 
 func _create_encounter_gate(z_position: float) -> StaticBody3D:
@@ -677,10 +991,72 @@ func _apply_ghost_material(node: Node, color: Color) -> void:
 		_apply_ghost_material(child, color)
 
 
-func _add_asset(path: String, at: Vector3, asset_scale: Vector3, rotation: Vector3, tint: Color) -> void:
+func _add_child_visual_box(parent: Node3D, at: Vector3, size: Vector3, color: Color) -> void:
+	var mesh_instance := MeshInstance3D.new()
+	mesh_instance.position = at
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	mesh_instance.mesh = mesh
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.roughness = 0.86
+	material.metallic = 0.08
+	mesh_instance.material_override = material
+	parent.add_child(mesh_instance)
+
+
+func _add_child_emissive_box(
+	parent: Node3D,
+	at: Vector3,
+	size: Vector3,
+	color: Color,
+	energy: float
+) -> void:
+	var mesh_instance := MeshInstance3D.new()
+	mesh_instance.position = at
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	mesh_instance.mesh = mesh
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.emission_enabled = true
+	material.emission = color
+	material.emission_energy_multiplier = energy
+	material.roughness = 0.52
+	mesh_instance.material_override = material
+	parent.add_child(mesh_instance)
+
+
+func _add_optional_pack_asset(
+	path: String,
+	at: Vector3,
+	asset_scale: Vector3,
+	rotation: Vector3,
+	tint: Color
+) -> Node3D:
+	if not ResourceLoader.exists(path):
+		return null
+	return _add_asset(
+		path,
+		at,
+		asset_scale,
+		rotation,
+		tint,
+		"res://assets/user_pack/Atlas_Albedo_LPUP.png"
+	)
+
+
+func _add_asset(
+	path: String,
+	at: Vector3,
+	asset_scale: Vector3,
+	rotation: Vector3,
+	tint: Color,
+	texture_path: String = ""
+) -> Node3D:
 	var packed := load(path) as PackedScene
 	if packed == null:
-		return
+		return null
 	var holder := Node3D.new()
 	holder.position = at
 	holder.scale = asset_scale
@@ -688,18 +1064,23 @@ func _add_asset(path: String, at: Vector3, asset_scale: Vector3, rotation: Vecto
 	add_child(holder)
 	var instance := packed.instantiate()
 	holder.add_child(instance)
-	_tint_meshes(instance, tint)
+	var texture: Texture2D = null
+	if not texture_path.is_empty() and ResourceLoader.exists(texture_path):
+		texture = load(texture_path) as Texture2D
+	_tint_meshes(instance, tint, texture)
+	return holder
 
 
-func _tint_meshes(node: Node, tint: Color) -> void:
+func _tint_meshes(node: Node, tint: Color, texture: Texture2D = null) -> void:
 	if node is MeshInstance3D:
 		var material := StandardMaterial3D.new()
 		material.albedo_color = tint
-		material.roughness = 0.85
-		material.metallic = 0.12
+		material.albedo_texture = texture
+		material.roughness = 0.78
+		material.metallic = 0.18
 		node.material_override = material
 	for child in node.get_children():
-		_tint_meshes(child, tint)
+		_tint_meshes(child, tint, texture)
 
 
 func _ensure_input_actions() -> void:

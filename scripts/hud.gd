@@ -9,6 +9,7 @@ var root: Control
 var hands: Control
 var post_rect: ColorRect
 var post_material: ShaderMaterial
+var crosshair: Label
 var title_layer: Control
 var announcement: Label
 var subtitle: Label
@@ -20,6 +21,13 @@ var ending_subtitle: Label
 var boss_group: Control
 var boss_bar: ProgressBar
 var boss_label: Label
+var prologue_layer: Control
+var prologue_shade: ColorRect
+var prologue_stats: Label
+var prologue_fragment: Label
+var prologue_title: Label
+var prologue_subtitle: Label
+var prologue_skip: Label
 
 var announcement_time := 0.0
 var event_log: Array[String] = []
@@ -27,6 +35,13 @@ var debug_visible := false
 var impact_pulse := 0.0
 var wound_pulse := 0.0
 var impact_origin := Vector2(0.5, 0.5)
+var prologue_active := false
+var prologue_time := 0.0
+var time_bend_visual := 0.0
+var intro_trauma_target := 0.0
+var intro_trauma_visual := 0.0
+var intro_crash_target := 0.0
+var intro_crash_visual := 0.0
 
 
 func _ready() -> void:
@@ -43,6 +58,18 @@ func bind(player_node: CharacterBody3D, game_node: Node3D) -> void:
 func _process(delta: float) -> void:
 	impact_pulse = maxf(impact_pulse - delta * 7.8, 0.0)
 	wound_pulse = maxf(wound_pulse - delta * 3.8, 0.0)
+	var bend_target := 0.0
+	if is_instance_valid(player) and player.watch_active:
+		bend_target = 1.0
+	var bend_duration := 0.09 if bend_target > time_bend_visual else 0.14
+	time_bend_visual = move_toward(time_bend_visual, bend_target, delta / bend_duration)
+	intro_trauma_visual = move_toward(intro_trauma_visual, intro_trauma_target, delta * 2.4)
+	var crash_speed := 18.0 if intro_crash_target > intro_crash_visual else 4.8
+	intro_crash_visual = move_toward(intro_crash_visual, intro_crash_target, delta * crash_speed)
+	if is_instance_valid(post_material):
+		post_material.set_shader_parameter("time_bend", time_bend_visual)
+		post_material.set_shader_parameter("trauma", intro_trauma_visual)
+		post_material.set_shader_parameter("crash", intro_crash_visual)
 	if Input.is_action_just_pressed("toggle_debug"):
 		debug_visible = not debug_visible
 		debug_label.visible = debug_visible
@@ -101,8 +128,103 @@ func pulse_wound(side: float) -> void:
 	impact_origin = Vector2(0.5 + side * 0.24, 0.56)
 
 
+func begin_prologue() -> void:
+	prologue_active = true
+	prologue_time = 0.0
+	prologue_layer.visible = true
+	title_layer.visible = false
+	crosshair.visible = false
+	objective.visible = false
+	boss_group.visible = false
+	announcement.visible = false
+	subtitle.visible = false
+	prologue_stats.visible = true
+	prologue_fragment.visible = false
+	prologue_title.visible = false
+	prologue_subtitle.visible = false
+	prologue_skip.visible = true
+	set_intro_effects(0.0, 0.0)
+	update_prologue(0.0)
+
+
+func update_prologue(t: float) -> void:
+	if not prologue_active:
+		return
+	prologue_time = maxf(t, 0.0)
+
+	# The entire opening is deliberately one continuous exposure change. The
+	# crash reaches black once and releases once; there is no flash/strobe cut.
+	var shade_alpha := 0.12
+	if prologue_time < 0.72:
+		shade_alpha = lerpf(1.0, 0.16, _smooth_range(prologue_time, 0.0, 0.72))
+	elif prologue_time >= 5.42 and prologue_time < 5.78:
+		shade_alpha = lerpf(0.12, 1.0, _smooth_range(prologue_time, 5.42, 5.78))
+	elif prologue_time < 6.12 and prologue_time >= 5.78:
+		shade_alpha = 1.0
+	elif prologue_time < 6.88 and prologue_time >= 6.12:
+		shade_alpha = lerpf(1.0, 0.12, _smooth_range(prologue_time, 6.12, 6.88))
+	prologue_shade.color = Color(0.018, 0.014, 0.011, shade_alpha)
+
+	var stats_alpha := (
+		_smooth_range(prologue_time, 0.55, 1.02)
+		* (1.0 - _smooth_range(prologue_time, 3.18, 3.72))
+	)
+	prologue_stats.visible = stats_alpha > 0.001
+	prologue_stats.modulate.a = stats_alpha
+
+	var fragment_alpha := 0.0
+	if prologue_time >= 2.55 and prologue_time < 3.45:
+		prologue_fragment.text = "VICTORY RECORDED  //  48"
+		fragment_alpha = _pulse_range(prologue_time, 2.55, 3.45, 0.16)
+	elif prologue_time >= 3.45 and prologue_time < 4.42:
+		prologue_fragment.text = "FIRST CONTRACT  //  DEFERRED"
+		fragment_alpha = _pulse_range(prologue_time, 3.45, 4.42, 0.18)
+	elif prologue_time >= 4.42 and prologue_time < 5.42:
+		prologue_fragment.text = "RETURN OVERDUE"
+		fragment_alpha = _pulse_range(prologue_time, 4.42, 5.42, 0.18)
+	prologue_fragment.visible = fragment_alpha > 0.001
+	prologue_fragment.modulate.a = fragment_alpha
+
+	var crash_amount := 0.0
+	if prologue_time >= 5.18 and prologue_time < 5.72:
+		crash_amount = _smooth_range(prologue_time, 5.18, 5.72)
+	elif prologue_time < 6.72 and prologue_time >= 5.72:
+		crash_amount = 1.0 - _smooth_range(prologue_time, 5.72, 6.72)
+	var trauma_amount := 0.0
+	if prologue_time >= 5.58:
+		trauma_amount = lerpf(
+			0.86,
+			0.10,
+			_smooth_range(prologue_time, 5.88, 9.35)
+		)
+	set_intro_effects(trauma_amount, crash_amount)
+
+	var epilogue_alpha := _smooth_range(prologue_time, 7.45, 8.02)
+	prologue_title.visible = epilogue_alpha > 0.001
+	prologue_title.modulate.a = epilogue_alpha
+	var first_job_alpha := _smooth_range(prologue_time, 7.92, 8.48)
+	prologue_subtitle.visible = first_job_alpha > 0.001
+	prologue_subtitle.modulate.a = first_job_alpha
+	prologue_skip.modulate.a = 0.48 * (1.0 - _smooth_range(prologue_time, 7.1, 8.1))
+
+
+func end_prologue() -> void:
+	prologue_active = false
+	prologue_layer.visible = false
+	crosshair.visible = true
+	objective.visible = true
+	intro_crash_target = 0.0
+	intro_trauma_target = 0.0
+
+
+func set_intro_effects(trauma: float, crash: float) -> void:
+	intro_trauma_target = clampf(trauma, 0.0, 1.0)
+	intro_crash_target = clampf(crash, 0.0, 1.0)
+
+
 func begin_run() -> void:
 	title_layer.visible = false
+	crosshair.visible = true
 	objective.visible = true
 	announce("CHRONOSWORD — LV 50", "Your time has come.", 1.7)
 
@@ -142,7 +264,7 @@ func show_ending(job_complete: bool) -> void:
 		ending_subtitle.text = "The first job is finished.\nThe last day is over.\n\nR — live it again"
 	else:
 		ending_title.text = "THE HAND REACHED ZERO"
-		ending_subtitle.text = "The job remains unfinished.\n\nR — rewind the day"
+		ending_subtitle.text = "The job remains unfinished.\n\nR — replay the last job"
 
 
 func receive_score_event(tag: StringName, payload: Dictionary) -> void:
@@ -161,6 +283,20 @@ func _compact_payload(payload: Dictionary) -> String:
 		else:
 			parts.append("%s=%s" % [key, value])
 	return " ".join(parts)
+
+
+func _smooth_range(value: float, from: float, to: float) -> float:
+	if to <= from:
+		return 1.0 if value >= to else 0.0
+	var unit := clampf((value - from) / (to - from), 0.0, 1.0)
+	return unit * unit * (3.0 - 2.0 * unit)
+
+
+func _pulse_range(value: float, from: float, to: float, edge: float) -> float:
+	return (
+		_smooth_range(value, from, from + edge)
+		* (1.0 - _smooth_range(value, to - edge, to))
+	)
 
 
 func _build_ui() -> void:
@@ -182,7 +318,7 @@ func _build_ui() -> void:
 	hands.name = "TwoDimensionalHands"
 	root.add_child(hands)
 
-	var crosshair := Label.new()
+	crosshair = Label.new()
 	crosshair.text = "·"
 	crosshair.set_anchors_preset(Control.PRESET_CENTER)
 	crosshair.position = Vector2(-16.0, -25.0)
@@ -191,6 +327,7 @@ func _build_ui() -> void:
 	crosshair.add_theme_font_size_override("font_size", 32)
 	crosshair.add_theme_color_override("font_color", Color(0.79, 0.76, 0.62, 0.78))
 	crosshair.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	crosshair.visible = false
 	root.add_child(crosshair)
 
 	objective = Label.new()
@@ -232,6 +369,7 @@ func _build_ui() -> void:
 
 	_build_boss_bar()
 	_build_title()
+	_build_prologue()
 	_build_ending()
 
 	debug_label = Label.new()
@@ -325,6 +463,95 @@ func _build_title() -> void:
 	copy.add_theme_constant_override("shadow_offset_x", 3)
 	copy.add_theme_constant_override("shadow_offset_y", 3)
 	title_layer.add_child(copy)
+
+
+func _build_prologue() -> void:
+	prologue_layer = Control.new()
+	prologue_layer.name = "Prologue"
+	prologue_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	prologue_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	prologue_layer.z_index = 20
+	prologue_layer.visible = false
+	root.add_child(prologue_layer)
+
+	prologue_shade = ColorRect.new()
+	prologue_shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	prologue_shade.color = Color(0.018, 0.014, 0.011, 1.0)
+	prologue_shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	prologue_layer.add_child(prologue_shade)
+
+	prologue_stats = Label.new()
+	prologue_stats.text = (
+		"CLEAR DATA\n"
+		+ "CHRONOSWORD\n\n"
+		+ "LEVEL          50\n"
+		+ "ATTACK     13,870\n"
+		+ "ART            99\n"
+		+ "EXPERIENCE      —"
+	)
+	prologue_stats.set_anchors_preset(Control.PRESET_CENTER_LEFT)
+	prologue_stats.position = Vector2(54.0, -154.0)
+	prologue_stats.size = Vector2(390.0, 310.0)
+	prologue_stats.add_theme_font_size_override("font_size", 22)
+	prologue_stats.add_theme_color_override("font_color", Color(0.79, 0.75, 0.62))
+	prologue_stats.add_theme_color_override("font_shadow_color", Color(0.025, 0.018, 0.012, 0.92))
+	prologue_stats.add_theme_constant_override("shadow_offset_x", 3)
+	prologue_stats.add_theme_constant_override("shadow_offset_y", 3)
+	prologue_layer.add_child(prologue_stats)
+
+	prologue_fragment = Label.new()
+	prologue_fragment.set_anchors_preset(Control.PRESET_CENTER)
+	prologue_fragment.position = Vector2(-430.0, 102.0)
+	prologue_fragment.size = Vector2(860.0, 44.0)
+	prologue_fragment.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	prologue_fragment.add_theme_font_size_override("font_size", 17)
+	prologue_fragment.add_theme_color_override("font_color", Color(0.67, 0.61, 0.49))
+	prologue_fragment.add_theme_color_override("font_shadow_color", Color(0.02, 0.015, 0.01))
+	prologue_fragment.add_theme_constant_override("shadow_offset_x", 3)
+	prologue_fragment.add_theme_constant_override("shadow_offset_y", 3)
+	prologue_fragment.visible = false
+	prologue_layer.add_child(prologue_fragment)
+
+	prologue_title = Label.new()
+	prologue_title.text = "EPILOGUE"
+	prologue_title.set_anchors_preset(Control.PRESET_CENTER)
+	prologue_title.position = Vector2(-440.0, -98.0)
+	prologue_title.size = Vector2(880.0, 86.0)
+	prologue_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	prologue_title.add_theme_font_size_override("font_size", 58)
+	prologue_title.add_theme_color_override("font_color", Color(0.86, 0.81, 0.67))
+	prologue_title.add_theme_color_override("font_shadow_color", Color(0.085, 0.037, 0.016, 0.92))
+	prologue_title.add_theme_constant_override("shadow_offset_x", 6)
+	prologue_title.add_theme_constant_override("shadow_offset_y", 6)
+	prologue_title.visible = false
+	prologue_layer.add_child(prologue_title)
+
+	prologue_subtitle = Label.new()
+	prologue_subtitle.text = "THE FIRST JOB"
+	prologue_subtitle.set_anchors_preset(Control.PRESET_CENTER)
+	prologue_subtitle.position = Vector2(-440.0, 4.0)
+	prologue_subtitle.size = Vector2(880.0, 48.0)
+	prologue_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	prologue_subtitle.add_theme_font_size_override("font_size", 20)
+	prologue_subtitle.add_theme_color_override("font_color", Color(0.60, 0.56, 0.47))
+	prologue_subtitle.add_theme_color_override("font_shadow_color", Color(0.025, 0.018, 0.012))
+	prologue_subtitle.add_theme_constant_override("shadow_offset_x", 3)
+	prologue_subtitle.add_theme_constant_override("shadow_offset_y", 3)
+	prologue_subtitle.visible = false
+	prologue_layer.add_child(prologue_subtitle)
+
+	prologue_skip = Label.new()
+	prologue_skip.text = "SPACE TO SKIP"
+	prologue_skip.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	prologue_skip.position = Vector2(-250.0, -54.0)
+	prologue_skip.size = Vector2(220.0, 30.0)
+	prologue_skip.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	prologue_skip.add_theme_font_size_override("font_size", 13)
+	prologue_skip.add_theme_color_override("font_color", Color(0.62, 0.58, 0.48))
+	prologue_skip.add_theme_color_override("font_shadow_color", Color.BLACK)
+	prologue_skip.add_theme_constant_override("shadow_offset_x", 2)
+	prologue_skip.add_theme_constant_override("shadow_offset_y", 2)
+	prologue_layer.add_child(prologue_skip)
 
 
 func _build_ending() -> void:

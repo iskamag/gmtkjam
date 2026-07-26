@@ -6,6 +6,7 @@ var canvas_scale := 1.0
 var canvas_offset := Vector2.ZERO
 var displayed_fire_ratio := 0.0
 var displayed_watch_lift := 0.0
+var second_hand_angle := -PI * 0.5
 
 const DESIGN_SIZE := Vector2(1280.0, 720.0)
 const SKIN := Color(0.44, 0.35, 0.27)
@@ -32,6 +33,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	visual_time += delta
 	if is_instance_valid(player):
+		var seconds_speed := deg_to_rad(29.0 if player.watch_active else 6.0)
+		second_hand_angle = wrapf(second_hand_angle - seconds_speed * delta, -PI, PI)
 		var target_ratio: float = clampf(player.watchfire / player.MAX_WATCHFIRE, 0.0, 1.0)
 		displayed_fire_ratio = move_toward(displayed_fire_ratio, target_ratio, delta * 1.9)
 		var target_lift := 48.0 if player.watch_active else 0.0
@@ -49,8 +52,8 @@ func _draw() -> void:
 	var lift := displayed_watch_lift
 	lift += sin(visual_time * 24.0) * player.wound_visual * 10.0
 	var movement_offset := Vector2(
-		player.movement_sway * 7.0 + player.camera_kick.x * 3.0,
-		absf(player.movement_sway) * 4.0 + player.landing_visual * 12.0
+		player.movement_sway * 3.0 + player.camera_kick.x * 3.0,
+		player.stride_bob * 3.0 + player.landing_visual * 12.0
 	)
 	var watch_center := Vector2(250.0, 584.0 - lift) + movement_offset
 
@@ -66,23 +69,23 @@ func _draw_watchfire(center: Vector2) -> void:
 	var ratio := displayed_fire_ratio
 	if ratio <= 0.005:
 		return
-	var active_scale := 1.18 if player.watch_active else 1.0
+	var active_scale := 1.13 if player.watch_active else 1.0
 	var height := (48.0 + ratio * 182.0) * active_scale
 	var width := 72.0 + ratio * 42.0
-	var flutter := sin(visual_time * (17.0 if player.watch_active else 9.0))
+	var flutter := sin(visual_time * (13.0 if player.watch_active else 5.0))
 
 	for layer in 3:
 		var layer_scale := 1.0 - float(layer) * 0.2
 		var x_shift := (float(layer) - 1.0) * 25.0
-		var tongue_height := height * layer_scale * (0.96 + sin(visual_time * 11.0 + float(layer) * 2.1) * 0.04)
+		var tongue_height := height * layer_scale * (0.98 + sin(visual_time * 7.0 + float(layer) * 2.1) * 0.018)
 		var base_y := center.y - 4.0
 		var points := PackedVector2Array([
 			Vector2(center.x - width * 0.5 + x_shift, base_y),
-			Vector2(center.x - width * 0.42 + x_shift + flutter * 4.0, base_y - tongue_height * 0.30),
+			Vector2(center.x - width * 0.42 + x_shift + flutter * 2.0, base_y - tongue_height * 0.30),
 			Vector2(center.x - width * 0.18 + x_shift, base_y - tongue_height * 0.54),
 			Vector2(center.x + x_shift + sin(visual_time * 13.0 + float(layer)) * 12.0, base_y - tongue_height),
 			Vector2(center.x + width * 0.18 + x_shift, base_y - tongue_height * 0.54),
-			Vector2(center.x + width * 0.45 + x_shift - flutter * 5.0, base_y - tongue_height * 0.27),
+			Vector2(center.x + width * 0.45 + x_shift - flutter * 2.4, base_y - tongue_height * 0.27),
 			Vector2(center.x + width * 0.52 + x_shift, base_y),
 		])
 		var color := PURPLE_DARK if layer == 0 else (PURPLE if layer == 1 else PURPLE_HOT)
@@ -151,6 +154,25 @@ func _draw_watch(center: Vector2) -> void:
 			draw_line(center, ghost_end, Color(0.53, 0.35, 0.62, ghost_strength * 0.24), 3.0, true)
 
 	draw_line(center, hand_end, IVORY, 5.0, true)
+
+	# The thin seconds hand is the ability tell. The life hand stays truthful
+	# while Watchfire makes this mechanism race backward through discarded time.
+	if player.watch_active:
+		for echo in 3:
+			var echo_offsets := [deg_to_rad(4.0), deg_to_rad(9.0), deg_to_rad(15.0)]
+			var echo_alpha := [0.24, 0.11, 0.04]
+			var echo_angle: float = second_hand_angle + echo_offsets[echo]
+			var echo_end := center + Vector2(cos(echo_angle), sin(echo_angle)) * 56.0
+			draw_line(
+				center,
+				echo_end,
+				Color(PURPLE_HOT.r, PURPLE_HOT.g, PURPLE_HOT.b, echo_alpha[echo]),
+				2.0,
+				true
+			)
+	var seconds_end := center + Vector2(cos(second_hand_angle), sin(second_hand_angle)) * 57.0
+	draw_line(center, seconds_end, Color(0.55, 0.19, 0.13), 2.0, true)
+	draw_circle(seconds_end, 2.5, Color(0.72, 0.55, 0.38))
 	draw_circle(center, 7.0, STEEL)
 
 	var crack_count := int(ceil((1.0 - max_ratio) * 9.0))
@@ -184,8 +206,8 @@ func _draw_right_hand() -> void:
 	if player.dagger_state == player.DaggerState.HELD:
 		var slash := sin(player.swing_visual * PI)
 		var origin := Vector2(
-			1040.0 - slash * 115.0 - player.movement_sway * 8.0,
-			615.0 - slash * 65.0 + absf(player.movement_sway) * 5.0 + player.landing_visual * 12.0
+			1040.0 - slash * 115.0 - player.movement_sway * 3.0,
+			615.0 - slash * 65.0 + player.stride_bob * 3.0 + player.landing_visual * 12.0
 		)
 		_set_component_transform(origin, -0.35 - slash * 0.85)
 		_draw_arm_from_origin()
@@ -194,8 +216,8 @@ func _draw_right_hand() -> void:
 	else:
 		var punch := sin(player.punch_visual * PI)
 		var origin := Vector2(
-			1090.0 - punch * 225.0 - player.movement_sway * 9.0,
-			625.0 - punch * 55.0 + absf(player.movement_sway) * 5.0 + player.landing_visual * 12.0
+			1090.0 - punch * 225.0 - player.movement_sway * 3.0,
+			625.0 - punch * 55.0 + player.stride_bob * 3.0 + player.landing_visual * 12.0
 		)
 		_set_component_transform(origin, -0.22 - punch * 0.12)
 		_draw_arm_from_origin()

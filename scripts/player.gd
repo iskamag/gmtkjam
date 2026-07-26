@@ -65,6 +65,8 @@ var was_watch_active := false
 
 var planar_speed := 0.0
 var movement_sway := 0.0
+var stride_bob := 0.0
+var movement_input := Vector2.ZERO
 var move_cycle := 0.0
 var is_sliding := false
 var slide_ratio := 0.0
@@ -196,6 +198,7 @@ func _move(delta: float) -> void:
 		coyote_timer = maxf(coyote_timer - delta, 0.0)
 
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
+	movement_input = input
 	var direction := (global_transform.basis * Vector3(input.x, 0.0, input.y)).normalized()
 	var horizontal := Vector3(velocity.x, 0.0, velocity.z)
 
@@ -277,9 +280,19 @@ func _move(delta: float) -> void:
 		play_sfx(&"land")
 
 	planar_speed = Vector2(velocity.x, velocity.z).length()
-	if is_on_floor() and planar_speed > 1.0:
-		move_cycle += delta * planar_speed * (0.23 if is_sliding else 0.48)
-	movement_sway = sin(move_cycle) * clampf(planar_speed / RUN_SPEED, 0.0, 1.3)
+	var local_side_speed := global_transform.basis.x.dot(velocity)
+	var local_forward_speed := -global_transform.basis.z.dot(velocity)
+	var stride_amount := clampf(
+		(absf(local_forward_speed) + absf(local_side_speed) * 0.16) / RUN_SPEED,
+		0.0,
+		1.2
+	)
+	if is_on_floor() and stride_amount > 0.06 and not is_sliding:
+		move_cycle += delta * planar_speed * 0.47
+	var stride_target := sin(move_cycle * 2.0) * stride_amount if is_on_floor() and not is_sliding else 0.0
+	stride_bob = lerpf(stride_bob, stride_target, 1.0 - exp(-delta * 24.0))
+	var stable_strafe := clampf(local_side_speed / RUN_SPEED, -1.0, 1.0)
+	movement_sway = lerpf(movement_sway, stable_strafe, 1.0 - exp(-delta * 30.0))
 	_update_camera(delta)
 
 
@@ -358,22 +371,22 @@ func _update_camera(delta: float) -> void:
 	var speed_factor := clampf(planar_speed / CHRONOSTEP_SPEED, 0.0, 1.0)
 	var target_height := 1.22 if is_sliding else 1.55
 	target_height -= landing_visual * 0.17
-	var bob_x := movement_sway * 0.022
-	var bob_y := absf(cos(move_cycle)) * 0.018 * clampf(planar_speed / RUN_SPEED, 0.0, 1.0)
-	camera.position.x = lerpf(camera.position.x, bob_x + camera_kick.x * 0.025, 1.0 - exp(-delta * 15.0))
+	var bob_x := movement_sway * 0.010
+	var bob_y := stride_bob * 0.013
+	camera.position.x = lerpf(camera.position.x, bob_x + camera_kick.x * 0.025, 1.0 - exp(-delta * 30.0))
 	camera.position.y = lerpf(
 		camera.position.y,
 		target_height + bob_y + camera_kick.y * 0.035,
-		1.0 - exp(-delta * 17.0)
+		1.0 - exp(-delta * 28.0)
 	)
 	var side_speed := global_transform.basis.x.dot(velocity)
-	var target_roll := clampf(-side_speed * 0.0065, -0.072, 0.072)
+	var target_roll := clampf(-side_speed * 0.0032, -0.035, 0.035)
 	if is_sliding:
-		target_roll += movement_sway * 0.052
+		target_roll *= 0.72
 	camera.rotation.z = lerpf(
 		camera.rotation.z,
 		target_roll + camera_kick.x * 0.012,
-		1.0 - exp(-delta * 22.0)
+		1.0 - exp(-delta * 30.0)
 	)
 	camera.fov = lerpf(camera.fov, 79.0 + speed_factor * 9.0, 1.0 - exp(-delta * 8.0))
 
@@ -687,7 +700,11 @@ func gain_watchfire(amount: float) -> void:
 
 func _request_impact(strength: float, at: Vector3) -> void:
 	impact_visual = maxf(impact_visual, strength)
-	camera_kick += Vector2(randf_range(-1.0, 1.0), -0.4) * strength
+	var to_contact := at - camera.global_position
+	var contact_side := 0.0
+	if to_contact.length_squared() > 0.0001:
+		contact_side = clampf(camera.global_transform.basis.x.dot(to_contact.normalized()), -1.0, 1.0)
+	camera_kick += Vector2(-contact_side * 0.72, -0.40) * strength
 	var game := get_parent()
 	if game.has_method("request_impact"):
 		game.request_impact(strength, at)
@@ -751,6 +768,18 @@ func play_sfx(cue: StringName) -> void:
 			path = "res://assets/audio/impactGlass_heavy_001.ogg"
 			volume_db = -8.0
 			sound_pitch = 0.64
+		&"train":
+			path = "res://assets/audio/footstep_concrete_001.ogg"
+			volume_db = -20.0
+			sound_pitch = 0.48
+		&"memory":
+			path = "res://assets/audio/impactBell_heavy_000.ogg"
+			volume_db = -16.0
+			sound_pitch = 1.62
+		&"crash":
+			path = "res://assets/audio/impactMetal_heavy_001.ogg"
+			volume_db = -1.5
+			sound_pitch = 0.58
 	if path.is_empty():
 		return
 	var stream := load(path) as AudioStream
