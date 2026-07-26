@@ -331,8 +331,6 @@ func _begin_prologue() -> void:
 	player.set_active(false)
 	# Begin seated off-centre near the rear of the carriage. This gives the
 	# player a composed view down the aisle, but mouse look is never taken away.
-	player.global_position = Vector3(0.12, 0.05, 18.05)
-	player.rotation = Vector3.ZERO
 	player.pitch = prologue_look_pitch
 	player.camera.position = Vector3(0.0, 1.31, 0.0)
 	player.camera.rotation = Vector3(prologue_look_pitch, 0.0, 0.0)
