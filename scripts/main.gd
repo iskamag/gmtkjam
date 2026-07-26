@@ -115,10 +115,10 @@ func _enter_train_menu() -> void:
 		prologue_shell.visible = true
 		prologue_shell.position = Vector3(0.0, 0.0, 16.0)
 		prologue_shell.rotation = Vector3.ZERO
-	# Hide the arena floor/walls while in the menu.
+	# Hide the arena geometry while in the menu, but keep lights + environment.
 	if is_instance_valid(world_root):
 		for child in world_root.get_children():
-			if child is Node3D and child != prologue_shell:
+			if child is Node3D and child != prologue_shell and not child is Light3D:
 				child.visible = false
 	hud.begin_prologue()
 

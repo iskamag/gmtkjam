@@ -118,29 +118,56 @@ func _process_ballistic(delta: float) -> void:
 func _process_flight_segment(delta: float, can_embed_in_enemy: bool) -> void:
 	var from := global_position
 	var to := from + velocity * delta
-	var query := PhysicsRayQueryParameters3D.create(from, to, 1 | 2)
-	query.exclude = [player.get_rid()]
-	var hit := get_world_3d().direct_space_state.intersect_ray(query)
-	if not hit.is_empty():
-		var collider = hit.get("collider")
-		var position: Vector3 = hit.get("position", to)
-		if collider != null and collider.has_method("take_damage"):
-			var id: int = collider.get_instance_id()
-			if not outbound_hits.has(id):
-				outbound_hits[id] = true
-				collider.take_damage(14500, position, true, 62.0, 4.5)
-				player.play_sfx(&"dagger_hit")
-				player._request_impact(1.0, position)
-			global_position = to
-			velocity *= 0.78
-			if can_embed_in_enemy and velocity.length() < 17.0:
-				global_position = position
-				_set_stuck()
-				return
-		else:
-			global_position = position + hit.get("normal", Vector3.UP) * 0.025
+	# Use a sphere shape (radius 0.6) swept along the flight path so the
+	# dagger connects with enemies more reliably than a thin ray.
+	var space := get_world_3d().direct_space_state
+	var sphere := SphereShape3D.new()
+	sphere.radius = 0.6
+	var shape_params := PhysicsShapeQueryParameters3D.new()
+	shape_params.shape = sphere
+	shape_params.collision_mask = 1 | 2
+	shape_params.exclude = [player.get_rid()]
+	# Check at the midpoint of the segment.
+	shape_params.transform = Transform3D(Basis.IDENTITY, from.lerp(to, 0.5))
+	var hits := space.intersect_shape(shape_params, 8)
+	var hit_collider = null
+	var hit_position: Vector3 = to
+	if not hits.is_empty():
+		# Closest hit.
+		var best_dist := INF
+		for entry in hits:
+			var d: float = global_position.distance_to(entry.position)
+			if d < best_dist:
+				best_dist = d
+				hit_collider = entry.collider
+				hit_position = entry.position
+	# Also raycast for environment collisions (walls etc.) that shape might miss.
+	var ray_query := PhysicsRayQueryParameters3D.create(from, to, 1 | 2)
+	ray_query.exclude = [player.get_rid()]
+	var ray_hit := space.intersect_ray(ray_query)
+	if not ray_hit.is_empty():
+		var ray_collider = ray_hit.get("collider")
+		if ray_collider == hit_collider or hit_collider == null:
+			if hit_collider == null:
+				hit_collider = ray_collider
+				hit_position = ray_hit.get("position", to)
+	if hit_collider != null and hit_collider.has_method("take_damage"):
+		var id: int = hit_collider.get_instance_id()
+		if not outbound_hits.has(id):
+			outbound_hits[id] = true
+			hit_collider.take_damage(14500, hit_position, true, 62.0, 4.5)
+			player.play_sfx(&"dagger_hit")
+			player._request_impact(1.0, hit_position)
+		global_position = to
+		velocity *= 0.78
+		if can_embed_in_enemy and velocity.length() < 17.0:
+			global_position = hit_position
 			_set_stuck()
 			return
+	elif hit_collider != null:
+		global_position = hit_position
+		_set_stuck()
+		return
 	else:
 		global_position = to
 
