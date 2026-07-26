@@ -292,155 +292,77 @@ static func build_level(main) -> void:
 	var rust := Color(0.25, 0.145, 0.075)
 	var old_gold := Color(0.37, 0.31, 0.19)
 
-	# A road through a ruined transit-ritual court: open sky, modern service
-	# infrastructure, and an older ceremonial axis underneath it.
-	_add_static_box(main, Vector3(0.0, -0.5, -7.0), Vector3(19.0, 1.0, 58.0), asphalt)
-	_add_static_box(main, Vector3(-13.0, -0.25, -7.0), Vector3(7.0, 0.5, 58.0), concrete)
-	_add_static_box(main, Vector3(13.0, -0.25, -7.0), Vector3(7.0, 0.5, 58.0), concrete)
-	_add_static_box(main, Vector3(-16.8, 0.8, -7.0), Vector3(0.8, 1.6, 58.0), soot)
-	_add_static_box(main, Vector3(16.8, 0.8, -7.0), Vector3(0.8, 1.6, 58.0), soot)
-	_add_static_box(main, Vector3(0.0, 0.6, -36.0), Vector3(34.0, 1.2, 1.0), soot)
+	# Named containers keep the scene tree navigable instead of hundreds of
+	# flat MeshInstance3D siblings.
+	var level := Node3D.new()
+	level.name = "Level"
+	main.world_root.add_child(level)
+	var floor_node := Node3D.new(); floor_node.name = "Floor"; level.add_child(floor_node)
+	var walls_node := Node3D.new(); walls_node.name = "Walls"; level.add_child(walls_node)
+	var cover_node := Node3D.new(); cover_node.name = "Cover"; level.add_child(cover_node)
+	var buildings_node := Node3D.new(); buildings_node.name = "Buildings"; level.add_child(buildings_node)
+	var props_node := Node3D.new(); props_node.name = "Props"; level.add_child(props_node)
 
-	# Worn meridian inlay, broken into segments rather than a glowing runway.
-	for z in range(17, -33, -5):
-		_add_visual_box(main, Vector3(0.0, 0.012, float(z)), Vector3(0.17, 0.025, 2.6), old_gold)
-		if z % 10 != 2:
-			_add_visual_box(main, Vector3(-2.4, 0.014, float(z) - 0.5), Vector3(2.2, 0.022, 0.11), old_gold)
+	# Arena floor: wider than the old corridor (30×36 instead of 19×58).
+	_add_static_box(main, Vector3(0.0, -0.5, -4.0), Vector3(30.0, 1.0, 42.0), asphalt, floor_node)
+	_add_visual_box(main, Vector3(0.0, -0.48, -4.0), Vector3(28.0, 0.02, 40.0), concrete.darkened(0.15), floor_node)
 
-	# Low cover creates combat lanes while preserving sight of the final arch.
+	# High perimeter walls (9m) — baion can't escape the arena.
+	var wall_h := 9.0
+	for side in [-1.0, 1.0]:
+		_add_static_box(main, Vector3(side * 15.5, wall_h * 0.5, -4.0), Vector3(1.0, wall_h, 42.0), soot, walls_node)
+	# End walls with passages.
+	_add_static_box(main, Vector3(-8.0, wall_h * 0.5, 17.0), Vector3(15.0, wall_h, 1.0), soot, walls_node)
+	_add_static_box(main, Vector3(8.0, wall_h * 0.5, 17.0), Vector3(15.0, wall_h, 1.0), soot, walls_node)
+	_add_static_box(main, Vector3(-8.0, wall_h * 0.5, -25.0), Vector3(15.0, wall_h, 1.0), soot, walls_node)
+	_add_static_box(main, Vector3(8.0, wall_h * 0.5, -25.0), Vector3(15.0, wall_h, 1.0), soot, walls_node)
+
+	# Cover scattered as combat islands, not corridor lanes.
 	for obstacle in [
-		[Vector3(-6.8, 0.72, 3.0), Vector3(2.8, 1.45, 1.2), rust],
-		[Vector3(7.0, 0.52, -5.5), Vector3(3.4, 1.05, 1.4), soot],
-		[Vector3(-7.4, 0.58, -15.0), Vector3(2.7, 1.15, 2.8), soot],
-		[Vector3(7.6, 0.74, -22.0), Vector3(2.4, 1.48, 3.2), rust],
+		[Vector3(-7.0, 0.72, 8.0), Vector3(3.0, 1.45, 1.4), rust],
+		[Vector3(7.0, 0.52, 2.0), Vector3(3.4, 1.05, 1.6), soot],
+		[Vector3(0.0, 0.65, -4.0), Vector3(4.0, 1.3, 1.2), concrete],
+		[Vector3(-8.0, 0.58, -12.0), Vector3(2.7, 1.15, 3.0), soot],
+		[Vector3(8.0, 0.74, -16.0), Vector3(2.4, 1.48, 3.2), rust],
+		[Vector3(0.0, 0.6, -20.0), Vector3(5.0, 1.2, 1.0), concrete],
 	]:
-		_add_static_box(main, obstacle[0], obstacle[1], obstacle[2])
+		_add_static_box(main, obstacle[0], obstacle[1], obstacle[2], cover_node)
 
-	# Building blocks frame the road into a street instead of a void. Modular
-	# masses line both sides; a distant skyline behind the gate gives depth.
+	# Building facades as arena backdrop (visual only, behind the walls).
 	var facade_colors: Array[Color] = [concrete, soot, concrete.darkened(0.08), soot.darkened(0.12), rust.darkened(0.45)]
-	# Side ground strips so the buildings stand on something, not over the void.
-	_add_visual_box(main, Vector3(-22.0, -0.45, -7.0), Vector3(12.0, 0.5, 58.0), concrete.darkened(0.3))
-	_add_visual_box(main, Vector3(22.0, -0.45, -7.0), Vector3(12.0, 0.5, 58.0), concrete.darkened(0.3))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 91337
 	for side in [-1.0, 1.0]:
-		var z := 21.0
-		while z > -40.0:
-			var depth := rng.randf_range(6.0, 10.0)
-			var width := rng.randf_range(5.5, 9.0)
-			var height := rng.randf_range(6.0, 15.0)
-			var x: float = side * rng.randf_range(20.0, 25.0)
+		var z := 16.0
+		while z > -24.0:
+			var depth := rng.randf_range(5.0, 8.0)
+			var width := rng.randf_range(4.5, 7.0)
+			var height := rng.randf_range(6.0, 14.0)
+			var x: float = side * rng.randf_range(18.0, 24.0)
 			var col: Color = facade_colors[rng.randi() % facade_colors.size()]
 			_add_building(main, Vector3(x, 0.0, z), Vector2(width, depth), height, col)
-			# Lit window strip on the road-facing face of taller buildings.
 			if height > 9.0 and rng.randf() < 0.6:
 				var inward_x: float = x - side * (width * 0.5 + 0.06)
 				_add_child_emissive_box(main.world_root, Vector3(inward_x, height * 0.55, z), Vector3(0.08, height * 0.4, depth * 0.6), Color(0.62, 0.5, 0.28), 1.3)
 			z -= depth + rng.randf_range(1.5, 3.0)
-	# Distant skyline behind the gate — dark silhouettes for depth.
-	for _i in 14:
-		var sx := rng.randf_range(-30.0, 30.0)
-		var sz := rng.randf_range(-46.0, -40.0)
-		var sh := rng.randf_range(10.0, 22.0)
-		_add_visual_box(main, Vector3(sx, sh * 0.5, sz), Vector3(rng.randf_range(4.0, 8.0), sh, rng.randf_range(4.0, 8.0)), soot.darkened(0.35))
 
-	# The gate is visibly fantasy-shaped, but braced with utility metal.
-	_add_static_box(main, Vector3(-7.0, 4.0, -32.0), Vector3(3.0, 8.0, 2.2), concrete)
-	_add_static_box(main, Vector3(7.0, 4.0, -32.0), Vector3(3.0, 8.0, 2.2), concrete)
-	_add_static_box(main, Vector3(0.0, 8.0, -32.0), Vector3(11.0, 2.0, 2.2), concrete)
-	_add_static_box(main, Vector3(0.0, 9.3, -32.0), Vector3(2.6, 0.7, 2.5), rust)
-
+	# Props.
 	for prop in [
-		["res://assets/kenney/crate-color.glb", Vector3(-12.5, 0.0, 7.0), Vector3(2.0, 2.0, 2.0), Vector3(0.0, 0.4, 0.0), rust],
-		["res://assets/kenney/crate-color.glb", Vector3(12.2, 0.0, -10.0), Vector3(2.3, 2.3, 2.3), Vector3(0.0, -0.3, 0.0), rust],
-		["res://assets/kenney/pipe.glb", Vector3(-16.0, 2.2, -5.0), Vector3(2.0, 5.0, 2.0), Vector3(0.0, 0.0, PI * 0.5), soot],
-		["res://assets/kenney/pipe-corner.glb", Vector3(15.6, 2.0, -24.0), Vector3(2.0, 2.0, 2.0), Vector3(0.0, PI, 0.0), soot],
-		["res://assets/kenney/weapon-sword.glb", Vector3(0.0, 0.1, -29.0), Vector3(4.2, 4.2, 4.2), Vector3(0.0, 0.0, PI), Color(0.16, 0.16, 0.145)],
+		["res://assets/kenney/crate-color.glb", Vector3(-10.0, 0.0, 10.0), Vector3(2.0, 2.0, 2.0), Vector3(0.0, 0.4, 0.0), rust],
+		["res://assets/kenney/crate-color.glb", Vector3(10.0, 0.0, -8.0), Vector3(2.3, 2.3, 2.3), Vector3(0.0, -0.3, 0.0), rust],
+		["res://assets/kenney/pipe.glb", Vector3(-13.0, 2.2, -2.0), Vector3(2.0, 5.0, 2.0), Vector3(0.0, 0.0, PI * 0.5), soot],
+		["res://assets/kenney/weapon-sword.glb", Vector3(0.0, 0.1, -18.0), Vector3(4.2, 4.2, 4.2), Vector3(0.0, 0.0, PI), Color(0.16, 0.16, 0.145)],
 	]:
 		_add_asset(main, prop[0], prop[1], prop[2], prop[3], prop[4])
 
-	# The locally supplied apocalypse kit turns the abstract road into one
-	# specific familiar town. Every call is optional; the authored collision
-	# and procedural dressing above remain a playable fallback.
-	_add_optional_pack_asset(
-		main,
-		"res://assets/user_pack/SM_Train_Speed_Derailment_Apocalypse.fbx",
-		Vector3(-9.2, 0.02, 18.2),
-		Vector3.ONE,
-		Vector3(-0.06, 1.26, 0.13),
-		Color(0.74, 0.70, 0.61)
-	)
-	_add_optional_pack_asset(
-		main,
-		"res://assets/user_pack/SM_Building_House_Modern_Apocalypse_A.fbx",
-		Vector3(-14.8, 0.0, -7.0),
-		Vector3.ONE * 1.12,
-		Vector3(0.0, 0.58, 0.0),
-		Color(0.60, 0.59, 0.53)
-	)
-	_add_optional_pack_asset(
-		main,
-		"res://assets/user_pack/SM_Building_Cafe_Apocalypse.fbx",
-		Vector3(14.2, 0.0, -20.0),
-		Vector3.ONE * 1.05,
-		Vector3(0.0, -0.64, 0.0),
-		Color(0.60, 0.57, 0.49)
-	)
-	# The pack's "rail tile" includes a 30-metre terrain slab, so the route uses
-	# authored rails instead of allowing that atlas-green slab to cover the road.
-	for rail_x in [-11.55, -10.15]:
-		_add_visual_box(
-			main,
-			Vector3(rail_x, 0.09, -3.0),
-			Vector3(0.13, 0.14, 41.0),
-			Color(0.25, 0.22, 0.18)
-		)
-	for sleeper_z in range(16, -24, -2):
-		_add_visual_box(
-			main,
-			Vector3(-10.85, 0.045, float(sleeper_z)),
-			Vector3(2.4, 0.09, 0.22),
-			Color(0.19, 0.13, 0.09)
-		)
-	for rubble_data in [
-		[Vector3(-7.7, 0.0, 11.3), Vector3(0.9, 0.9, 0.9), 0.4],
-		[Vector3(10.7, 0.0, -3.6), Vector3(1.2, 1.2, 1.2), -0.8],
-		[Vector3(-10.2, 0.0, -23.6), Vector3(1.4, 1.4, 1.4), 1.1],
-	]:
-		_add_optional_pack_asset(
-			main,
-			"res://assets/user_pack/SM_Rubble_Concrete_Apocalypse_A.fbx",
-			rubble_data[0],
-			rubble_data[1],
-			Vector3(0.0, rubble_data[2], 0.0),
-			Color(0.58, 0.56, 0.50)
-		)
-	for lamp_data in [
-		[Vector3(-9.0, 0.0, 4.0), 0.15],
-		[Vector3(9.2, 0.0, -10.0), PI + 0.1],
-		[Vector3(-9.2, 0.0, -23.0), -0.08],
-	]:
-		_add_optional_pack_asset(
-			main,
-			"res://assets/user_pack/SM_Lamp_Road_Apocalypse_A.fbx",
-			lamp_data[0],
-			Vector3.ONE,
-			Vector3(0.0, lamp_data[1], 0.0),
-			Color(0.52, 0.50, 0.43)
-		)
+	# Ghost fragments.
+	_add_ghost_box(main, Vector3(0.0, 0.14, 5.0), Vector3(12.0, 0.28, 3.5), Color(0.24, 0.20, 0.27))
+	_add_ghost_asset(main, "res://assets/kenney/figurine.glb", Vector3(-3.7, 0.0, -12.0), Vector3(1.45, 1.45, 1.45), Vector3.ZERO)
+	_add_ghost_asset(main, "res://assets/kenney/figurine.glb", Vector3(3.7, 0.0, -12.0), Vector3(1.45, 1.45, 1.45), Vector3.ZERO)
 
-	# These fragments are the place at a different age. Permanent wounds and
-	# completed encounters make them increasingly legible.
-	_add_ghost_box(main, Vector3(0.0, 0.14, 5.0), Vector3(15.0, 0.28, 3.5), Color(0.24, 0.20, 0.27))
-	_add_ghost_box(main, Vector3(-5.8, 3.2, -10.0), Vector3(1.25, 6.4, 1.25), Color(0.24, 0.20, 0.27))
-	_add_ghost_box(main, Vector3(5.8, 3.2, -10.0), Vector3(1.25, 6.4, 1.25), Color(0.24, 0.20, 0.27))
-	_add_ghost_box(main, Vector3(0.0, 6.1, -10.0), Vector3(10.4, 1.0, 1.25), Color(0.24, 0.20, 0.27))
-	_add_ghost_asset(main, "res://assets/kenney/figurine.glb", Vector3(-3.7, 0.0, -18.0), Vector3(1.45, 1.45, 1.45), Vector3.ZERO)
-	_add_ghost_asset(main, "res://assets/kenney/figurine.glb", Vector3(3.7, 0.0, -18.0), Vector3(1.45, 1.45, 1.45), Vector3.ZERO)
-
-	main.encounter_gates.append(_create_encounter_gate(main, -5.0))
-	main.encounter_gates.append(_create_encounter_gate(main, -21.0))
+	# Encounter gates at arena chokepoints.
+	main.encounter_gates.append(_create_encounter_gate(main, 6.0))
+	main.encounter_gates.append(_create_encounter_gate(main, -14.0))
 	var art_direction := WorldAestheticScript.new()
 	art_direction.name = "ReturnRoadArtDirection"
 	main.world_root.add_child(art_direction)
@@ -714,35 +636,35 @@ static func build_prologue_shell(main) -> void:
 static func build_encounter_zones(main) -> void:
 	var encounters: Array = [
 		{
-			"trigger_z": 13.0,
+			"trigger_z": 12.0,
 			"title": "THE ARREARS",
 			"subtitle": "The train brought an old collector with it.",
 			"threat": 0.35,
 			"spawns": [
-				[Vector3(-3.7, 0.05, 5.5), EnemyScript.Kind.MELEE],
-				[Vector3(2.8, 0.05, 2.4), EnemyScript.Kind.MELEE],
-				[Vector3(5.0, 0.05, 0.0), EnemyScript.Kind.RANGED],
+				[Vector3(-5.0, 0.05, 8.0), EnemyScript.Kind.MELEE],
+				[Vector3(5.0, 0.05, 6.0), EnemyScript.Kind.MELEE],
+				[Vector3(8.0, 0.05, 2.0), EnemyScript.Kind.RANGED],
 			],
 		},
 		{
-			"trigger_z": -7.0,
+			"trigger_z": -2.0,
 			"title": "THE SIGNAL WITNESS",
 			"subtitle": "Read the timetable. Break the buried guard.",
 			"threat": 0.70,
 			"spawns": [
-				[Vector3(-6.3, 0.05, -11.0), EnemyScript.Kind.MELEE],
-				[Vector3(5.6, 0.05, -14.0), EnemyScript.Kind.MELEE],
-				[Vector3(-1.7, 0.05, -17.8), EnemyScript.Kind.ELITE],
-				[Vector3(6.4, 0.05, -19.0), EnemyScript.Kind.RANGED],
+				[Vector3(-7.0, 0.05, -6.0), EnemyScript.Kind.MELEE],
+				[Vector3(7.0, 0.05, -8.0), EnemyScript.Kind.MELEE],
+				[Vector3(-2.0, 0.05, -10.0), EnemyScript.Kind.ELITE],
+				[Vector3(9.0, 0.05, -12.0), EnemyScript.Kind.RANGED],
 			],
 		},
 		{
-			"trigger_z": -22.0,
+			"trigger_z": -18.0,
 			"title": "THE UNFINISHED",
 			"subtitle": "The first thing you postponed rises to meet the last.",
 			"threat": 1.0,
 			"spawns": [
-				[Vector3(0.0, 0.05, -28.0), EnemyScript.Kind.BOSS],
+				[Vector3(0.0, 0.05, -22.0), EnemyScript.Kind.BOSS],
 			],
 		},
 	]
@@ -844,12 +766,14 @@ static func _create_encounter_gate(main, z_position: float) -> StaticBody3D:
 	return gate
 
 
-static func _add_static_box(main, at: Vector3, size: Vector3, color: Color) -> void:
+static func _add_static_box(main, at: Vector3, size: Vector3, color: Color, parent: Node3D = null) -> void:
+	if parent == null:
+		parent = main.world_root
 	var body := StaticBody3D.new()
 	body.position = at
 	body.collision_layer = 1
 	body.collision_mask = 0
-	main.world_root.add_child(body)
+	parent.add_child(body)
 
 	var collision := CollisionShape3D.new()
 	var shape := BoxShape3D.new()
@@ -869,7 +793,9 @@ static func _add_static_box(main, at: Vector3, size: Vector3, color: Color) -> v
 	body.add_child(mesh_instance)
 
 
-static func _add_visual_box(main, at: Vector3, size: Vector3, color: Color) -> void:
+static func _add_visual_box(main, at: Vector3, size: Vector3, color: Color, parent: Node3D = null) -> void:
+	if parent == null:
+		parent = main.world_root
 	var mesh_instance := MeshInstance3D.new()
 	mesh_instance.position = at
 	var mesh := BoxMesh.new()
@@ -879,7 +805,7 @@ static func _add_visual_box(main, at: Vector3, size: Vector3, color: Color) -> v
 	material.albedo_color = color
 	material.roughness = 0.94
 	mesh_instance.material_override = material
-	main.world_root.add_child(mesh_instance)
+	parent.add_child(mesh_instance)
 
 
 static func _add_ghost_box(main, at: Vector3, size: Vector3, color: Color) -> void:

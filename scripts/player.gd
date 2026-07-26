@@ -7,6 +7,13 @@ signal score_event(tag: StringName, payload: Dictionary)
 
 const DaggerThrowScript = preload("res://scripts/dagger_throw.gd")
 
+const SFX_BAION := preload("res://sounds/baion.wav")
+const SFX_SWORD_DRAW := preload("res://sounds/sword-draw.wav")
+const SFX_SWORD_SLASH := preload("res://sounds/441666__ethanchase7744__sword-slash.wav")
+const SFX_GUNSHOT := preload("res://sounds/gunshot.wav")
+const SFX_HIT := preload("res://sounds/hit.ogg")
+const SFX_RECALL := preload("res://sounds/recall.wav")
+
 const STARTING_MAX_TIME := 60.0
 const MAX_WATCHFIRE := 100.0
 const WATCH_SLOW_BURN := 15.0
@@ -377,6 +384,12 @@ func _read_action_inputs() -> void:
 	if Input.is_action_just_pressed("attack"):
 		if not is_on_floor() and not slam_active:
 			slam_active = true
+			# Clear any pending combat so the rocket jump doesn't also trigger
+			# a melee swing (the "attack plays twice" bug).
+			combat_state = CombatState.IDLE
+			combat_state_time = 0.0
+			buffered_action = &""
+			attack_buffer = 0.0
 			_rocket_jump()
 		else:
 			_queue_attack(&"blade" if dagger_state == DaggerState.HELD else &"fist")
@@ -1160,7 +1173,7 @@ func _rocket_jump() -> void:
 	if not hit.is_empty():
 		blast = hit["position"]
 	var strength := 1.0
-	play_sfx(&"slam")
+	_play_stream(SFX_BAION, -2.0, randf_range(0.88, 1.12))
 	camera_kick.y += strength * 0.7
 	camera_kick.x += randf_range(-0.15, 0.15) * strength
 	_request_impact(strength, blast)
@@ -1177,112 +1190,87 @@ func _rocket_jump() -> void:
 	emit_signal("score_event", &"rocket_jump", {"strength": strength})
 
 
+var _sfx_pool: Array[AudioStreamPlayer] = []
+const SFX_POOL_SIZE := 12
+
+
 func play_sfx(cue: StringName) -> void:
 	if DisplayServer.get_name() == "headless":
 		return
-	var path := ""
+	var stream: AudioStream = null
 	var volume_db := -8.0
 	var sound_pitch := 1.0
 	match cue:
 		&"dagger_hit":
-			path = "res://assets/audio/impactMetal_medium_000.ogg"
-			sound_pitch = randf_range(0.92, 1.08)
+			stream = SFX_SWORD_SLASH; sound_pitch = randf_range(0.92, 1.08)
 		&"deflect":
-			path = "res://assets/audio/impactMetal_heavy_001.ogg"
-			volume_db = -4.0
+			stream = SFX_SWORD_SLASH; volume_db = -4.0; sound_pitch = randf_range(0.8, 0.95)
 		&"punch":
-			path = "res://assets/audio/impactPunch_medium_003.ogg"
-			sound_pitch = randf_range(0.94, 1.06)
+			stream = SFX_HIT; sound_pitch = randf_range(0.94, 1.06)
 		&"kick":
-			path = "res://assets/audio/impactPunch_heavy_000.ogg"
-			volume_db = -4.0
-			sound_pitch = 0.86
+			stream = SFX_HIT; volume_db = -4.0; sound_pitch = 0.86
 		&"projectile_kick":
-			path = "res://assets/audio/impactMetal_heavy_001.ogg"
-			volume_db = -2.0
-			sound_pitch = 0.68
+			stream = SFX_GUNSHOT; volume_db = -2.0; sound_pitch = 0.68
 		&"blade_swing":
-			path = "res://assets/audio/impactMetal_light_002.ogg"
-			volume_db = -12.0
-			sound_pitch = 1.32
+			stream = SFX_SWORD_DRAW; volume_db = -10.0; sound_pitch = randf_range(1.1, 1.4)
 		&"fist_swing":
-			path = "res://assets/audio/impactPunch_medium_001.ogg"
-			volume_db = -14.0
-			sound_pitch = 1.2
+			stream = SFX_HIT; volume_db = -14.0; sound_pitch = 1.2
 		&"throw":
-			path = "res://assets/audio/impactMetal_light_002.ogg"
-			sound_pitch = 1.16
+			stream = SFX_GUNSHOT; sound_pitch = randf_range(0.9, 1.2)
 		&"recall":
-			path = "res://assets/audio/impactMetal_light_000.ogg"
-			sound_pitch = 0.82
+			stream = SFX_RECALL; sound_pitch = randf_range(0.78, 0.88)
 		&"pickup":
-			path = "res://assets/audio/impactMetal_light_000.ogg"
-			volume_db = -11.0
-			sound_pitch = 1.25
+			stream = SFX_RECALL; volume_db = -11.0; sound_pitch = 1.25
 		&"empty":
-			path = "res://assets/audio/impactMetal_light_000.ogg"
-			volume_db = -15.0
-			sound_pitch = 0.52
+			stream = SFX_HIT; volume_db = -15.0; sound_pitch = 0.52
 		&"wound":
-			path = "res://assets/audio/impactGlass_heavy_001.ogg"
-			volume_db = -3.5
-			sound_pitch = 0.82
+			stream = SFX_HIT; volume_db = -3.5; sound_pitch = 0.82
 		&"watch":
-			path = "res://assets/audio/impactBell_heavy_000.ogg"
-			volume_db = -7.0
-			sound_pitch = 0.58
+			stream = SFX_RECALL; volume_db = -7.0; sound_pitch = 0.58
 		&"watch_snap":
-			path = "res://assets/audio/impactGlass_heavy_001.ogg"
-			volume_db = -11.0
-			sound_pitch = 1.72
+			stream = SFX_HIT; volume_db = -11.0; sound_pitch = 1.72
 		&"overclock":
-			path = "res://assets/audio/impactMetal_heavy_001.ogg"
-			volume_db = -8.0
-			sound_pitch = 0.47
+			stream = SFX_GUNSHOT; volume_db = -8.0; sound_pitch = 0.47
 		&"jump", &"land", &"slide":
-			path = "res://assets/audio/footstep_concrete_001.ogg"
-			volume_db = -13.0 if cue == &"jump" else -10.0
+			stream = SFX_HIT; volume_db = -13.0 if cue == &"jump" else -10.0
 			sound_pitch = 1.2 if cue == &"jump" else (0.72 if cue == &"slide" else 0.86)
 		&"step":
-			path = "res://assets/audio/impactGlass_heavy_001.ogg"
-			volume_db = -8.0
-			sound_pitch = 0.64
+			stream = SFX_HIT; volume_db = -8.0; sound_pitch = 0.64
 		&"train":
-			path = "res://assets/audio/footstep_concrete_001.ogg"
-			volume_db = -20.0
-			sound_pitch = 0.48
+			stream = SFX_HIT; volume_db = -20.0; sound_pitch = 0.48
 		&"memory":
-			path = "res://assets/audio/impactBell_heavy_000.ogg"
-			volume_db = -16.0
-			sound_pitch = 1.62
+			stream = SFX_RECALL; volume_db = -16.0; sound_pitch = 1.62
 		&"crash":
-			path = "res://assets/audio/impactMetal_heavy_001.ogg"
-			volume_db = -1.5
-			sound_pitch = 0.58
-		&"slam":
-			path = "res://sounds/hit.ogg"
-			volume_db = -2.0
-			sound_pitch = randf_range(0.72, 0.92)
+			stream = SFX_GUNSHOT; volume_db = -1.5; sound_pitch = 0.58
 		&"hit":
-			path = "res://sounds/hit.ogg"
-			volume_db = -6.0
-			sound_pitch = randf_range(0.95, 1.18)
-	# Time slow warps every sound: pitch drops and the master bus low-pass
-	# closes (see _update_watch), so the whole mix muffles during witch time.
+			stream = SFX_HIT; volume_db = -6.0; sound_pitch = randf_range(0.95, 1.18)
+		_:
+			return
+	_play_stream(stream, volume_db, sound_pitch)
+
+
+func _play_stream(stream: AudioStream, volume_db: float, sound_pitch: float) -> void:
+	if stream == null:
+		return
 	if watch_active:
 		sound_pitch *= 0.52 if is_watch_overclocked() else 0.68
 		volume_db -= 1.5
-	if path.is_empty():
-		return
-	var stream := load(path) as AudioStream
-	if stream == null:
-		return
-	var voice := AudioStreamPlayer.new()
+	# Grab a free node from the pool (or create one if needed).
+	var voice: AudioStreamPlayer = null
+	for node in _sfx_pool:
+		if not node.playing:
+			voice = node
+			break
+	if voice == null:
+		if _sfx_pool.size() >= SFX_POOL_SIZE:
+			voice = _sfx_pool[0]
+		else:
+			voice = AudioStreamPlayer.new()
+			_sfx_pool.append(voice)
+			add_child(voice)
 	voice.stream = stream
 	voice.volume_db = volume_db
 	voice.pitch_scale = sound_pitch
-	add_child(voice)
-	voice.finished.connect(voice.queue_free)
 	voice.play()
 
 
