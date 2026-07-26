@@ -346,9 +346,9 @@ func _update_prologue(delta: float) -> void:
 	prologue_time += delta
 	hud.update_prologue(prologue_time)
 
-	if prologue_time >= next_train_tick and prologue_time < 5.55:
+	if prologue_time >= next_train_tick and prologue_time < 9.0:
 		player.play_sfx(&"train")
-		next_train_tick += 0.64 if prologue_time < 4.35 else 0.46
+		next_train_tick += 0.64 if prologue_time < 7.5 else 0.46
 
 	_update_prologue_exterior()
 
@@ -363,26 +363,26 @@ func _update_prologue(delta: float) -> void:
 	var camera_pitch_offset := sin(prologue_time * 0.79) * 0.0035
 	var camera_roll := sin(prologue_time * 0.91) * 0.0025
 
-	if prologue_time >= 2.1 and not prologue_flags.has("stats"):
+	if prologue_time >= 4.0 and not prologue_flags.has("stats"):
 		prologue_flags["stats"] = true
 		emit_signal("score_event", &"status_reveal", {
 			"level": 50,
 			"attack": 13870,
 			"art": 99,
 		})
-	if prologue_time >= 3.7 and not prologue_flags.has("memory"):
+	if prologue_time >= 6.0 and not prologue_flags.has("memory"):
 		prologue_flags["memory"] = true
 		player.play_sfx(&"memory")
 		emit_signal("score_event", &"memory_intrusion", {"layer": 1})
-	if prologue_time >= 4.62 and not prologue_flags.has("premonition"):
+	if prologue_time >= 8.0 and not prologue_flags.has("premonition"):
 		prologue_flags["premonition"] = true
 		player.play_sfx(&"watch")
 		emit_signal("score_event", &"crash_premonition", {})
-	if prologue_time >= 5.24 and not prologue_flags.has("first_jolt"):
+	if prologue_time >= 9.0 and not prologue_flags.has("first_jolt"):
 		prologue_flags["first_jolt"] = true
 		player.play_sfx(&"wound")
 		emit_signal("score_event", &"crash_premonition", {"impact": 1})
-	if prologue_time >= 5.48 and not prologue_flags.has("crash"):
+	if prologue_time >= 9.5 and not prologue_flags.has("crash"):
 		prologue_flags["crash"] = true
 		player.play_sfx(&"crash")
 		player.play_sfx(&"wound")
@@ -390,15 +390,15 @@ func _update_prologue(delta: float) -> void:
 		player.watch_previous_time = player.STARTING_MAX_TIME
 		hud.set_intro_effects(1.0, 1.0)
 		emit_signal("score_event", &"crash_hit", {})
-	if prologue_time >= 5.78 and not prologue_flags.has("secondary_impact"):
+	if prologue_time >= 10.0 and not prologue_flags.has("secondary_impact"):
 		prologue_flags["secondary_impact"] = true
 		player.play_sfx(&"crash")
-	if prologue_time >= 6.08 and not prologue_flags.has("final_impact"):
+	if prologue_time >= 10.5 and not prologue_flags.has("final_impact"):
 		prologue_flags["final_impact"] = true
 		player.play_sfx(&"train")
 
-	if prologue_time >= 5.24 and prologue_time < 6.34:
-		var crash_phase := clampf((prologue_time - 5.24) / 1.10, 0.0, 1.0)
+	if prologue_time >= 9.0 and prologue_time < 11.0:
+		var crash_phase := clampf((prologue_time - 9.0) / 2.0, 0.0, 1.0)
 		var crash_ease := crash_phase * crash_phase * (3.0 - 2.0 * crash_phase)
 		var judder := sin(crash_phase * PI * 8.0) * (1.0 - crash_phase)
 		if is_instance_valid(prologue_shell):
@@ -419,13 +419,13 @@ func _update_prologue(delta: float) -> void:
 		)
 		camera_pitch_offset += crash_ease * 0.18 + judder * 0.035
 		camera_roll += -crash_ease * 0.37 + judder * 0.075
-	elif prologue_time >= 6.34:
+	elif prologue_time >= 11.0:
 		if not prologue_flags.has("aftermath"):
 			prologue_flags["aftermath"] = true
 			player.global_position = Vector3(0.0, 0.05, 16.0)
 		if is_instance_valid(prologue_shell):
 			prologue_shell.visible = false
-		var recovery := clampf((prologue_time - 6.34) / 2.85, 0.0, 1.0)
+		var recovery := clampf((prologue_time - 11.0) / 4.0, 0.0, 1.0)
 		var recovery_ease := 1.0 - pow(1.0 - recovery, 3.0)
 		camera_position = Vector3(
 			lerpf(-0.19, 0.0, recovery_ease),
@@ -436,7 +436,7 @@ func _update_prologue(delta: float) -> void:
 		camera_roll += lerpf(-0.31, 0.0, recovery_ease)
 		hud.set_intro_effects(
 			1.0 - recovery,
-			maxf(0.0, 1.0 - (prologue_time - 5.48) * 3.3)
+			maxf(0.0, 1.0 - (prologue_time - 9.5) * 3.3)
 		)
 
 	player.camera.position = camera_position
@@ -446,11 +446,11 @@ func _update_prologue(delta: float) -> void:
 		camera_roll
 	)
 
-	if prologue_time >= 7.82 and not prologue_flags.has("epilogue"):
+	if prologue_time >= 13.0 and not prologue_flags.has("epilogue"):
 		prologue_flags["epilogue"] = true
 		emit_signal("score_event", &"title_epilogue", {"chapter": "the_first_job"})
 
-	if prologue_time >= 9.55:
+	if prologue_time >= 15.0:
 		_finish_prologue()
 
 

@@ -397,7 +397,7 @@ static func build_level(main) -> void:
 	var art_direction := WorldAestheticScript.new()
 	art_direction.name = "ReturnRoadArtDirection"
 	main.world_root.add_child(art_direction)
-	build_prologue_shell(main)
+	# No prologue shell here — the train is its own scene (train.tscn).
 
 
 static func build_prologue_shell(main) -> void:

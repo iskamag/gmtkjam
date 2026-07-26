@@ -191,17 +191,8 @@ func update_prologue(t: float) -> void:
 		return
 	prologue_time = maxf(t, 0.0)
 
-	# The entire opening is deliberately one continuous exposure change. The
-	# crash reaches black once and releases once; there is no flash/strobe cut.
-	var shade_alpha := 0.12
-	if prologue_time < 0.72:
-		shade_alpha = lerpf(1.0, 0.16, _smooth_range(prologue_time, 0.0, 0.72))
-	elif prologue_time >= 5.42 and prologue_time < 5.78:
-		shade_alpha = lerpf(0.12, 1.0, _smooth_range(prologue_time, 5.42, 5.78))
-	elif prologue_time < 6.12 and prologue_time >= 5.78:
-		shade_alpha = 1.0
-	elif prologue_time < 6.88 and prologue_time >= 6.12:
-		shade_alpha = lerpf(1.0, 0.12, _smooth_range(prologue_time, 6.12, 6.88))
+	# Shade removed — no black screen at any point during the cutscene.
+	var shade_alpha := 0.0
 	prologue_shade.color = Color(0.018, 0.014, 0.011, shade_alpha)
 
 	var stats_alpha := (
